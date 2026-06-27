@@ -15,16 +15,17 @@ stays on your phone.
 - 🪥 **Habits carry the app.** As long as one unavoidable daily habit exists, you open
   Checkfuchs every day — and your dated tasks and backlog ride along, never silently
   vanishing.
-- 🚦 **Three visibility tiers.** Daily habits are *always* shown; hard-dated items
-  *announce themselves* as their day nears; the backlog waits *passively* until you visit.
-- 🧘 **"Not done" is data, not a verdict.** A missed habit is tracked, never punished.
-  The only real failure is a hard deadline that physically passes. Avoidance shows up as
-  a colour shift — "you've pushed this 6 weeks" — never a nag.
-- 🔁 **Habits and to-dos are one thing.** A one-off can become a series; a yearly task can
-  live in your weekly list. Editing one occurrence vs. the whole series works like
-  Outlook — no surprises behind your back.
-- 🗂️ **Pools, not rigid categories.** Habits, hard dates, a weekly pool, a monthly pool,
-  quick to-dos — all the same machine with a few dials turned. Build your own.
+- 🧘 **"Not done" is data, not a verdict.** A missed habit just *fades* — it never nags or
+  bleeds red. The only real failure is a hard deadline you let pass.
+- 🔭 **Lenses & Views — look at your tasks your way.** A *Lens* picks and orders a slice of
+  your tasks (all your daily habits; one weekly chore to chip at; the next due dates). A
+  *View* arranges the Lenses you care about into a screen — a calm **Home**, a detailed
+  **Habits** tracker, a **Long-term** backlog. Not rigid categories; dials you set.
+- 🔁 **Habits and to-dos are one object.** A one-off becomes a series in two taps;
+  "every other Saturday" and "the 25th of each month" are easy; editing *this* occurrence
+  vs. *the whole series* works like a calendar — no surprises behind your back.
+- 🎨 **Calm by design.** No ads, no subscription, no dark patterns. Dark + light, four
+  languages, and a typeface picker that includes dyslexia- and low-vision-friendly fonts.
 
 ## Privacy
 
@@ -34,12 +35,17 @@ reminder is computed locally from your tasks — nothing ever leaves the phone.
 ## Stack
 
 Flutter · drift (SQLite) · Riverpod · Material 3 · `flutter_local_notifications` ·
-local-first, serverless. Four languages: English, German, French, Italian.
+local-first, serverless. Four languages: English, German, French, Italian. Part of the
+**[Fuchsbau](https://github.com/Kemenor/fuchsbau)** family — the shared ethos, design
+system, and base stack behind the fox apps.
 
 ## Status
 
-Early. The conceptual data model is frozen in [`design-concept.md`](./design-concept.md);
-the stack, schema, and phased build order are in [`PLAN.md`](./PLAN.md).
+**Design fully specified, build underway.** The model lives in
+[`design-concept.md`](./design-concept.md), the look in
+[`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) (with HTML mockups in
+[`examples/ui/`](./examples/ui/)), and the stack + phased roadmap in
+[`PLAN.md`](./PLAN.md). Phase 0 (scaffold) is done; the domain engine is next.
 
 ## Build & run
 
