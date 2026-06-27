@@ -37,6 +37,10 @@ Three principles from the concept that shape *technical* decisions, not just UX:
 | Reminders | **`flutter_local_notifications` + `timezone`**, rescheduled on every state change |
 | Domain core | A **pure, side-effect-free engine** over an injected `Clock`. DB + notifications are driven *from* it, never mixed *into* it — so the whole state machine and the generation/projection logic are unit-testable with a fake clock |
 | Generation | **Lazy: materialize the current instance, project the future as virtual, materialize-on-action.** A stored Task always wins over its virtual projection |
+| Recurrence | **Hand-rolled** occurrence generator over the curated struct — *no* `rrule` package (it exposes the RFC-5545 complexity we deliberately excluded) |
+| Navigation | **Router-less** (Fuchsbau): `TabBar`/`IndexedStack` over the Views, imperative `push` for sheets. No `go_router` |
+| Date math | vanilla `DateTime` + `intl` (+ `timezone` for the day-boundary); no date library |
+| Keys / SDK | `INTEGER` autoincrement PKs (local-only, no sync); min Android API **26** |
 | l10n | **en/de/fr/it** from day one, no hardcoded user-facing strings |
 | Backup | **ZIP** = SQLite snapshot + JSON export; fully local, no cloud lock-in |
 | App id | `ch.checkfuchs.app` |
