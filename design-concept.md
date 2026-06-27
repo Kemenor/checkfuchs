@@ -1,320 +1,378 @@
-# Habit & To-Do App — Conceptual Design
+# Checkfuchs — Conceptual Design
 
-> **Status:** Conceptual specification. No tech stack, no design system, no UI layout.
-> Those are defined separately. This document fixes the *data model*, *object
-> responsibilities*, *state machines*, and *edit semantics* only.
+> **Status:** Canonical conceptual specification (rebuilt from first principles).
+> This fixes the *data model*, *object responsibilities*, *state machines*, and
+> *edit semantics*. Tech stack, design system, and screen layout are defined
+> separately. Anything labelled **(visualization)** or **(deferred)** is explicitly
+> out of scope here.
+>
+> This document supersedes the original draft (preserved in git history). The biggest
+> change: **status lives *only* on the Task**, and the old "Pool" is now a pure
+> presentation layer renamed **Lens**.
 
 ---
 
 ## 1. Problem & Philosophy
 
 ### 1.1 The core problem
-Existing tools force a split between **habits** (Habitify: recurring behaviours, no
-real due date) and **to-dos** (Vikunja/Todoist: dated tasks). For the target user,
-these are **one mental object** with different time horizons, not two systems. Every
-standalone to-do app gets adopted and then dropped, because:
-
-- On a full day, no to-do gets done → no reason to open the app → the app goes
-  unseen → it dies.
-- Pure to-do apps have **no anchor** that forces a daily open.
+Existing tools split **habits** (recurring behaviours, no due date) from **to-dos**
+(dated tasks). For the target user these are **one mental object** with different time
+horizons, not two systems. Pure to-do apps get adopted then dropped, because on a full
+day nothing gets ticked → no reason to open the app → it goes unseen → it dies.
 
 ### 1.2 The carrier mechanism
-A **daily habit** (e.g. brushing teeth) is unavoidable and therefore guarantees the
-app is opened every day. That daily open is the carrier that keeps everything else
-visible. The design exploits this:
+A **daily habit** (brushing teeth) is unavoidable and so guarantees the app is opened
+every day. That daily open is the carrier that keeps everything else visible. Habits
+and to-dos share one surface; while checking off the unavoidable daily habit, the user's
+eye passes the important dated items.
 
-- **Habits and to-dos share one surface.** While checking off the unavoidable daily
-  habit, the user's eye necessarily passes the important dated items.
-- As long as at least one daily habit exists, the app is opened daily, and nothing
-  silently disappears.
-
-### 1.3 Anti-rigidity (critical design value)
+### 1.3 Anti-rigidity (the central value)
 The target user has a documented drop-reflex with rigid systems. Therefore:
 
-- **"Not done" is data, never a command or punishment.** A missed habit is tracked,
-  not failed. The only genuine failure is a *hard date* that physically passes.
-- **Avoidance and lack-of-capacity look identical in a single moment.** The system
-  must not guess. Instead it surfaces *patterns over time* (e.g. "skipped 6 weeks in
-  a row") as **information, not enforcement** — e.g. a colour change, never a forced
-  action.
-- The simple case must show zero complexity. Power is available when summoned, never
-  imposed.
+- **"Not done" is data, never punishment.** A missed habit is *tracked*, not *failed*.
+- The simple case (one daily habit) must show **zero complexity**. Power is summoned,
+  never imposed.
+- **The app must never act behind your back.** This is a hard correctness value, not a
+  nicety — it shapes the generation, edit, and reminder rules throughout.
 
-### 1.4 Three visibility tiers
-| Tier | Behaviour | Example |
-|------|-----------|---------|
-| **Forced** | Always shown on the daily surface | Daily habits (teeth) |
-| **Self-announcing** | Surfaces itself only near its relevant day | Hard-dated items |
-| **Passive** | User visits on their own initiative; not forced into view | Pool backlog |
+### 1.4 The separation law (the spine of the whole model)
+Every hole in the original draft came from one object reaching into another's job. The
+rule that fixes it:
 
-Passive items do **not** need to be a forced glance. Because the app *is* opened daily
-(via habits), the user stays mentally aware that the backlog exists — this is the
-opposite of "out of sight, out of mind." Only the **hard-dated** subset gets an active
-push into the daily surface, and because hard dates are rare, this never creates noise.
+| Object | The single question it answers | Owns status? |
+|---|---|---|
+| **Template** | *When is a Task born, and with what defaults?* (generation) | No |
+| **Task** | *What is the state of this one thing right now?* (lifecycle) | **Yes — the only one** |
+| **Lens** | *How are Tasks shown to me?* (presentation) | **No** |
 
----
+> **If a property changes what a Task *is*, or *when it regenerates*, it belongs on the
+> Task or the Template — never the Lens.** A Lens only ever changes what is *shown*.
 
-## 2. The Three Objects
-
-The entire model is three objects with strictly separated responsibilities.
-
-| Object | Responsibility | Completable? | User-facing name |
-|--------|----------------|--------------|------------------|
-| **Template** | Recurrence definition / factory. Generates Tasks. | No | "Series" (hidden for one-offs) |
-| **Task** | The actual to-do instance. The only thing checked off. | **Yes** | "Task" |
-| **Pool** | Visibility & organization layer. | No | "Pool" |
-
-> **Naming note:** The user only ever sees **Task** (the completable item) and
-> **Pool**. **Template** is exposed only when relevant (editing a series), mirroring
-> the Outlook *meeting series vs. single meeting* model — both individually editable.
+There is also one **app-level** concept that belongs to none of the three: **Vacation**
+(§6).
 
 ---
 
-## 3. Task (the completable instance)
+## 2. Task — the only completable object
 
-A Task is one concrete to-do. It is the **only** object with a completion status, and
-the only thing analytics read from.
+A Task is one concrete to-do/habit instance. It is the **only** object with a completion
+status, and the **only** source of analytics.
 
-### 3.1 Fields
-- `completion_status`: `ToDo` → `Done` | `Skipped` | `NotDone`
-- `active_window`: `{ start, end }` — when the task can be acted on
-- `template_id`: nullable — the Template that generated it (null = standalone one-off
-  with no exposed series)
-- `is_exception`: boolean — has this instance been individually edited away from its
-  Template? (see §5.3)
-- `hard_due_date`: nullable — if set, grants **rotation immunity** (see §6.4)
-- `missed_behavior`: `flag` | `archive` — what happens when a hard due date passes
-  (per-task; see §3.4)
+### 2.1 Fields
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | the label |
+| `note` | string? | optional free text (also the informal multi-item escape hatch) |
+| `status` | enum | `Open · Done · Skipped · Missed` (see §2.2) |
+| `start` | datetime? | when it becomes **Active**; absent ⇒ active immediately |
+| `end` | datetime? | when the window closes; absent ⇒ **endless & unfailable** |
+| `notifications` | list | local pings (see §2.4) |
+| `templateId` | id? | the Template that generated it; **null = standalone one-off** |
+| *(membership)* | join | Lens membership lives on the `Task↔Lens` join (§4), not here |
+| `createdAt` | datetime | when the instance came into being |
+| `resolvedAt` | datetime? | when it went terminal; null while Open — **required for analytics** |
 
-### 3.2 Lifecycle state machine
+*(Deferred:* `checklist: [{label, status}]` *— additive, no per-item logic, no per-item
+windows. Multiple windows ⇒ multiple Tasks. Not in v1.)*
+
+### 2.2 Status — four live-or-terminal states
 ```
-                 now ≥ start
-   ┌─────────┐  ───────────────►  ┌────────┐
-   │ Pending │                    │ Active │
-   └─────────┘                    └───┬────┘
-   now < start                        │
-   (exists, not yet actionable)       │
-                                      │
-         user Complete ───────────────┼──────────────► Done
-         user Skip ────────────────────┼─────────────► Skipped
-         now > end while still ToDo ───┘  (automatic) ► NotDone
+                    ┌──────────────────────────────► Done      (user · only while Active)
+   ┌──────┐         │
+   │ Open │ ────────┼──────────────────────────────► Skipped   (user · anytime while Open)
+   └──────┘         │
+   (live, no        └──────────────────────────────► Missed    (automatic · end passed)
+    terminal
+    decision yet)
 ```
 
-- **Pending** — created but `now < active_window.start`. Visible-but-not-actionable
-  (e.g. a one-off you may only do 14–25 July, created in advance).
-- **Active** — within the window and still `ToDo`. This is what "active" means: there
-  is an open, actionable task. Actions are only permitted while Active.
-- **Done / Skipped / NotDone** — terminal for this instance.
+- **`Open`** — the live state, *no terminal decision yet*. Whether an Open task is
+  *Pending* or *Active* is **derived from the dates, never stored** (§2.3).
+- **`Done`** — user completed it. Allowed **only while Active**.
+- **`Skipped`** — user deliberately declined *this* instance. Allowed **anytime while
+  Open** (Pending or Active). **Neutral** to progress (a guilt-free rest day).
+- **`Missed`** — **automatic**: `end` passed while still Open. **Irrevocable failure** —
+  the window is gone, like missing a birthday. There is **no hard/soft variant**: a Task
+  knows nothing about its siblings, so a missed habit and a missed deadline are the same
+  *fact*. Whether that fact *feels* like data or failure is read from the Template at
+  render time **(visualization)** — see §2.6.
 
-### 3.3 The two-axis coupling (subtle but central)
-`completion_status` and *activity* are conceptually **orthogonal** — a Task can be
-`ToDo` yet not-yet-active (Pending). But their **transitions are coupled**:
+> **Principle:** `status` = *decisions that were made*; the dates = *where you are in
+> time*. Two `Open` tasks can look completely different on screen (one greyed-pending,
+> one live) with identical stored status.
 
-> When a Task leaves the active state while still `ToDo` (its window expires), it
-> **must** be auto-recorded as `NotDone`.
+### 2.3 Window & derived phases
+Both dates are **datetimes** (so partial-day windows work — "brush teeth (morning)" must
+fail by noon). The UI offers shorthands — *just a date* (00:00–23:59), *morning /
+afternoon / evening*, *specific time* — that resolve to raw datetimes.
 
-This coupling is the mechanism that **generates the tracking data**. A daily habit
-whose one-day window expires each evening auto-writes a `NotDone` record — that is
-exactly how the habit history/streak is built. Without this rule there is no analytics.
+```
+   now < start          start ≤ now ≤ end           end passes while Open
+   ┌─────────┐  ──────►  ┌────────┐  ─────────────►  Missed (automatic)
+   │ Pending │           │ Active │
+   └─────────┘           └────────┘
+```
 
-User actions vs. automatic outcomes:
-- `Done`, `Skipped` = **user actions**
-- `NotDone` = **automatic** (window timeout)
+- **`start` absent** ⇒ active immediately from creation.
+- **`end` absent** ⇒ **endless & unfailable**: only `Done`/`Skipped`, never `Missed`.
+  This is the *someday/backlog* case and produces no miss-data.
 
-### 3.4 Missed behaviour (hard dates only)
-When a Task carries a `hard_due_date` and that date passes without completion, the
-outcome is **terminal failure** — the task can no longer be completed. Per-task choice:
-- `flag` — keep it, colour it as failed (visible reckoning)
-- `archive` — move it out of view
+> **Invariant:** a Template-generated Task is **always bounded** (it always gets an
+> `end`, the next occurrence at the latest) and so always failable. **The only deathless
+> Tasks are the one-offs you typed in by hand.**
 
-This is distinct from `NotDone` (a soft, expected miss). A hard-date miss is a real
-failure; a habit miss is just data. (See §6.3 for the two meanings of "fail".)
+### 2.4 Notifications
+A general array — the four trigger types are one mechanism wearing four hats:
+
+```
+notifications: [ { anchor: start | end | absolute, offset: Duration } ]
+```
+- *at start* → `(start, 0)` · *upcoming activation* → `(start, −1d)` · *due* → `(end, 0)`
+  or `(end, −2h)` · *reminder* → `(absolute, <datetime>)`. The UI shows friendly presets.
+- **Validation:** a `start`-anchored ping requires the Task to *have* a `start`; `end`
+  likewise. `absolute` works regardless.
+- **Lifecycle:** relative fire-times **recompute** when the window is edited, and **all
+  pending pings cancel** the moment the Task goes terminal. (No pinging you about a task
+  you already closed.)
+- Defaults are inherited from the Template and stamped per instance.
+
+### 2.5 Actions by phase
+| Phase | `Skip` | `Done` | `Missed` |
+|---|---|---|---|
+| Pending (`now < start`) | ✓ (pre-empt a known conflict) | ✗ | — |
+| Active (`start ≤ now ≤ end`) | ✓ | ✓ | — |
+| window end passes while Open | — | — | ✓ automatic |
+
+*Pre-empt example:* "Wash clothes, active Wednesdays — but I'm away this Wednesday"
+→ `Skip` it while still Pending.
+
+### 2.6 The two "feels" of a Missed — not stored
+A missed floss (data) and a missed birthday gift (real failure) are the **same** Task
+fact. The difference is *"will a successor exist?"* — a recurring Template spawns
+tomorrow's instance (soft), a one-off has none (final). That judgment is **computed from
+the Template at display time**, never a field on the Task. **(visualization)**
 
 ---
 
-## 4. Template (the factory)
+## 3. Template — the recurring factory
 
-A Template is the recurrence definition. It is **never completed**; it manufactures
-Tasks. One-offs are Templates that fire exactly once and stay hidden until the user
-chooses "turn into series."
+A Template defines **when** a new Task is born and **with what defaults**. It is **never
+completed** and **carries no status**. There is **no one-off Template**: a standalone
+to-do is just a `Task` with `templateId = null`.
+
+### 3.1 Recurrence — a curated subset of the calendar standard (RRULE-shaped)
+```
+recurrence: {
+  freq:       daily | weekly | monthly | yearly      // no "once"
+  interval:   int                                    // "every N" (default 1)
+  byWeekday:  [weekday]?                              // weekly: which day(s)
+  byMonthDay: int?                                    // monthly: 25  (−1 = last day)
+  byMonth:    int?                                    // yearly: 3 (March) + byMonthDay
+  anchor:     date                                    // the reference intervals count from
+}
+```
+| Want | Encodes as |
+|---|---|
+| every day | `freq: daily` |
+| 25th of every month | `freq: monthly, byMonthDay: 25` |
+| Saturday every two weeks | `freq: weekly, interval: 2, byWeekday: [Sat], anchor: <a Saturday>` |
+| 13th of March | `freq: yearly, byMonth: 3, byMonthDay: 13` |
+
+- The **`anchor`** is load-bearing for any `interval > 1` ("every two weeks" is meaningless
+  without "from *when*").
+- **Month-overflow clamps** to the last valid day (Feb has no 31st); `byMonthDay: -1`
+  means "last day of the month."
+- The same primitive also drives **Lens periods** (§4) — one calendar engine, two jobs.
+- Exportable to real `.ics` later, but none of RRULE's scary corners are exposed.
+
+### 3.2 Defaults it stamps onto each generated Task
+`name`, `note`, `notifications`, **Lens membership(s) + default order**, and the **window
+rule** (below). Editing these on the Template changes *future* instances only.
+
+### 3.3 Window rule
+How each instance's `start`/`end` are derived from its occurrence date:
+- **Slice** — a named/timed band on the occurrence day (*morning* = 00:00–12:00, *evening*,
+  or an explicit range). → "brush teeth (morning)".
+- **Duration** — `start = occurrence`, `end = occurrence + duration`. → "active for the
+  week before the birthday".
+- **Default (unset)** — `start = occurrence`, `end = next occurrence`. → classic daily habit.
+
+### 3.4 Generation — materialize the present, project the future
+- The engine materializes **only the current open instance**.
+- **Future occurrences are virtual** — computed on demand from the recurrence rule (like
+  a calendar grid), never stored.
+- **Acting on a virtual occurrence materializes it.** Pre-`Skip` next Wednesday → a real
+  `Skipped` Task springs into existence for that date; everything untouched stays virtual.
+- When the current instance goes terminal, the next occurrence becomes current and
+  materializes.
+
+> **Resolution rule:** for any occurrence slot, *a stored Task wins; otherwise show the
+> virtual projection.* So the mere existence of a stored Task **is** the override. A
+> Template edit never rewrites stored Tasks — it only fills empty (virtual) slots — so
+> "edit all future occurrences" is free, individually-edited occurrences survive
+> automatically, and **no `is_exception` flag is needed**. The currently-running instance
+> is the only stored one and is left untouched (no surprise changes).
+
+### 3.5 Pause
+```
+paused: bool   +   resumeOn: date?
+```
+- `false` → generating · `true + null` → suspended indefinitely (manual resume) ·
+  `true + <date>` → auto-resumes on that date (planned vacation).
+- While paused the engine generates **no new instances**; the *current* open instance is
+  left alone (you can still do/skip it, or let it Miss). **Pause ≠ delete** — history is
+  untouched.
+
+### 3.6 "Turn into a series"
+A one-off (`templateId = null`) becomes recurring by: pick a recurrence → create a
+Template, copy the task's window/notification/lens settings into its defaults → set the
+task's `templateId`. The engine takes over from the next occurrence.
+
+---
+
+## 4. Lens — pure presentation
+
+A **Lens** is a way of *looking* at Tasks; it neither holds nor owns them. **It never
+reads or writes status — it only changes what is *shown*.** (Formerly "Pool".)
 
 ### 4.1 Fields
-- `reactivation_rule`: when new Tasks are generated (`daily`, `every 2 weeks`,
-  `yearly in March`, `once` for one-offs, …)
-- `default_active_window`: the window applied to generated Tasks. Default end =
-  *next reactivation date*; the Template may instead specify an explicit duration
-  (e.g. "becomes active on the 1st of the month, active for 1 week").
-- `pool_id`: which Pool generated Tasks belong to
-- `task_defaults`: title, missed_behavior, hard_due_date policy, etc., inherited by
-  generated Tasks.
+| Field | Values | Meaning |
+|---|---|---|
+| `name` | string | user-defined |
+| `showCount` | `1 \| 2 \| 3 \| … \| all` | how many slots are surfaced |
+| `ordering` | `dueDate \| manual \| automatic` | how members are ranked (manual = priority, automatic = FIFO) |
+| `selection` | `top \| random` | how the shown set is drawn (top = first `showCount` by order; random ignores order) |
+| `period` | `none \|` calendar cadence | refill behaviour (§4.3); reuses the §3.1 primitive (so a 17-day lens is fine) |
+| `dormantAfter` | `N` | periods unworked before a task goes **Dormant** (periodic lenses only) |
 
-### 4.2 Lazy generation
-Templates do **not** materialize the whole future series (unlike Outlook). They
-generate **one open Task at a time** (optionally plus the next one as a preview). This
-makes "change all future occurrences" trivial: because the next Task only comes into
-existence at reactivation, it automatically inherits the current Template definition.
+### 4.2 Membership & per-pair state
+- Membership = a **`Task↔Lens` join** (many-to-many: a Task can appear in several Lenses,
+  e.g. weekly habits also shown in a daily overview).
+- The join row carries the **per-pair** state: `order`, `dormancyCounter`,
+  `passedThisPeriod`.
+- **Templates** stamp a default Lens + order onto each instance they generate; **one-offs**
+  set the row directly.
+- **Order persistence:** reordering a *recurring* member writes back to the **Template's
+  default order** (a series-level edit, so it sticks for tomorrow). `dormancyCounter` /
+  `passedThisPeriod` are per-instance and **reset each cycle**.
 
-### 4.3 One-off = single-fire Template
-A standalone to-do is internally a Template with `reactivation_rule = once`. The
-Template stays hidden. When the user taps **"turn into series,"** the Template surfaces
-and gains a real reactivation rule. This unifies one-off and recurring into a single
-mechanism — the only difference is *one Task* vs. *one Task per reactivation*.
+### 4.3 `period` decides refill behaviour
+- **`none` → continuous:** a freed slot (on `Done`) **refills immediately** with the next
+  task. Dormancy does not apply. *(daily habits, due-date lens)*
+- **periodic (week / month / any cadence) → hold-till-rollover:** completing meets your
+  quota for the period; the slot shows "nicely done" and **holds** until the next
+  rollover. Over time you work down the list. Dormancy applies. *(week/month work-down
+  lenses)*
 
----
+### 4.4 The three load-bearing verbs (the old "skip" confusion, resolved)
+| Word | What it is | Touches status? |
+|---|---|---|
+| **Skip** | decline the **Task** → terminal `Skipped` | **Yes** |
+| **Pass** | "not this one this period — show another"; Task untouched, stays a member | No (display) |
+| **Dormant** | a shown task sits `N` periods unworked → sinks out of view, stays a member, **resurfaces later** | No (display) |
 
-## 5. Edit Semantics (Outlook series vs. instance)
+Only **Skip** is a status change. **Pass** and **Dormant** rearrange the furniture; the
+Task is serenely unaware.
 
-The user can edit either a single Task or the whole series, and they behave like
-Outlook — which the user already understands without explanation.
+### 4.5 The three tiers dissolve
+The original "Forced / Self-announcing / Passive" tiers and a special **"Today"** surface
+are **not** data concepts — they are points on the dials above:
+- *Forced* = a continuous "everything" Lens you keep in front of you.
+- *Self-announcing* = a due-date Lens with a small `showCount`.
+- *Passive* = a periodic work-down Lens you visit.
 
-### 5.1 Edit this Task (single instance)
-Only this instance changes. It becomes an **exception** (`is_exception = true`) and
-stops following the Template.
-
-### 5.2 Edit the Template (the series)
-Applies **prospectively only** — to Tasks generated *after* the edit. Because of lazy
-generation (§4.2), there are essentially no materialized future Tasks to rewrite; the
-next generated Task simply inherits the new definition.
-
-> **Currently-open Task:** A Template edit does **not** alter the already-open Task.
-> It keeps its current form unless edited directly. Rule: *Template edits take effect
-> from the next generated Task onward.* This protects the running instance from
-> surprise changes and is the simplest rule to explain.
-
-### 5.3 The conflict rule (exceptions win)
-If a Task has already been individually edited (`is_exception = true`), subsequent
-Template edits **leave it untouched**. The exception always wins over the series
-update. Without this, a series edit would silently overwrite a manual change — exactly
-the "the app did something behind my back" failure that destroys trust.
-
----
-
-## 6. Pool (visibility & organization)
-
-Pools are **not five hard-coded types.** They are presets over a small set of axes.
-This is what makes the model generic: a user who thinks differently builds their own
-Pool by setting the axes.
-
-### 6.1 Pool axes
-| Axis | Values | Meaning |
-|------|--------|---------|
-| `show_count` | `1` \| `3` \| `all` | How many slots appear in the overview |
-| `selection` | `next_due` \| `manual_order` \| `random` \| `all_active` | How a free slot is filled |
-| `fail_policy` | `never` \| `on_due_passed` \| `after_n_missed` | When/whether the pool marks a task failed |
-| `on_complete` | `hold_until_rollover` \| `advance_immediately` \| `task_reactivates` | What happens to a slot on completion |
-| `skip_policy` | `track_only` \| `remove` \| `rotate` \| `requeue_end` | What a skip does to the task's position |
-| `period` | `none` \| `week` \| `month` | The cadence for fail/advance (pool-level only) |
-
-### 6.2 Shipped presets
-| Preset | show_count | selection | fail_policy | on_complete | skip_policy | period |
-|--------|-----------|-----------|-------------|-------------|-------------|--------|
-| **Habits** | all | all_active | never | task_reactivates | track_only | none |
-| **Hard dates** | 3 | next_due | on_due_passed (terminal) | — (one-off) | remove | none |
-| **Week pool** | 1¹ | manual_order / random² | after_n_missed (n=3) | hold_until_rollover | rotate | week |
-| **Month pool** | 1¹ | manual_order / random² | after_n_missed (n=3) | hold_until_rollover | rotate | month |
-| **Small to-dos** | 3 | manual_order | never | advance_immediately | requeue_end | none |
-
-¹ `show_count` configurable (the user may want more than one per week).
-² open: whether a freed slot pulls the next item in order or a random one. Configurable.
-
-> Week and Month pools differ **only** in `period`. This is the proof the axis
-> decomposition is correct.
-
-### 6.3 Two meanings of "fail" — kept separate
-- **Task-level missed** (§3.4): *terminal, date-driven.* A hard due date passes; the
-  task is dead. Per-task: flag or archive.
-- **Pool-level rotation** (`fail_policy = after_n_missed`): *organizational,
-  slot-driven.* After N not-dones the pool rotates a **new** task into the slot. The
-  rotated-out task is **not** dead — it yields its slot and returns to the list.
-
-These never collide because they live on different objects (Task vs. Pool).
-
-### 6.4 Hard-date rotation immunity
-A Task with a `hard_due_date` is **immune to pool rotation**. It stays in its slot
-until its date or completion, regardless of the Pool's `fail_policy`. **Hard date beats
-organizational cadence.** This prevents a rotation policy from cycling away a task that
-has a real deadline.
-
-### 6.5 Two meanings of "cyclical" — kept separate
-- **Task reactivation** (intrinsic): belongs to the **Template**. Governs *when a task
-  becomes active again* (every 2 weeks, yearly in March). It does not care which Pool
-  the task lives in or whether that Pool has a period.
-- **Pool period** (extrinsic): a **visibility cadence only**.
-
-> A self-reactivating Task **may** live in a periodic Pool. There is no conflict:
-> reactivation is a Template concern (*when the task exists*), period is a Pool concern
-> (*how it is shown*). Example: window-cleaning reactivates yearly in March, but lives
-> in a Weekly pool — it's a larger task the user can *choose* to pull into a given
-> week, not something with a weekly cadence of its own.
+There is **no special "Today" object.** "Today" is simply whichever Lens(es) you pin —
+a **(visualization)** choice.
 
 ---
 
-## 7. Constraints & Validation
+## 5. Edit semantics
 
-Some Pool policies presuppose Task fields. These must be validated at configuration
-time, not left to fail silently at runtime.
-
-- `selection = next_due` requires member Tasks to have a date to sort by. A Hard-dates
-  pool can only admit Tasks with a `hard_due_date`.
-- `fail_policy = on_due_passed` requires a `hard_due_date` on the Task — otherwise
-  there is no expiry condition to trigger the failure.
-- General rule: **Policy X requires Task field Y.** Reject Pool/Task combinations that
-  cannot satisfy their own fail/advance condition.
-
-Active-window rule:
-- A reactivating Task's `active_window` is optional. If absent, `window.end` defaults
-  to the *next reactivation date* — the open Task is closed (as `Skipped`/`NotDone`)
-  when the next one is generated. One formula covers both one-off and cyclical.
+- **Edit this instance** — change the materialized Task directly. Because a stored Task
+  wins over the projection (§3.4), the edit survives future Template edits automatically.
+- **Edit the series** — change the Template. Applies to *future* generated instances only;
+  the currently-running instance is untouched. Virtual future occurrences simply recompute
+  against the new definition.
+- No `is_exception` flag — *existence of a stored Task for a slot is itself the override.*
 
 ---
 
-## 8. Evaluation / Tracking
+## 6. Vacation (app-level)
+
+Belongs to none of the three objects — it is global state in settings.
+
+- A **list of `{ start, end }` periods**, schedulable in advance (line up July's trip and
+  September's now). `vacationActive(now) = now ∈ any period`.
+- **Generation gate:** the engine emits a new instance only if
+  `NOT template.paused AND NOT vacationActive`.
+- **Treadmill only — not reality.** Recurring generation pauses, but a **hard-dated
+  one-off still goes `Missed`** if its date passes while you're away. Silencing chores is
+  honest; silently rescuing a real deadline would be the app lying.
+- *(deferred detail:* when vacation *starts*, an already-open recurring instance is
+  auto-`Skip`ped — leaning — vs left to Miss. Pin during engine implementation.)*
+
+---
+
+## 7. Constraints & validation
+
+Validate at configuration time, not silently at runtime:
+- A `start`-anchored notification requires a `start`; an `end`-anchored one requires an
+  `end` (§2.4).
+- `ordering = dueDate` is only meaningful for members that *have* a due date.
+- General rule: **policy X requires field Y** — reject combinations that can't satisfy
+  their own condition.
+
+---
+
+## 8. Evaluation / tracking
 
 - **All analytics read from Task records only** — the stream of `Done` / `Skipped` /
-  `NotDone` outcomes over time. Templates and Pools hold no history.
-- Supports: streaks, completion history, "how far behind" counts.
-- **Avoidance surfacing:** beyond a threshold of consecutive skips/not-dones, surface
-  the item *differently* (e.g. colour) as **information, not a command** — "you've
-  pushed this for 6 weeks." This is the honest middle path between forcing the task
-  (rigid → drop-reflex) and letting it silently vanish (avoidance wins permanently).
+  `Missed` outcomes plus their `resolvedAt` timestamps. Templates and Lenses hold no
+  history.
+- **Progress framing (anti-rigid):** lead with *completion rate over a window*, not a
+  fragile streak. A deliberate `Skip` is **neutral** (rest day, preserves the run); an
+  automatic `Missed` breaks the run but is shown as **neutral data, not red**.
+- **Avoidance surfacing:** beyond a threshold of consecutive misses, render the item
+  *differently* (e.g. colour) as **information, not a command**. **(visualization)**
 
 ---
 
-## 9. Reminders (behavioural requirement only)
+## 9. Reminders (behavioural requirement)
 
-Tech is defined separately, but the conceptual requirement:
-
-- All reminder timings are **locally derivable** from Task active windows and
-  reactivation rules. No remote trigger is conceptually required — the device always
-  knows when to notify. (Consistent with a local-first, privacy-respecting stance.)
-- **Reminders must be rescheduled whenever state changes** — on completion, skip,
-  reorder, or new generation. Otherwise reminders fire for tasks that are no longer
-  open. This is a hard correctness requirement of the model, independent of the
-  notification implementation.
+- All reminder timings are **locally derivable** from a Task's `notifications` + window.
+  No remote trigger is required — the device always knows when to fire (local-first,
+  privacy-respecting).
+- Reminders are **rescheduled on every state change** (complete, skip, reorder, new
+  generation, window edit) — a hard correctness requirement (§2.4 lifecycle).
 
 ---
 
 ## 10. Glossary
 
 | Term | Definition |
-|------|------------|
-| **Template** | Recurrence definition / factory. Generates Tasks. Never completed. Hidden for one-offs. |
-| **Task** | A single completable to-do instance. The only object with a completion status and the only source of analytics. |
-| **Pool** | Visibility & organization layer; a preset over the axes in §6.1. |
-| **Active window** | `{start, end}` on a Task defining when it is actionable. |
-| **Active** | Derived: a Task that is within its window and still `ToDo`. |
-| **Exception** | A Task individually edited away from its Template; immune to future Template edits. |
-| **Reactivation** | Template-level rule for when a new Task is generated. |
-| **Period** | Pool-level visibility cadence (`week`/`month`); unrelated to reactivation. |
-| **NotDone** | Automatic outcome when an active window expires while still `ToDo`. Data, not failure. |
-| **Missed** | Terminal failure of a hard-dated Task whose due date passed. |
+|---|---|
+| **Task** | The only completable instance; the only object with a status and the only analytics source. |
+| **Template** | Recurring factory. Generates Tasks lazily. Never completed. (One-offs are template-less.) |
+| **Lens** | Pure presentation layer; display dials over a `Task↔Lens` membership. (Was "Pool".) |
+| **Open** | Live status, no terminal decision yet. *Pending* vs *Active* is derived from the dates. |
+| **Pending / Active** | Derived phases of an `Open` task (`now<start` / `start≤now≤end`). Not stored. |
+| **Done / Skipped / Missed** | Terminal statuses: user-completed / user-declined (neutral) / window-expired (automatic, irrevocable). |
+| **Skip** | Status action: decline the Task (`→ Skipped`). |
+| **Pass** | Lens display action: skip this period's *focus*, Task untouched. |
+| **Dormant** | Lens auto-behaviour: a task unworked `N` periods sinks out of view but stays a member. |
+| **Window** | `start`/`end` datetimes; absent `end` ⇒ endless & unfailable. |
+| **Recurrence** | Template rule for when a new Task is generated (RRULE-shaped subset). |
+| **Period** | A Lens's refill cadence (`none` = continuous; otherwise a calendar cadence). |
+| **Vacation** | App-level list of `{start,end}` periods that gates generation (treadmill only). |
 
 ---
 
 ## 11. Open questions (deferred, not blocking)
 
-1. Week/Month pool freed-slot fill: next-in-order vs. random — configurable, default TBD.
-2. `show_count` per pool: confirm configurable range.
-3. "Next task preview" (the +1 lazy-generated Task): shown to the user or internal only?
-4. Snooze-until-date as an alternative to manual drag for a temporarily-blocked top
-   item (raised as a possible v2; not in v1 scope).
+1. Periodic-lens freed-slot fill when `selection = top` vs `random` — default TBD.
+2. `showCount` configurable range per Lens.
+3. Vacation-start handling of the already-open instance: auto-`Skip` (leaning) vs leave.
+4. Snooze-until-date for a temporarily-blocked top item — v2 candidate.
+5. Smart/filter Lenses (auto-membership by query) as a convenience layer atop explicit
+   membership — later.
+6. Checklists on a Task (array of `{label, status}`) — additive, if it ever earns its place.
