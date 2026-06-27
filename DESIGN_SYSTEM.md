@@ -105,10 +105,47 @@ Use the standard M3 scale; these are the ones we actually reach for:
 CSV/export stays plain. Figtree, Atkinson, and System all support tabular; OpenDyslexic
 falls back gracefully.
 
-## 3. Spacing, shape & elevation  *(next)*
+## 3. Spacing, shape & elevation
 
-_TBD — gap vocabulary, inset rules, corner-radius scale (cards/sheets/pills), elevation /
-shadow usage, list bottom-padding so FABs don't overlap._
+### 3.1 Shape — soft, friendly rounding
+The brand is calm, so corners are generous (we deliberately chose the rounder option —
+it sits better with the warm tangerine). One radius scale, no ad-hoc values:
+
+| Token | Value | Used for |
+|---|---|---|
+| `xs` | 8 | chips, tags |
+| `sm` | 12 | buttons, inputs |
+| `md` | 16 | small/inner surfaces |
+| `lg` | 20 | **cards**, dialogs |
+| `xl` | 28 | **bottom sheets** (top corners) |
+| `full` | 999 | **pills, FAB**, status badges |
+
+The FAB is a **full pill** (not the M3 16dp default) — a deliberate brand choice for a
+softer feel. Buttons are `sm` (12), cards `lg` (20), sheets `xl` (28).
+
+### 3.2 Spacing — one tight scale
+Gap vocabulary: **`4 · 8 · 12 · 16 · 20 · 24 · 32`**. No values outside it.
+
+- **Screen inset: 16.**
+- **List bottom-padding: 96** (88 for forms) so the FAB never covers the last row.
+- **Touch targets ≥ 48dp**; **task/list rows ≥ 56dp** (accessibility + the wider-font rule
+  from §2.1).
+- Default gap between stacked cards: 12; within a card, 16 insets.
+
+### 3.3 Elevation — flat and quiet
+Material's default drop-shadows feel heavy; we keep surfaces calm.
+
+- **Separation = hairline borders** (`colorScheme.outlineVariant`) + a *barely-there* soft
+  shadow, not stacked floating cards.
+- **The FAB is the only genuinely-elevated element** — a soft orange-tinted glow.
+- **Dark mode leans on M3 tonal elevation** (surface tint) rather than shadow.
+- Bottom sheets: scrim + drag handle + modest elevation (`isScrollControlled: true`,
+  `showDragHandle: true`), full-width primary `FilledButton` at the bottom — same shape
+  language as knabberfuchs.
+
+---
+
+## 4. Components  *(next — driven by the screen mocks)*
 
 ## 4. Components  *(after mocks)*
 
