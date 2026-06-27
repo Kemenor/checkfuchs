@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "Checkfuchs",
+  "@appTitle": {
+    "description": "The application name."
+  },
+  "emptyTitle": "Nothing here yet",
+  "@emptyTitle": {
+    "description": "Title of the empty home/View state."
+  },
+  "emptyHint": "Tap + to add your first task or habit.",
+  "@emptyHint": {
+    "description": "Hint shown beneath the empty-state title."
+  },
+  "addTask": "Add",
+  "@addTask": {
+    "description": "Label of the add (FAB) action."
+  }
+}

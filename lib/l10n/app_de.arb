@@ -1,0 +1,7 @@
+{
+  "@@locale": "de",
+  "appTitle": "Checkfuchs",
+  "emptyTitle": "Noch nichts hier",
+  "emptyHint": "Tippe auf +, um deine erste Aufgabe oder Gewohnheit hinzuzufügen.",
+  "addTask": "Hinzufügen"
+}
