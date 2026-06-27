@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkfuchs — habits & to-dos, one thing</title>
+  <meta name="description" content="A calm, local-first habit & to-do app. No accounts, no nagging, no subscription. In early development.">
+  <meta property="og:title" content="Checkfuchs">
+  <meta property="og:description" content="Habits and to-dos are one thing. A calm, local-first app — no accounts, no nagging.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://checkfuchs.ch">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <style>
+    :root {
+      --fox: #e8632a;
+      --fox-soft: #f0883e;
+      --bg: #faf7f4;
+      --card: #ffffff;
+      --ink: #221d1a;
+      --muted: #7a6f68;
+      --line: #ece4dd;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #161311; --card: #211c19; --ink: #f3ede9;
+        --muted: #a99e96; --line: #322a25;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(232,99,42,.12), transparent 60%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      line-height: 1.55;
+    }
+    .card {
+      width: 100%;
+      max-width: 30rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 20px 50px -30px rgba(0,0,0,.35);
+    }
+    .fox {
+      width: 84px; height: 84px;
+      margin: 0 auto 20px;
+      display: grid; place-items: center;
+      font-size: 44px;
+      border-radius: 24px;
+      background: linear-gradient(150deg, var(--fox-soft), var(--fox));
+      box-shadow: 0 10px 24px -10px rgba(232,99,42,.6);
+    }
+    h1 { margin: 0 0 6px; font-size: 2rem; letter-spacing: -0.02em; }
+    .tag { margin: 0 0 20px; color: var(--fox); font-weight: 600; }
+    p.lead { margin: 0 0 24px; color: var(--muted); }
+    .badge {
+      display: inline-block;
+      font-size: .8rem; font-weight: 600;
+      color: var(--fox);
+      background: rgba(232,99,42,.12);
+      border: 1px solid rgba(232,99,42,.25);
+      padding: 4px 12px; border-radius: 999px;
+      margin-bottom: 28px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none; font-weight: 600;
+      color: #fff; background: var(--ink);
+      padding: 12px 22px; border-radius: 12px;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    @media (prefers-color-scheme: dark) { .btn { color: var(--ink); background: var(--fox); } }
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .foot { margin-top: 26px; font-size: .85rem; color: var(--muted); }
+    .foot a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="fox" aria-hidden="true">🦊</div>
+    <h1>Checkfuchs</h1>
+    <p class="tag">Habits and to-dos are one thing.</p>
+    <span class="badge">🚧 In early development</span>
+    <p class="lead">
+      A calm habit &amp; to-do app for people who drop rigid systems. One surface for both —
+      your data stays on your phone. No accounts, no nagging, no subscription.
+    </p>
+    <a class="btn" href="https://github.com/Kemenor/checkfuchs">
+      Follow along on GitHub →
+    </a>
+    <p class="foot"><a href="https://checkfuchs.ch">checkfuchs.ch</a></p>
+  </main>
+</body>
+</html>
