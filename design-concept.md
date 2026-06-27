@@ -250,8 +250,8 @@ reads or writes status — it only changes what is *shown*.** (Formerly "Pool".)
 ### 4.2 Membership & per-pair state
 - Membership = a **`Task↔Lens` join** (many-to-many: a Task can appear in several Lenses,
   e.g. weekly habits also shown in a daily overview).
-- The join row carries the **per-pair** state: `order`, `dormancyCounter`,
-  `passedThisPeriod`.
+- The join row carries the **per-pair** state: `order`, `surfacedAt`, `passedThisPeriod`
+  (Dormancy is *derived* from `surfacedAt` + the lens period, not a stored counter).
 - **Templates** stamp a default Lens + order onto each instance they generate; **one-offs**
   set the row directly.
 - **Order persistence:** reordering a *recurring* member writes back to the **Template's

@@ -107,6 +107,22 @@ on time** via the OS scheduler (independent of the app running).
   unopened for a long stretch (honesty over a silent gap — the no-dark-patterns line).
 - Vacation **suspends** reminders along with generation.
 
+### Derived state & reactivity
+
+- **Nothing derived is stored** — the screen is recomputed from raw facts every time.
+- **drift reactive streams** of the raw tables → a pure **`derive(snapshot, now) →
+  ViewState`** (walk View → Lens refs → members → `statusFilter` → `ordering` →
+  `selection`/`showCount` → periodic hold + dormancy) → **Riverpod** providers → widgets.
+  Fully reactive: a mutation writes a row → stream fires → recompute → rebuild → reschedule
+  notifications. No manual refresh anywhere.
+- **Projection lives inside `derive`:** upcoming occurrences (pre-`Skip` preview, "next
+  due") are projected from the recurrence rule, and a **stored Task for a slot shadows the
+  projection**. Projection is the thin edge — most reads hit materialized tasks.
+- **Foreground time advance:** `derive` returns the *soonest* relevant instant (next
+  visible window-edge / period rollover); a single **timer to that instant** triggers
+  `reconcile` + recompute — event-driven, no polling. On resume, `reconcile(now)` runs first.
+- Counts are tiny (a handful of templates/lenses/views) → recompute is free; no caching.
+
 ### Schema (drift, first cut)
 
 Seven tables. **Analytics read from `tasks` only** — terminal Tasks persist and *are* the
@@ -128,7 +144,8 @@ resolved_at`.
 dormant_after, created_at`.
 
 **`task_lens`** — the membership join (many-to-many): `task_id, lens_id, order,
-dormancy_counter, passed_this_period`. Templates also carry **default** lens memberships
+surfaced_at, passed_this_period`. Dormancy is **derived** from `surfaced_at` + the lens
+period (count rollovers to `now`), never a ticking counter. Templates also carry **default** lens memberships
 (`template_lens_defaults: template_id, lens_id, default_order`) that seed each instance's
 join rows.
 
@@ -143,6 +160,21 @@ is gated when `now` falls in any of them.
 
 > No `is_exception`, no status on Lens, no `pool` axes that touch lifecycle — the schema
 > *enforces* the separation law.
+
+### Testing surface
+
+The engine is pure, so correctness lives in **fast unit tests over a fake `Clock`**:
+
+- **Recurrence generator** (the trickiest unit) — golden/property: rule + anchor →
+  occurrence sequence, incl. month-overflow clamp and `interval`-anchoring.
+- **`reconcile`** — idempotency (`reconcile∘reconcile == reconcile`) + back-fill (jump the
+  clock 3 days → exactly the right Misses appear, once).
+- **`derive`** — fixture DB + `now` → expected `ViewState` (filter/order/showCount/periodic
+  hold/dormancy).
+- **State machine** — every transition + the action-by-phase rules (Done only-while-Active,
+  Skip anytime-Open…).
+- **Widget/integration** (light) — tap-ring→Done, the three swipes, create→appears,
+  edit-series-vs-instance.
 
 ## Roadmap (phased)
 
