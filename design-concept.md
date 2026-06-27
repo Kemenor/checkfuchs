@@ -43,12 +43,14 @@ rule that fixes it:
 |---|---|---|
 | **Template** | *When is a Task born, and with what defaults?* (generation) | No |
 | **Task** | *What is the state of this one thing right now?* (lifecycle) | **Yes — the only one** |
-| **Lens** | *How are Tasks shown to me?* (presentation) | **No** |
+| **Lens** | *Which Tasks do I see, in what order?* (selection) | **No** |
+| **View** | *Which Lenses do I see, arranged & filtered?* (the screen) | **No** |
 
 > **If a property changes what a Task *is*, or *when it regenerates*, it belongs on the
-> Task or the Template — never the Lens.** A Lens only ever changes what is *shown*.
+> Task or the Template — never on a Lens or View.** Presentation only ever changes what is
+> *shown*. The four layers nest: **Template → Task → Lens → View** (§4.6).
 
-There is also one **app-level** concept that belongs to none of the three: **Vacation**
+There is also one **app-level** concept that belongs to none of these: **Vacation**
 (§6).
 
 ---
@@ -281,8 +283,28 @@ are **not** data concepts — they are points on the dials above:
 - *Self-announcing* = a due-date Lens with a small `showCount`.
 - *Passive* = a periodic work-down Lens you visit.
 
-There is **no special "Today" object.** "Today" is simply whichever Lens(es) you pin —
-a **(visualization)** choice.
+There is **no special "Today" object.** "Today" is simply a **View** (§4.6) you open.
+
+### 4.6 View — the screen layer (arranging Lenses)
+A **View** is a user-composed screen: an ordered set of **Lens references**, and the
+**top-level navigation** of the app (Home, Habits, Short Term, Long Term — all
+user-defined). It is the top of the presentation stack and, like the Lens, **never
+touches status**.
+
+`View ↔ Lens` is a membership join (mirroring `Task↔Lens`, §4.2) carrying the per-pair
+display state:
+- `order` — where the Lens sits in this View.
+- `statusFilter` — which **terminal** states (`Done` / `Skipped` / `Missed`) to surface
+  *alongside* the always-shown open tasks. **Default: open-only** (calm, actionable). A
+  *tracking* View (e.g. "Habits") opts `Done`/`Missed` back in to show the full day.
+
+The same Lens may appear in several Views with **different** filters — *Home* shows the
+Habits lens open-only (quick glance); *Habits* shows it in full (progress + misses). This
+is why `statusFilter` lives on the join, not on the Lens. "Today" is not special; it's
+just the View opened first.
+
+> A View can become overwhelming if it holds every Lens — so the user builds *focused*
+> Views (a calm Home, a detailed Habits, a Long-Term backlog) instead of one firehose.
 
 ---
 
@@ -353,7 +375,9 @@ Validate at configuration time, not silently at runtime:
 |---|---|
 | **Task** | The only completable instance; the only object with a status and the only analytics source. |
 | **Template** | Recurring factory. Generates Tasks lazily. Never completed. (One-offs are template-less.) |
-| **Lens** | Pure presentation layer; display dials over a `Task↔Lens` membership. (Was "Pool".) |
+| **Lens** | Pure presentation; selects/orders Tasks via a `Task↔Lens` membership. (Was "Pool".) |
+| **View** | User-composed screen; arranges Lenses via a `View↔Lens` membership + `statusFilter`. Top-level nav. |
+| **statusFilter** | Per `(View, Lens)`: which terminal states (Done/Skipped/Missed) to show beside open tasks. Default open-only. |
 | **Open** | Live status, no terminal decision yet. *Pending* vs *Active* is derived from the dates. |
 | **Pending / Active** | Derived phases of an `Open` task (`now<start` / `start≤now≤end`). Not stored. |
 | **Done / Skipped / Missed** | Terminal statuses: user-completed / user-declined (neutral) / window-expired (automatic, irrevocable). |
@@ -376,3 +400,9 @@ Validate at configuration time, not silently at runtime:
 5. Smart/filter Lenses (auto-membership by query) as a convenience layer atop explicit
    membership — later.
 6. Checklists on a Task (array of `{label, status}`) — additive, if it ever earns its place.
+7. **Retroactive logging / un-Miss.** "I brushed my teeth this morning but forgot to log
+   it; this evening it's auto-`Missed`." This tensions with the locked "`Missed` is
+   irrevocable" rule. Likely resolution: **recurring/habit** instances allow a past
+   `Missed → Done` correction (it's a *logging* fix, not doing it late), while a true hard
+   deadline stays irrevocable. Resolve during the engine stage; may soften §2.2 for the
+   recurring case.

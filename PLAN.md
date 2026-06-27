@@ -87,7 +87,7 @@ doubt" is always safe.
 
 ### Schema (drift, first cut)
 
-Five tables. **Analytics read from `tasks` only** — terminal Tasks persist and *are* the
+Seven tables. **Analytics read from `tasks` only** — terminal Tasks persist and *are* the
 history; there is no separate history table.
 
 **`templates`** — the factory (concept §3): `id, name, note, recurrence (freq,
@@ -109,6 +109,12 @@ dormant_after, created_at`.
 dormancy_counter, passed_this_period`. Templates also carry **default** lens memberships
 (`template_lens_defaults: template_id, lens_id, default_order`) that seed each instance's
 join rows.
+
+**`views`** — the screen layer (concept §4.6): `id, name, sort_index`. Top-level
+navigation; user-composed.
+
+**`view_lens`** — the membership join (many-to-many): `view_id, lens_id, order,
+status_filter` (which terminal states surface alongside open tasks; default open-only).
 
 **`vacations`** — app-level (concept §6): `id, start, end`. A list of periods; generation
 is gated when `now` falls in any of them.
@@ -138,10 +144,12 @@ visibility tiers are now Lens configurations, not code paths.
 - **Phase 3 — Templates & recurrence.** Create a habit / recurring task; the RRULE-shaped
   recurrence editor; window rules (slice / duration / default); **edit-this-instance vs
   edit-the-series** (free, thanks to virtual projection); "turn a one-off into a series."
-- **Phase 4 — Lenses & dials.** The full Lens model: `showCount`, `ordering`,
+- **Phase 4 — Lenses, Views & dials.** The full Lens model: `showCount`, `ordering`,
   `selection`, `period` (continuous vs periodic hold-till-rollover), `dormantAfter`;
   `Task↔Lens` membership + order persistence; the **Pass** and **Dormant** behaviours;
-  config-time validation. (Due-date Lens covers what used to be "hard dates.")
+  config-time validation. (Due-date Lens covers what used to be "hard dates.") Plus
+  **Views** (concept §4.6) as user-composed screens of Lenses with per-lens `statusFilter`,
+  driving top-level navigation.
 - **Phase 5 — Reminders.** The `notifications` array → local notifications, **rescheduled
   on every state change** (concept §9). Friendly presets (start / upcoming / due /
   reminder) over the general `(anchor, offset)` form.
