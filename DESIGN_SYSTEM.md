@@ -68,10 +68,42 @@ The model says a `Missed` is **data, not punishment** (concept §1.3). The colou
 
 ---
 
-## 2. Typography  *(next)*
+## 2. Typography
 
-_TBD — anchor a type scale (display/title/body/label) on M3, pick a typeface direction
-(system vs. a bundled humanist sans), set numeric/tabular rules for times & counts._
+### 2.1 The typeface is user-selectable (accessibility-first)
+There is no single hard-coded font. The user picks the app's base typeface in Settings —
+a deliberate accessibility choice, not a vanity feature:
+
+| Option | Role | License / source |
+|---|---|---|
+| **Figtree** | **Default** — the brand voice (friendly, modern humanist) | OFL · bundled |
+| **System** | Native platform font, zero bundle, maximum familiarity | — |
+| **Atkinson Hyperlegible** | Accessibility — **low vision**; disambiguates `l/I/1`, `O/0/Q` | OFL · bundled |
+| **OpenDyslexic** | Accessibility — **dyslexia**; weighted letterforms | OFL-style · bundled |
+
+- The choice sets the app's base `fontFamily` only; **the M3 type scale (sizes/weights)
+  is family-agnostic** and never changes — switching fonts re-skins, never re-flows logic.
+- Every family falls back to `system-ui` for any missing glyph.
+- **Layouts must tolerate a wider/taller font** (OpenDyslexic is chunky): no fixed-height
+  text boxes, no single-line truncation that a larger face would clip. This is good
+  accessibility hygiene regardless. Pair with respecting the OS text-scale setting.
+
+### 2.2 Type scale (Material 3 roles)
+Use the standard M3 scale; these are the ones we actually reach for:
+
+| Role | Use |
+|---|---|
+| `headlineSmall` / `titleLarge` | screen titles ("Today"), sheet titles |
+| `titleMedium` | task name, lens name |
+| `bodyMedium` | secondary text, notes |
+| `labelLarge` | buttons |
+| `labelSmall` | pills, chips, metadata |
+
+### 2.3 Numbers
+**Times, counts, streaks, and "n of m" use tabular figures**
+(`fontFeatures: [FontFeature.tabularFigures()]`) so digits don't jiggle as they update.
+CSV/export stays plain. Figtree, Atkinson, and System all support tabular; OpenDyslexic
+falls back gracefully.
 
 ## 3. Spacing, shape & elevation  *(next)*
 
