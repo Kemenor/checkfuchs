@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — spacing, shape & elevation</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;--missed:#a8988c;
+    --sh:0 14px 34px -26px rgba(0,0,0,.40);--fab:0 10px 24px -8px rgba(234,122,36,.55);}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;--missed:#b6a79b;
+    --sh:0 14px 34px -24px rgba(0,0,0,.7);--fab:0 10px 26px -8px rgba(243,156,78,.5);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:980px;margin:0 auto;padding:26px 20px 60px}
+  header{display:flex;align-items:center;justify-content:space-between}
+  h1{font-size:1.35rem;margin:0;letter-spacing:-.02em}
+  h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:32px 0 14px;font-weight:700}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+
+  /* radius scale */
+  .radii{display:flex;flex-wrap:wrap;gap:14px}
+  .rad{text-align:center}
+  .rad div{width:74px;height:54px;background:color-mix(in srgb,var(--orange) 18%,var(--card));
+    border:1.5px solid var(--orange);margin-bottom:6px}
+  .rad small{color:var(--muted);font-size:.74rem;font-weight:600}
+  /* spacing scale */
+  .gaps{display:flex;align-items:flex-end;gap:10px}
+  .gap{text-align:center}
+  .gap i{display:block;background:var(--indigo);height:20px;border-radius:4px;margin-bottom:6px}
+  .gap small{color:var(--muted);font-size:.72rem;font-weight:600}
+
+  /* composed screen */
+  .phone{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:18px;box-shadow:var(--sh);position:relative;overflow:hidden}
+  .ttl{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin:4px 2px 0}
+  .date{color:var(--muted);font-size:.85rem;margin:2px 2px 16px}
+  .lens{border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:12px}
+  .lenshead{font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:12px 16px 8px}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 16px;min-height:56px}.row+.row{border-top:1px solid var(--line)}
+  .mark{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+  .mark.ring{background:transparent;border:2.5px solid var(--orange);color:var(--orange)}
+  .name{flex:1;font-weight:600}.hint{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .missed .name{color:var(--missed);text-decoration:line-through}
+  .pill{font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,transparent)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--orange);color:#fff;font-weight:700;border:none;border-radius:12px;padding:13px;font-family:inherit;font-size:.95rem}
+  body.dark .btn{color:#1a1411}
+  .fab{position:absolute;right:18px;bottom:18px;height:52px;padding:0 20px;border-radius:999px;background:var(--orange);color:#fff;border:none;font-weight:700;font-family:inherit;display:flex;align-items:center;gap:8px;box-shadow:var(--fab);font-size:.95rem}
+  body.dark .fab{color:#1a1411}
+  .sheet{margin-top:14px;border:1px solid var(--line);border-radius:28px 28px 14px 14px;background:var(--card);box-shadow:var(--sh);overflow:hidden}
+  .handle{width:36px;height:4px;border-radius:999px;background:var(--line);margin:10px auto 4px}
+  .sheetbody{padding:6px 18px 18px}.sheetbody h3{margin:6px 0 12px;font-size:1.05rem}
+  .field{border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--muted);margin-bottom:10px}
+  .legend{font-size:.78rem;color:var(--muted);margin-top:8px}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 Spacing · shape · elevation</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="cols">
+    <div>
+      <h2>Radius scale</h2>
+      <div class="radii">
+        <div class="rad"><div style="border-radius:8px"></div><small>xs · 8<br>chips</small></div>
+        <div class="rad"><div style="border-radius:12px"></div><small>sm · 12<br>buttons</small></div>
+        <div class="rad"><div style="border-radius:16px"></div><small>md · 16</small></div>
+        <div class="rad"><div style="border-radius:20px"></div><small>lg · 20<br>cards</small></div>
+        <div class="rad"><div style="border-radius:28px"></div><small>xl · 28<br>sheets</small></div>
+        <div class="rad"><div style="border-radius:999px"></div><small>full<br>pills/FAB</small></div>
+      </div>
+      <h2>Spacing scale</h2>
+      <div class="gaps">
+        <div class="gap"><i style="width:4px"></i><small>4</small></div>
+        <div class="gap"><i style="width:8px"></i><small>8</small></div>
+        <div class="gap"><i style="width:12px"></i><small>12</small></div>
+        <div class="gap"><i style="width:16px"></i><small>16</small></div>
+        <div class="gap"><i style="width:20px"></i><small>20</small></div>
+        <div class="gap"><i style="width:24px"></i><small>24</small></div>
+        <div class="gap"><i style="width:32px"></i><small>32</small></div>
+      </div>
+      <p class="legend">Screen inset <b>16</b> · list bottom-pad <b>96</b> (FAB clearance) · touch targets <b>≥48</b> · rows <b>≥56</b>.</p>
+
+      <h2>Input sheet (radius 28 top · soft elevation)</h2>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="sheetbody">
+          <h3>New task</h3>
+          <div class="field">Name</div>
+          <div class="field">Active — morning ▾</div>
+          <button class="btn">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2>Composed screen</h2>
+      <div class="phone">
+        <p class="ttl">Today</p><p class="date">Saturday, 27 June</p>
+        <div class="lens">
+          <div class="lenshead">Daily habits</div>
+          <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill">ACTIVE</span></div>
+          <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="hint">07:42</span></div>
+          <div class="row missed"><span class="mark" style="background:var(--missed)">·</span><span class="name">Floss</span><span class="hint">missed</span></div>
+        </div>
+        <div class="lens">
+          <div class="lenshead">This week · empty PET bin</div>
+          <div class="row"><span class="mark" style="background:var(--indigo)">3</span><span class="name">Empty the PET bin</span><span class="pill" style="color:var(--indigo);background:color-mix(in srgb,var(--indigo) 16%,transparent)">FOCUS</span></div>
+        </div>
+        <button class="fab">＋ Add</button>
+        <div style="height:64px"></div>
+      </div>
+      <p class="legend">Cards = hairline border + barely-there shadow. The <b>FAB is the only thing that floats</b> (orange glow). Quiet, not a deck of floating cards.</p>
+    </div>
+  </div>
+</div></body></html>

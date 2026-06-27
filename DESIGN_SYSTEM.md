@@ -145,7 +145,63 @@ Material's default drop-shadows feel heavy; we keep surfaces calm.
 
 ---
 
-## 4. Components  *(next — driven by the screen mocks)*
+## 4. Components
+
+Canonical mockups live in [`examples/ui/`](./examples/ui/) — open in a browser (each has a
+light/dark toggle). Until the Flutter widgets exist, the HTML is the visual canon; once
+built, each pattern gains a `file:line` pointer to live code (knabberfuchs convention).
+
+### 4.1 State markers (locked)
+| State | Icon (Material Symbols Rounded) | Colour |
+|---|---|---|
+| Active | `radio_button_unchecked` (single ring) | orange |
+| Done | `check_circle` (filled) | emerald |
+| Skipped | `remove_circle_outline` | muted |
+| Missed | `radio_button_unchecked` + struck name | taupe |
+| Pending | `schedule` | muted |
+| Focus | `center_focus_strong` (filled) | indigo |
+| Dormant | `bedtime` | taupe |
+
+### 4.2 Task row → `examples/ui/05-task-detail.html`
+- Layout `[marker] name … [hint | pill]`, min height **56**.
+- **Tap the marker ring = instant `Done`** (the 80 % action).
+- **Swipe** reveals actions — continuous lens: **Done · Skip**; periodic lens: **Done ·
+  Skip · Pass**. `Pass` = `arrow_forward` (indigo). **Never a destructive action on swipe.**
+- `Missed` row: faded ring + struck taupe name.
+
+### 4.3 Lens card → `examples/ui/04-lens-view.html`
+- A `lg`(20) card. Header = lens name + the **text-breakdown summary**
+  ("1 done · 1 missed · 1 left", `missed` in taupe, zero parts omitted). **The header
+  summarises the *full* lens even in a filtered View** (calm list, honest header).
+- Periodic lens: focus row uses the Focus marker + `FOCUS` pill; quota-met → "done this week".
+
+### 4.4 View navigation → `examples/ui/04-lens-view.html`
+- Top **scrollable tab row** (Views are user-defined & unbounded → tabs, not bottom-nav);
+  active tab = tangerine underline.
+- Each `View↔Lens` carries `statusFilter`; the same lens reads differently per View.
+
+### 4.5 Detail sheet → `examples/ui/05-task-detail.html`
+- Bottom sheet: `xl`(28) top, drag handle, `isScrollControlled`.
+- Prominent name field; **This-occurrence / The-series** segmented (only when recurring).
+- Property rows (icon + label + value, drill-in): **Active window** (day/morning/…/time
+  chips), **Repeat**, **Reminders**, **Lens**, **Note**.
+- Full-width **Save** (`FilledButton`); **Delete** in `error` red — *the one sanctioned
+  alarm-red use* (§1.3).
+
+### 4.6 Recurrence editor → `examples/ui/06-recurrence.html`
+- Segmented frequency **Off · Day · Week · Month · Year** (Off = one-off).
+- **Every-N** stepper; Week → weekday chips; Month → day-of-month + "Last day"; Year →
+  month + day; the **Starts** (anchor) row.
+- **Live plain-English summary banner** (tangerine tint) at top, restated on every change.
+- Ordinal-weekday ("2nd Tuesday") intentionally **out** for v1 (concept §11).
+
+### 4.7 Pills, chips & tints
+- Status pill = uppercase `labelSmall`, `full` radius, fill =
+  `color-mix(<status> 15–18 %, transparent)`. NOW/ACTIVE tangerine · FOCUS indigo · due amber.
+
+### 4.8 FAB
+- **Extended, full-pill** `+ Add`, bottom-right, tangerine — the one elevated element (soft
+  orange glow). Unique `heroTag` per screen.
 
 ## 4. Components  *(after mocks)*
 

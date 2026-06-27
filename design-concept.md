@@ -406,3 +406,6 @@ Validate at configuration time, not silently at runtime:
    `Missed → Done` correction (it's a *logging* fix, not doing it late), while a true hard
    deadline stays irrevocable. Resolve during the engine stage; may soften §2.2 for the
    recurring case.
+8. **Ordinal-weekday recurrence** ("2nd Tuesday", "last Friday of the month") — RRULE's
+   `BYSETPOS`, intentionally excluded from v1 to keep the recurrence editor lean. Adding it
+   later means one extra field on the recurrence struct + a mode in the Monthly editor.

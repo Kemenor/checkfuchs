@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — typeface picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:'OpenDyslexic';font-weight:400;font-display:swap;
+    src:url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'OpenDyslexic';font-weight:700;font-display:swap;
+    src:url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-700-normal.woff2') format('woff2')}
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 60px}
+  header{display:flex;align-items:center;justify-content:space-between}
+  h1{font-size:1.35rem;margin:0;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:4px 0 0;font-size:.92rem}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 34px -26px rgba(0,0,0,.4)}
+  .fontname{font-family:system-ui,sans-serif;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .role{font-family:system-ui,sans-serif;font-size:.74rem;color:var(--muted);margin:2px 0 14px}
+  .role b{color:var(--orange)}
+  .ttl{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin:0}
+  .date{color:var(--muted);font-size:.85rem;margin:2px 0 14px}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 2px}.row+.row{border-top:1px solid var(--line)}
+  .mark{width:23px;height:23px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+  .mark.ring{background:transparent;border:2.5px solid var(--orange);color:var(--orange)}
+  .name{flex:1;font-weight:600}
+  .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;font-weight:600}
+  .pill{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,transparent)}
+  .stat{margin-top:14px;font-size:.9rem;color:var(--muted);font-weight:600}
+  .stat b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .glyphs{margin-top:10px;font-size:.95rem;letter-spacing:.02em}
+  .f-fig{font-family:'Figtree',sans-serif}
+  .f-atk{font-family:'Atkinson Hyperlegible',sans-serif}
+  .f-od{font-family:'OpenDyslexic','Comic Sans MS',sans-serif}
+  .f-sys{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+</style></head>
+<body><div class="wrap">
+  <header><div><h1>🦊 Typeface picker</h1><p class="sub">Default + native + two accessibility faces. Same entry. Note the glyph row Il1 O0Q — that's where legibility fonts earn their keep.</p></div>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="grid">
+    <div class="card f-fig"><div class="fontname">Figtree</div><div class="role"><b>Default</b> · brand voice</div>
+      <p class="ttl">Today</p><p class="date">Saturday, 27 June</p>
+      <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill">ACTIVE</span></div>
+      <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="num">07:42</span></div>
+      <div class="stat">🔥 <b>12</b>-day streak · <b>4</b> of <b>5</b> done</div>
+      <p class="glyphs">Illustrate 1 lll · O0Q · rн0123456789</p></div>
+
+    <div class="card f-sys"><div class="fontname">System</div><div class="role">Native · zero bundle</div>
+      <p class="ttl">Today</p><p class="date">Saturday, 27 June</p>
+      <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill">ACTIVE</span></div>
+      <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="num">07:42</span></div>
+      <div class="stat">🔥 <b>12</b>-day streak · <b>4</b> of <b>5</b> done</div>
+      <p class="glyphs">Illustrate 1 lll · O0Q · 0123456789</p></div>
+
+    <div class="card f-atk"><div class="fontname">Atkinson Hyperlegible</div><div class="role">Accessibility · low vision</div>
+      <p class="ttl">Today</p><p class="date">Saturday, 27 June</p>
+      <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill">ACTIVE</span></div>
+      <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="num">07:42</span></div>
+      <div class="stat">🔥 <b>12</b>-day streak · <b>4</b> of <b>5</b> done</div>
+      <p class="glyphs">Illustrate 1 lll · O0Q · 0123456789</p></div>
+
+    <div class="card f-od"><div class="fontname">OpenDyslexic</div><div class="role">Accessibility · dyslexia</div>
+      <p class="ttl">Today</p><p class="date">Saturday, 27 June</p>
+      <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill">ACTIVE</span></div>
+      <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="num">07:42</span></div>
+      <div class="stat">🔥 <b>12</b>-day streak · <b>4</b> of <b>5</b> done</div>
+      <p class="glyphs">Illustrate 1 lll · O0Q · 0123456789</p></div>
+  </div>
+</div></body></html>
