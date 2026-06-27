@@ -1,0 +1,32 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+.pub-cache/
+.pub/
+*.iml
+.idea/
+.metadata
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+*.keystore
+*.jks
+
+# iOS / macOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/Flutter/Flutter.framework/
+
+# Secrets — never commit
+play-store-key.json
+*.env
+
+# OS
+.DS_Store
+
+# Claude session scratch
+claude.session
