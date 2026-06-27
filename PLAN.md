@@ -34,7 +34,7 @@ Three principles from the concept that shape *technical* decisions, not just UX:
 | Persistence | **drift / SQLite**, local-first, with migrations |
 | Design | **Material 3**, own **fox-orange** seed (TBD — *not* the knabberfuchs green) |
 | Networking | **None.** Fully on-device. Every reminder is *locally derivable* from a Task's `notifications` + window — no server, no push, no account |
-| Reminders | **`flutter_local_notifications` + `timezone`**, rescheduled on every state change |
+| Reminders | **`flutter_local_notifications` + `timezone`**, all **discrete** (cancellable — a completed task's ping vanishes immediately); refreshed by a ~12h **`workmanager`** background pass (Android) + on every open; **≤ 64 pending** (the iOS cap governs). Lapse-if-long-absent is accepted **and disclosed in Settings** |
 | Domain core | A **pure, side-effect-free engine** over an injected `Clock`. DB + notifications are driven *from* it, never mixed *into* it — so the whole state machine and the generation/projection logic are unit-testable with a fake clock |
 | Generation | **Lazy: materialize the current instance, project the future as virtual, materialize-on-action.** A stored Task always wins over its virtual projection |
 | Recurrence | **Hand-rolled** occurrence generator over the curated struct — *no* `rrule` package (it exposes the RFC-5545 complexity we deliberately excluded) |
@@ -85,9 +85,27 @@ functions over `(state, now)`:
 - **Validation** — reject combinations that can't satisfy their own condition (a
   `start`-anchored notification needs a `start`; `ordering = dueDate` needs dated members).
 
-**Run cadence:** the sweep + generation run on app foreground, on midnight rollover, and
-after every user action. Because they're pure and idempotent, "run them whenever in
-doubt" is always safe.
+**Run cadence:** `reconcile(now)` runs **lazily on app open/resume**, **after every
+mutation**, and on a **~12 h Android `workmanager` pass**. No exact-alarm / midnight
+service — state is back-filled on the next run, and because reconcile is pure + idempotent,
+"run it whenever in doubt" is always safe. **Misses are *recorded* lazily; *reminders* fire
+on time** via the OS scheduler (independent of the app running).
+
+### Notifications
+
+- **All discrete** (one per occurrence), so completing/skipping/editing in-app **instantly
+  cancels** the affected reminders — a task you've done never pings you. (Native repeating
+  triggers are rejected as the default: they can't skip a single fired occurrence → the
+  "brushed at 7:55, pinged at 8:00" bug. Kept only as a documented iOS-only fallback.)
+- **`workmanager` (~12 h, Android)** re-fills the discrete schedule for the next horizon,
+  skipping resolved instances; the worker only *refreshes the schedule* — the OS fires the
+  reminders exactly, so Doze delaying the worker never delays a ping.
+- **≤ 64 pending** (iOS cap) — schedule the soonest 64. **iOS background refresh is
+  opportunistic** (`BGTaskScheduler`), not guaranteed; on iOS the horizon may thin out for a
+  user who doesn't open the app for days. Android-first, so accepted.
+- **Disclosed:** Settings explains plainly that reminders can lapse if the app goes
+  unopened for a long stretch (honesty over a silent gap — the no-dark-patterns line).
+- Vacation **suspends** reminders along with generation.
 
 ### Schema (drift, first cut)
 
@@ -154,8 +172,9 @@ visibility tiers are now Lens configurations, not code paths.
   config-time validation. (Due-date Lens covers what used to be "hard dates.") Plus
   **Views** (concept §4.6) as user-composed screens of Lenses with per-lens `statusFilter`,
   driving top-level navigation.
-- **Phase 5 — Reminders.** The `notifications` array → local notifications, **rescheduled
-  on every state change** (concept §9). Friendly presets (start / upcoming / due /
+- **Phase 5 — Reminders.** The `notifications` array → **discrete** local notifications,
+  rescheduled on every state change (concept §9) + a ~12 h **`workmanager`** refresh pass;
+  ≤ 64 pending; the Settings lapse-disclosure. Friendly presets (start / upcoming / due /
   reminder) over the general `(anchor, offset)` form.
 - **Phase 6 — Pause & Vacation.** Per-Template `paused` + `resumeOn`; app-level
   `vacations` periods; the generation gate (treadmill only — hard deadlines still
