@@ -17,6 +17,10 @@ dependencies:
   flutter_riverpod: ^3.0.0
   intl: ^0.20.2
 
+  # Local-first persistence.
+  drift: ^2.34.0
+  drift_flutter: ^0.3.0
+
   # Shared design system (theme, triad palette, Figtree, status colours).
   fuchsbau:
     git:
@@ -27,6 +31,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  drift_dev: ^2.34.0
+  build_runner: ^2.15.0
 
 flutter:
   uses-material-design: true
