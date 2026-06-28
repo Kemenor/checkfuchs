@@ -33,7 +33,7 @@ void main() {
     expect(tasks.single.name, 'Brush teeth');
 
     // And tasksProvider exposes that same stream to the UI.
-    final sub = container.listen(tasksProvider, (_, __) {});
+    final sub = container.listen(tasksProvider, (_, _) {});
     addTearDown(sub.close);
     await Future<void>.delayed(Duration.zero);
     expect(container.read(tasksProvider).value, hasLength(1));
