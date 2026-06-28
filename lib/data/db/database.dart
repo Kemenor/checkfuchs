@@ -107,8 +107,29 @@ class Vacations extends Table {
   DateTimeColumn get end => dateTime()();
 }
 
-@DriftDatabase(
-    tables: [Templates, Tasks, Lenses, Views, TaskLens, ViewLens, Vacations])
+/// Singleton app settings (theme override + typeface). Stored as plain indices
+/// (ThemeMode.values / FuchsbauFont.values) to avoid coupling the schema to the
+/// enums.
+@DataClassName('AppSettingsRow')
+class AppSettings extends Table {
+  IntColumn get id => integer().withDefault(const Constant(1))();
+  IntColumn get themeModeIndex => integer().withDefault(const Constant(0))();
+  IntColumn get fontIndex => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [
+  Templates,
+  Tasks,
+  Lenses,
+  Views,
+  TaskLens,
+  ViewLens,
+  Vacations,
+  AppSettings,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -116,7 +137,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -129,6 +150,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(viewLens);
             await m.createTable(vacations);
             await m.addColumn(templates, templates.defaultLensId);
+          }
+          if (from < 3) {
+            await m.createTable(appSettings);
           }
         },
       );

@@ -2882,6 +2882,256 @@ class VacationsCompanion extends UpdateCompanion<VacationRow> {
   }
 }
 
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _themeModeIndexMeta = const VerificationMeta(
+    'themeModeIndex',
+  );
+  @override
+  late final GeneratedColumn<int> themeModeIndex = GeneratedColumn<int>(
+    'theme_mode_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _fontIndexMeta = const VerificationMeta(
+    'fontIndex',
+  );
+  @override
+  late final GeneratedColumn<int> fontIndex = GeneratedColumn<int>(
+    'font_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, themeModeIndex, fontIndex];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('theme_mode_index')) {
+      context.handle(
+        _themeModeIndexMeta,
+        themeModeIndex.isAcceptableOrUnknown(
+          data['theme_mode_index']!,
+          _themeModeIndexMeta,
+        ),
+      );
+    }
+    if (data.containsKey('font_index')) {
+      context.handle(
+        _fontIndexMeta,
+        fontIndex.isAcceptableOrUnknown(data['font_index']!, _fontIndexMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AppSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSettingsRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      themeModeIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}theme_mode_index'],
+      )!,
+      fontIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}font_index'],
+      )!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
+  final int id;
+  final int themeModeIndex;
+  final int fontIndex;
+  const AppSettingsRow({
+    required this.id,
+    required this.themeModeIndex,
+    required this.fontIndex,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['theme_mode_index'] = Variable<int>(themeModeIndex);
+    map['font_index'] = Variable<int>(fontIndex);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(
+      id: Value(id),
+      themeModeIndex: Value(themeModeIndex),
+      fontIndex: Value(fontIndex),
+    );
+  }
+
+  factory AppSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSettingsRow(
+      id: serializer.fromJson<int>(json['id']),
+      themeModeIndex: serializer.fromJson<int>(json['themeModeIndex']),
+      fontIndex: serializer.fromJson<int>(json['fontIndex']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'themeModeIndex': serializer.toJson<int>(themeModeIndex),
+      'fontIndex': serializer.toJson<int>(fontIndex),
+    };
+  }
+
+  AppSettingsRow copyWith({int? id, int? themeModeIndex, int? fontIndex}) =>
+      AppSettingsRow(
+        id: id ?? this.id,
+        themeModeIndex: themeModeIndex ?? this.themeModeIndex,
+        fontIndex: fontIndex ?? this.fontIndex,
+      );
+  AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
+    return AppSettingsRow(
+      id: data.id.present ? data.id.value : this.id,
+      themeModeIndex: data.themeModeIndex.present
+          ? data.themeModeIndex.value
+          : this.themeModeIndex,
+      fontIndex: data.fontIndex.present ? data.fontIndex.value : this.fontIndex,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsRow(')
+          ..write('id: $id, ')
+          ..write('themeModeIndex: $themeModeIndex, ')
+          ..write('fontIndex: $fontIndex')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, themeModeIndex, fontIndex);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSettingsRow &&
+          other.id == this.id &&
+          other.themeModeIndex == this.themeModeIndex &&
+          other.fontIndex == this.fontIndex);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
+  final Value<int> id;
+  final Value<int> themeModeIndex;
+  final Value<int> fontIndex;
+  const AppSettingsCompanion({
+    this.id = const Value.absent(),
+    this.themeModeIndex = const Value.absent(),
+    this.fontIndex = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    this.id = const Value.absent(),
+    this.themeModeIndex = const Value.absent(),
+    this.fontIndex = const Value.absent(),
+  });
+  static Insertable<AppSettingsRow> custom({
+    Expression<int>? id,
+    Expression<int>? themeModeIndex,
+    Expression<int>? fontIndex,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (themeModeIndex != null) 'theme_mode_index': themeModeIndex,
+      if (fontIndex != null) 'font_index': fontIndex,
+    });
+  }
+
+  AppSettingsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? themeModeIndex,
+    Value<int>? fontIndex,
+  }) {
+    return AppSettingsCompanion(
+      id: id ?? this.id,
+      themeModeIndex: themeModeIndex ?? this.themeModeIndex,
+      fontIndex: fontIndex ?? this.fontIndex,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (themeModeIndex.present) {
+      map['theme_mode_index'] = Variable<int>(themeModeIndex.value);
+    }
+    if (fontIndex.present) {
+      map['font_index'] = Variable<int>(fontIndex.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('themeModeIndex: $themeModeIndex, ')
+          ..write('fontIndex: $fontIndex')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2892,6 +3142,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TaskLensTable taskLens = $TaskLensTable(this);
   late final $ViewLensTable viewLens = $ViewLensTable(this);
   late final $VacationsTable vacations = $VacationsTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2904,6 +3155,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     taskLens,
     viewLens,
     vacations,
+    appSettings,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5658,6 +5910,164 @@ typedef $$VacationsTableProcessedTableManager =
       VacationRow,
       PrefetchHooks Function()
     >;
+typedef $$AppSettingsTableCreateCompanionBuilder =
+    AppSettingsCompanion Function({
+      Value<int> id,
+      Value<int> themeModeIndex,
+      Value<int> fontIndex,
+    });
+typedef $$AppSettingsTableUpdateCompanionBuilder =
+    AppSettingsCompanion Function({
+      Value<int> id,
+      Value<int> themeModeIndex,
+      Value<int> fontIndex,
+    });
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get themeModeIndex => $composableBuilder(
+    column: $table.themeModeIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fontIndex => $composableBuilder(
+    column: $table.fontIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get themeModeIndex => $composableBuilder(
+    column: $table.themeModeIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fontIndex => $composableBuilder(
+    column: $table.fontIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get themeModeIndex => $composableBuilder(
+    column: $table.themeModeIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get fontIndex =>
+      $composableBuilder(column: $table.fontIndex, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingsTable,
+          AppSettingsRow,
+          $$AppSettingsTableFilterComposer,
+          $$AppSettingsTableOrderingComposer,
+          $$AppSettingsTableAnnotationComposer,
+          $$AppSettingsTableCreateCompanionBuilder,
+          $$AppSettingsTableUpdateCompanionBuilder,
+          (
+            AppSettingsRow,
+            BaseReferences<_$AppDatabase, $AppSettingsTable, AppSettingsRow>,
+          ),
+          AppSettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> themeModeIndex = const Value.absent(),
+                Value<int> fontIndex = const Value.absent(),
+              }) => AppSettingsCompanion(
+                id: id,
+                themeModeIndex: themeModeIndex,
+                fontIndex: fontIndex,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> themeModeIndex = const Value.absent(),
+                Value<int> fontIndex = const Value.absent(),
+              }) => AppSettingsCompanion.insert(
+                id: id,
+                themeModeIndex: themeModeIndex,
+                fontIndex: fontIndex,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingsTable,
+      AppSettingsRow,
+      $$AppSettingsTableFilterComposer,
+      $$AppSettingsTableOrderingComposer,
+      $$AppSettingsTableAnnotationComposer,
+      $$AppSettingsTableCreateCompanionBuilder,
+      $$AppSettingsTableUpdateCompanionBuilder,
+      (
+        AppSettingsRow,
+        BaseReferences<_$AppDatabase, $AppSettingsTable, AppSettingsRow>,
+      ),
+      AppSettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5676,4 +6086,6 @@ class $AppDatabaseManager {
       $$ViewLensTableTableManager(_db, _db.viewLens);
   $$VacationsTableTableManager get vacations =>
       $$VacationsTableTableManager(_db, _db.vacations);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }

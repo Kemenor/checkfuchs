@@ -6,6 +6,7 @@ import '../data/repositories/view_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
+import 'settings_screen.dart';
 import 'task_tile.dart';
 import 'vacation_screen.dart';
 
@@ -80,11 +81,16 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const VacationScreen()));
                 }
+                if (v == 'settings') {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const SettingsScreen()));
+                }
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'view', child: Text('New view')),
                 PopupMenuItem(value: 'lens', child: Text('New lens here')),
                 PopupMenuItem(value: 'vacation', child: Text('Vacation')),
+                PopupMenuItem(value: 'settings', child: Text('Settings')),
               ],
             ),
             orElse: () => const SizedBox.shrink(),

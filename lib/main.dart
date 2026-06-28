@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fuchsbau/fuchsbau.dart';
 
-import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
+import 'providers.dart';
 import 'ui/home_shell.dart';
 
 void main() {
   runApp(const ProviderScope(child: CheckfuchsApp()));
 }
 
-class CheckfuchsApp extends StatelessWidget {
+class CheckfuchsApp extends ConsumerWidget {
   const CheckfuchsApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: CheckfuchsTheme.light,
-      darkTheme: CheckfuchsTheme.dark,
-      themeMode: ThemeMode.system,
+      theme: fuchsbauTheme(Brightness.light, font: settings.font),
+      darkTheme: fuchsbauTheme(Brightness.dark, font: settings.font),
+      themeMode: settings.themeMode,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const HomeShell(),
