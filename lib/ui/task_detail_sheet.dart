@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/analytics.dart';
 import '../domain/task.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
@@ -30,14 +31,19 @@ class _TaskDetailSheet extends ConsumerStatefulWidget {
 class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   late final _controller = TextEditingController(text: widget.task.name);
   bool _paused = false;
+  HabitStats? _stats;
 
   @override
   void initState() {
     super.initState();
     final tid = widget.task.templateId;
     if (tid != null) {
-      ref.read(taskRepositoryProvider).isTemplatePaused(tid).then((p) {
+      final repo = ref.read(taskRepositoryProvider);
+      repo.isTemplatePaused(tid).then((p) {
         if (mounted) setState(() => _paused = p);
+      });
+      repo.tasksForTemplate(tid).then((tasks) {
+        if (mounted) setState(() => _stats = computeStats(tasks));
       });
     }
   }
@@ -95,6 +101,21 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 child: Text('Save'),
               ),
             ),
+            if (_stats?.hasData ?? false) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Icon(Icons.local_fire_department_rounded,
+                      size: 18, color: scheme.primary),
+                  const SizedBox(width: 6),
+                  Text('${_stats!.currentStreak}-day streak',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 14),
+                  Text('${(_stats!.completionRate * 100).round()}% done',
+                      style: TextStyle(color: scheme.outline)),
+                ],
+              ),
+            ],
             const SizedBox(height: 4),
             ListTile(
               contentPadding: EdgeInsets.zero,

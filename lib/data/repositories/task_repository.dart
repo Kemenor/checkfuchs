@@ -27,6 +27,13 @@ class TaskRepository {
   Future<List<domain.Task>> allTasks() async =>
       (await db.select(db.tasks).get()).map(_toTask).toList();
 
+  /// All instances of one series — the analytics source (§8).
+  Future<List<domain.Task>> tasksForTemplate(int templateId) async =>
+      (await (db.select(db.tasks)..where((t) => t.templateId.equals(templateId)))
+              .get())
+          .map(_toTask)
+          .toList();
+
   // --- writes ----------------------------------------------------------------
 
   Future<int> createTemplate(domain.Template t, {int? defaultLensId}) async {
