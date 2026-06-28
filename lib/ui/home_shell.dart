@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
-import 'add_habit_sheet.dart';
+import 'create_task_sheet.dart';
 import 'task_tile.dart';
 
 /// The Today surface (Phase 2 carrier MVP): one continuous "everything" lens of
@@ -61,7 +61,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'homeAdd',
-        onPressed: () => showAddHabitSheet(context, ref),
+        onPressed: () => showCreateTaskSheet(context, ref),
         icon: const Icon(Icons.add),
         label: Text(l10n.addTask),
       ),
