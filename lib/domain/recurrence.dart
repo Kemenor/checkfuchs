@@ -189,3 +189,16 @@ DateTime occurrenceOnOrAfter(Recurrence r, DateTime from) =>
 /// The first occurrence strictly after [date].
 DateTime occurrenceAfter(Recurrence r, DateTime date) =>
     occurrences(r, from: _addDays(_dateOnly(date), 1)).first;
+
+/// The latest occurrence on or before [date], or null if [date] precedes the
+/// first occurrence. Iterates from the anchor — cheap when the anchor is near
+/// [date] (the generation use-case).
+DateTime? lastOccurrenceOnOrBefore(Recurrence r, DateTime date) {
+  final target = _dateOnly(date);
+  DateTime? last;
+  for (final occ in occurrences(r)) {
+    if (occ.isAfter(target)) break;
+    last = occ;
+  }
+  return last;
+}
