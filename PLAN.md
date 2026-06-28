@@ -191,17 +191,18 @@ visibility tiers are now Lens configurations, not code paths.
 > | 1 · Domain engine + DB | ✅ **done** — recurrence · state machine · generation/back-fill · derive · drift schema · repository · Riverpod providers |
 > | 2 · Today surface (carrier MVP) | ✅ **done** — reconcile-on-launch/resume · tap-ring complete · swipe Skip · add flow |
 > | 3 · Templates & recurrence | ✅ **done** — recurrence editor · create (recurring/one-off) · rename/delete · edit-series · turn-into-series · stop-repeating |
-> | 4 · Lenses, Views & dials | 🟡 **next** — needs the lens/view DB tables + UI (pure `derive` already done & tested) |
-> | 5 · Reminders | ⬜ todo |
-> | 6 · Pause & Vacation | ⬜ todo |
-> | 7 · Analytics & avoidance | ⬜ todo |
-> | 8 · Polish & i18n | ⬜ todo |
-> | 9 · Release | ⬜ todo |
+> | 4 · Lenses, Views & dials | ✅ **done (MVP)** — 5 tables + membership + derive-driven View tabs + lens cards + text-breakdown header. *Deferred: lens dial-editing + statusFilter UI* |
+> | 5 · Reminders | 🟡 **logic done** — model + fire-time + 64-cap selection, tested. *Flagged (device): flutter_local_notifications + workmanager runtime, the notifications schema column, permissions* |
+> | 6 · Pause & Vacation | ✅ **done** — vacation gating in reconcile + pause toggle + vacation screen |
+> | 7 · Analytics & avoidance | ✅ **done** — streak / completion-rate / avoidance, shown on recurring tasks |
+> | 8 · Polish & i18n | 🟡 **partial** — text-breakdown header ✅ · Settings (theme + font picker + reminder disclosure) ✅. *Flagged: Material Symbols Rounded bundling, full DE/FR/IT translation, ZIP backup/restore, onboarding* |
+> | 9 · Release | ⬜ todo — fox icon, fastlane, signing |
 >
-> **State:** ~76 tests green · CI green · dogfoodable. The hard part (the pure engine) is
-> complete; most remaining work is UI + the lens/view persistence. Known polish debts:
-> Material Icons not Material Symbols Rounded; the "N to do" header vs. the text-breakdown;
-> recurrence summary is English-only (l10n).
+> **State:** **93 tests green · CI green · dogfoodable.** The whole vertical works: create
+> (recurring/one-off) → complete/skip → edit/convert series → Views & lenses → pause &
+> vacation → streaks. Remaining is **platform** (notification runtime), **content** (full
+> DE/FR/IT translation), and **polish** (Material Symbols bundling, ZIP backup, lens
+> dial-editing UI, release). New UI strings are English-only pending the i18n pass.
 
 - **Phase 0 — Scaffold.** Flutter project (`ch.checkfuchs.app`), Riverpod, M3 theme +
   fox-orange seed, l10n skeleton (en/de/fr/it), distrobox + CI (`flutter analyze` +
