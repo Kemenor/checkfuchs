@@ -27,6 +27,7 @@ class Task {
     this.status = TaskStatus.open,
     this.start,
     this.end,
+    this.occurrence,
     required this.createdAt,
     this.resolvedAt,
   });
@@ -44,6 +45,10 @@ class Task {
   final DateTime? start;
   final DateTime? end;
 
+  /// The occurrence date this instance fills (for a generated Task) — used to
+  /// match stored tasks to projection slots (§3.4). Null for standalone one-offs.
+  final DateTime? occurrence;
+
   final DateTime createdAt;
 
   /// When it went terminal; null while open. Required for analytics (§2.1).
@@ -60,6 +65,7 @@ class Task {
     TaskStatus? status,
     DateTime? start,
     DateTime? end,
+    DateTime? occurrence,
     DateTime? createdAt,
     DateTime? resolvedAt,
   }) {
@@ -71,6 +77,7 @@ class Task {
       status: status ?? this.status,
       start: start ?? this.start,
       end: end ?? this.end,
+      occurrence: occurrence ?? this.occurrence,
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
     );
@@ -86,6 +93,7 @@ class Task {
       other.status == status &&
       other.start == start &&
       other.end == end &&
+      other.occurrence == occurrence &&
       other.createdAt == createdAt &&
       other.resolvedAt == resolvedAt;
 
@@ -98,6 +106,7 @@ class Task {
         status,
         start,
         end,
+        occurrence,
         createdAt,
         resolvedAt,
       );
