@@ -132,6 +132,39 @@ class TaskRepository {
     await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
   }
 
+  // --- pause & vacation (§3.5, §6) ---------------------------------------------
+
+  Future<void> pauseTemplate(int templateId, bool paused,
+          {DateTime? resumeOn}) =>
+      (db.update(db.templates)..where((t) => t.id.equals(templateId))).write(
+          TemplatesCompanion(
+              paused: Value(paused), resumeOn: Value(resumeOn)));
+
+  Future<bool> isTemplatePaused(int templateId) async {
+    final row = await (db.select(db.templates)
+          ..where((t) => t.id.equals(templateId)))
+        .getSingleOrNull();
+    return row?.paused ?? false;
+  }
+
+  /// True when [now] falls inside any vacation period (treadmill paused, §6).
+  Future<bool> isOnVacation(DateTime now) async {
+    final rows = await db.select(db.vacations).get();
+    return rows
+        .any((v) => !now.isBefore(v.start) && !now.isAfter(v.end));
+  }
+
+  Stream<List<VacationRow>> watchVacations() => (db.select(db.vacations)
+        ..orderBy([(v) => OrderingTerm.asc(v.start)]))
+      .watch();
+
+  Future<int> addVacation(DateTime start, DateTime end) =>
+      db.into(db.vacations).insert(
+          VacationsCompanion.insert(start: start, end: end));
+
+  Future<void> deleteVacation(int id) =>
+      (db.delete(db.vacations)..where((v) => v.id.equals(id))).go();
+
   Future<({Recurrence recurrence, WindowRule windowRule})?> templateConfig(
       int templateId) async {
     final row = await (db.select(db.templates)
@@ -144,7 +177,8 @@ class TaskRepository {
 
   /// Run the pure engine over every template and persist the changes
   /// (design-concept §3.4). Idempotent — safe to call on every open/resume.
-  Future<void> reconcileAll(DateTime now, {bool vacationActive = false}) async {
+  Future<void> reconcileAll(DateTime now, {bool? vacationActive}) async {
+    final vac = vacationActive ?? await isOnVacation(now);
     final templates = await db.select(db.templates).get();
     for (final row in templates) {
       final template = _toTemplate(row);
@@ -155,7 +189,7 @@ class TaskRepository {
         template,
         existing.map(_toTask).toList(),
         now,
-        vacationActive: vacationActive,
+        vacationActive: vac,
       );
       for (final task in result.changed) {
         if (task.id == null) {

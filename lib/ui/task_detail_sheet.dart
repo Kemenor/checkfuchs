@@ -29,6 +29,18 @@ class _TaskDetailSheet extends ConsumerStatefulWidget {
 
 class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   late final _controller = TextEditingController(text: widget.task.name);
+  bool _paused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final tid = widget.task.templateId;
+    if (tid != null) {
+      ref.read(taskRepositoryProvider).isTemplatePaused(tid).then((p) {
+        if (mounted) setState(() => _paused = p);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -91,6 +103,20 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => showEditRepeatSheet(context, ref, widget.task),
             ),
+            if (recurring)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.pause_circle_outline),
+                title: const Text('Paused'),
+                subtitle: const Text('Stop generating new instances'),
+                value: _paused,
+                onChanged: (v) async {
+                  await ref
+                      .read(taskRepositoryProvider)
+                      .pauseTemplate(widget.task.templateId!, v);
+                  if (mounted) setState(() => _paused = v);
+                },
+              ),
             const SizedBox(height: 4),
             TextButton.icon(
               onPressed: () => _delete(series: false),

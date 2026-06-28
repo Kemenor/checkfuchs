@@ -7,7 +7,8 @@ import 'package:checkfuchs/domain/window_rule.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-DateTime d(int y, int m, int day, [int h = 0]) => DateTime(y, m, day, h);
+DateTime d(int y, int m, int day, [int h = 0, int min = 0]) =>
+    DateTime(y, m, day, h, min);
 
 void main() {
   late AppDatabase db;
@@ -149,5 +150,30 @@ void main() {
     expect(tasks, hasLength(1));
     expect(tasks.single.templateId, isNull);
     expect(await repo.templateConfig(tid), isNull);
+  });
+
+  test('isOnVacation reflects the scheduled periods', () async {
+    await repo.addVacation(d(2026, 6, 20), d(2026, 6, 30, 23, 59));
+    expect(await repo.isOnVacation(d(2026, 6, 27, 8)), isTrue);
+    expect(await repo.isOnVacation(d(2026, 7, 5)), isFalse);
+  });
+
+  test('a vacation gates generation (no instance materialised)', () async {
+    await seedDailyHabit();
+    await repo.addVacation(d(2026, 6, 20), d(2026, 6, 30, 23, 59));
+    await repo.reconcileAll(d(2026, 6, 27, 8)); // vacation auto-computed → gated
+    expect(await repo.allTasks(), isEmpty);
+  });
+
+  test('pausing a template stops generating the next instance', () async {
+    final tid = await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.pauseTemplate(tid, true);
+    final today = (await repo.allTasks()).single;
+    await repo.completeTask(today, d(2026, 6, 27, 8)); // reconciles, but paused
+
+    final tasks = await repo.allTasks();
+    expect(tasks, hasLength(1));
+    expect(tasks.single.status, TaskStatus.done); // no tomorrow generated
   });
 }

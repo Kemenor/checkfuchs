@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
 import 'task_tile.dart';
+import 'vacation_screen.dart';
 
 /// The home surface (Phase 4): a tab per View, each View rendered through the
 /// View → Lens → `derive` pipeline. Reconciles + seeds defaults on launch/resume.
@@ -75,10 +76,15 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 if (v == 'lens' && vs.isNotEmpty) {
                   _newLens(vs[_selectedView.clamp(0, vs.length - 1)].id);
                 }
+                if (v == 'vacation') {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const VacationScreen()));
+                }
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'view', child: Text('New view')),
                 PopupMenuItem(value: 'lens', child: Text('New lens here')),
+                PopupMenuItem(value: 'vacation', child: Text('Vacation')),
               ],
             ),
             orElse: () => const SizedBox.shrink(),

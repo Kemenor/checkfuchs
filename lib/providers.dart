@@ -26,6 +26,10 @@ final tasksProvider = StreamProvider<List<Task>>(
   (ref) => ref.watch(taskRepositoryProvider).watchTasks(),
 );
 
+final vacationsProvider = StreamProvider<List<VacationRow>>(
+  (ref) => ref.watch(taskRepositoryProvider).watchVacations(),
+);
+
 final viewRepositoryProvider = Provider<ViewRepository>(
   (ref) => ViewRepository(ref.watch(databaseProvider)),
 );
