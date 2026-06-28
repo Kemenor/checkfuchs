@@ -61,6 +61,21 @@ class TaskRepository {
       (db.update(db.tasks)..where((x) => x.id.equals(t.id!)))
           .write(_toCompanion(t));
 
+  Future<void> renameTask(int id, String name) =>
+      (db.update(db.tasks)..where((t) => t.id.equals(id)))
+          .write(TasksCompanion(name: Value(name)));
+
+  /// Delete a single Task (this occurrence).
+  Future<void> deleteTask(int id) =>
+      (db.delete(db.tasks)..where((t) => t.id.equals(id))).go();
+
+  /// Delete a whole series — the Template and every Task it generated.
+  Future<void> deleteTemplate(int templateId) async {
+    await (db.delete(db.tasks)..where((t) => t.templateId.equals(templateId)))
+        .go();
+    await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
+  }
+
   /// Run the pure engine over every template and persist the changes
   /// (design-concept §3.4). Idempotent — safe to call on every open/resume.
   Future<void> reconcileAll(DateTime now, {bool vacationActive = false}) async {

@@ -94,4 +94,25 @@ void main() {
     expect(byOcc[d(2026, 6, 27)]!.status, TaskStatus.skipped);
     expect(byOcc[d(2026, 6, 28)]!.status, TaskStatus.open);
   });
+
+  test('deleteTask removes just that instance', () async {
+    await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.deleteTask((await repo.allTasks()).single.id!);
+    expect(await repo.allTasks(), isEmpty);
+  });
+
+  test('deleteTemplate removes the series and its tasks', () async {
+    final templateId = await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.deleteTemplate(templateId);
+    expect(await repo.allTasks(), isEmpty);
+  });
+
+  test('renameTask updates the name', () async {
+    await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.renameTask((await repo.allTasks()).single.id!, 'Floss');
+    expect((await repo.allTasks()).single.name, 'Floss');
+  });
 }
