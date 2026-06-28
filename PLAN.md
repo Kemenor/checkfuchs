@@ -190,15 +190,15 @@ visibility tiers are now Lens configurations, not code paths.
 > | 0 · Scaffold | ✅ **done** |
 > | 1 · Domain engine + DB | ✅ **done** — recurrence · state machine · generation/back-fill · derive · drift schema · repository · Riverpod providers |
 > | 2 · Today surface (carrier MVP) | ✅ **done** — reconcile-on-launch/resume · tap-ring complete · swipe Skip · add flow |
-> | 3 · Templates & recurrence | 🟡 **in progress** — create-with-recurrence ✅ · rename/delete (this & series) ✅ · *edit-this-vs-series + turn-into-series: TODO* |
-> | 4 · Lenses, Views & dials | ⬜ todo — needs the lens/view DB tables + UI (pure `derive` already done & tested) |
+> | 3 · Templates & recurrence | ✅ **done** — recurrence editor · create (recurring/one-off) · rename/delete · edit-series · turn-into-series · stop-repeating |
+> | 4 · Lenses, Views & dials | 🟡 **next** — needs the lens/view DB tables + UI (pure `derive` already done & tested) |
 > | 5 · Reminders | ⬜ todo |
 > | 6 · Pause & Vacation | ⬜ todo |
 > | 7 · Analytics & avoidance | ⬜ todo |
 > | 8 · Polish & i18n | ⬜ todo |
 > | 9 · Release | ⬜ todo |
 >
-> **State:** ~73 tests green · CI green · dogfoodable. The hard part (the pure engine) is
+> **State:** ~76 tests green · CI green · dogfoodable. The hard part (the pure engine) is
 > complete; most remaining work is UI + the lens/view persistence. Known polish debts:
 > Material Icons not Material Symbols Rounded; the "N to do" header vs. the text-breakdown;
 > recurrence summary is English-only (l10n).
