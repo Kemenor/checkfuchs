@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db/database.dart';
 import 'data/repositories/task_repository.dart';
+import 'data/repositories/view_repository.dart';
 import 'domain/clock.dart';
 import 'domain/task.dart';
 
@@ -23,4 +24,19 @@ final taskRepositoryProvider = Provider<TaskRepository>(
 /// single source the UI watches.
 final tasksProvider = StreamProvider<List<Task>>(
   (ref) => ref.watch(taskRepositoryProvider).watchTasks(),
+);
+
+final viewRepositoryProvider = Provider<ViewRepository>(
+  (ref) => ViewRepository(ref.watch(databaseProvider)),
+);
+
+final viewsProvider = StreamProvider<List<ViewRow>>(
+  (ref) => ref.watch(viewRepositoryProvider).watchViews(),
+);
+
+/// The rendered state of a View — its lenses' projected tasks (design §4).
+final viewStateProvider = StreamProvider.family<ViewState?, int>(
+  (ref, viewId) => ref
+      .watch(viewRepositoryProvider)
+      .watchViewState(viewId, ref.read(clockProvider).now()),
 );

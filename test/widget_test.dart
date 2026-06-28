@@ -1,6 +1,6 @@
 import 'package:checkfuchs/data/db/database.dart';
+import 'package:checkfuchs/data/repositories/view_repository.dart';
 import 'package:checkfuchs/domain/clock.dart';
-import 'package:checkfuchs/domain/task.dart';
 import 'package:checkfuchs/main.dart';
 import 'package:checkfuchs/providers.dart';
 import 'package:drift/native.dart';
@@ -10,16 +10,20 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('boots to the empty home state when there are no tasks',
       (tester) async {
-    // In-memory db only for the harmless reconcile-on-launch call; the task
-    // stream is overridden with a plain stream so no drift *watch* (and its
-    // cleanup Timer) lands in the widget tree.
+    // In-memory db for the harmless seed/reconcile-on-launch; the view streams
+    // are overridden with plain streams so no drift *watch* (and its cleanup
+    // Timer) lands in the widget tree.
     final db = AppDatabase(NativeDatabase.memory());
+    const home = ViewRow(id: 1, name: 'Home', sortIndex: 0);
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(FixedClock(DateTime(2026, 6, 27, 8))),
-        tasksProvider.overrideWith((ref) => Stream.value(const <Task>[])),
+        viewsProvider.overrideWith((ref) => Stream.value(const [home])),
+        viewStateProvider(1).overrideWith(
+          (ref) => Stream.value(ViewState(view: home, sections: const [])),
+        ),
       ],
       child: const CheckfuchsApp(),
     ));

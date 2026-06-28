@@ -29,19 +29,40 @@ class TaskRepository {
 
   // --- writes ----------------------------------------------------------------
 
-  Future<int> createTemplate(domain.Template t) =>
-      db.into(db.templates).insert(TemplatesCompanion.insert(
-            name: t.name,
-            note: Value(t.note),
-            recurrence: t.recurrence,
-            windowRule: t.windowRule,
-            paused: Value(t.paused),
-            resumeOn: Value(t.resumeOn),
-            createdAt: t.createdAt,
-          ));
+  Future<int> createTemplate(domain.Template t, {int? defaultLensId}) async {
+    final lensId = defaultLensId ?? await _defaultLensId();
+    return db.into(db.templates).insert(TemplatesCompanion.insert(
+          name: t.name,
+          note: Value(t.note),
+          recurrence: t.recurrence,
+          windowRule: t.windowRule,
+          paused: Value(t.paused),
+          resumeOn: Value(t.resumeOn),
+          createdAt: t.createdAt,
+          defaultLensId: Value(lensId),
+        ));
+  }
 
-  Future<int> createTask(domain.Task t) =>
-      db.into(db.tasks).insert(_toCompanion(t));
+  Future<int> createTask(domain.Task t, {int? lensId}) async {
+    final id = await db.into(db.tasks).insert(_toCompanion(t));
+    final lid = lensId ?? await _defaultLensId();
+    if (lid != null) await addMembership(id, lid, t.createdAt);
+    return id;
+  }
+
+  /// The default lens new tasks join when none is specified — the first lens.
+  Future<int?> _defaultLensId() async => (await (db.select(db.lenses)
+            ..orderBy([(l) => OrderingTerm.asc(l.id)])
+            ..limit(1))
+          .getSingleOrNull())
+      ?.id;
+
+  Future<void> addMembership(int taskId, int lensId, DateTime surfacedAt) =>
+      db.into(db.taskLens).insert(
+            TaskLensCompanion.insert(
+                taskId: taskId, lensId: lensId, surfacedAt: Value(surfacedAt)),
+            mode: InsertMode.insertOrIgnore,
+          );
 
   /// Tap-the-ring / swipe Done. Applies the domain transition (no-op if not
   /// currently completable), persists, then reconciles so the next instance is
@@ -138,7 +159,10 @@ class TaskRepository {
       );
       for (final task in result.changed) {
         if (task.id == null) {
-          await db.into(db.tasks).insert(_toCompanion(task));
+          final newId = await db.into(db.tasks).insert(_toCompanion(task));
+          if (row.defaultLensId != null) {
+            await addMembership(newId, row.defaultLensId!, now);
+          }
         } else {
           await (db.update(db.tasks)..where((t) => t.id.equals(task.id!)))
               .write(_toCompanion(task));

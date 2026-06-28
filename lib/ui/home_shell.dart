@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../domain/task.dart';
+import '../data/db/database.dart';
+import '../data/repositories/view_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
 import 'task_tile.dart';
 
-/// The Today surface (Phase 2 carrier MVP): one continuous "everything" lens of
-/// the open Tasks. Reconciles on launch + resume so misses back-fill and the
-/// current instances appear. Views, multiple lenses, and the full design come
-/// in later phases.
+/// The home surface (Phase 4): a tab per View, each View rendered through the
+/// View → Lens → `derive` pipeline. Reconciles + seeds defaults on launch/resume.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -20,11 +19,13 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
+  int _selectedView = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reconcile());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startup());
   }
 
   @override
@@ -35,28 +36,74 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _reconcile();
+    if (state == AppLifecycleState.resumed) _startup();
   }
 
-  Future<void> _reconcile() => ref
-      .read(taskRepositoryProvider)
-      .reconcileAll(ref.read(clockProvider).now());
+  Future<void> _startup() async {
+    await ref.read(viewRepositoryProvider).seedDefaults();
+    await ref
+        .read(taskRepositoryProvider)
+        .reconcileAll(ref.read(clockProvider).now());
+  }
+
+  Future<void> _newView() async {
+    final name = await _promptName(context, 'New view');
+    if (name != null) await ref.read(viewRepositoryProvider).createView(name);
+  }
+
+  Future<void> _newLens(int viewId) async {
+    final name = await _promptName(context, 'New lens');
+    if (name != null) {
+      await ref.read(viewRepositoryProvider).createLensInView(viewId, name);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tasks = ref.watch(tasksProvider);
+    final views = ref.watch(viewsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
-      body: tasks.when(
+      appBar: AppBar(
+        title: Text(l10n.appTitle),
+        actions: [
+          views.maybeWhen(
+            data: (vs) => PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (v) {
+                if (v == 'view') _newView();
+                if (v == 'lens' && vs.isNotEmpty) {
+                  _newLens(vs[_selectedView.clamp(0, vs.length - 1)].id);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'view', child: Text('New view')),
+                PopupMenuItem(value: 'lens', child: Text('New lens here')),
+              ],
+            ),
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
+      ),
+      body: views.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
-        data: (all) {
-          final open = all.where((t) => t.isOpen).toList();
-          return open.isEmpty
-              ? _EmptyState(l10n: l10n)
-              : _TodayLens(open: open);
+        data: (vs) {
+          if (vs.isEmpty) {
+            return const Center(child: CircularProgressIndicator()); // seeding
+          }
+          final idx = _selectedView.clamp(0, vs.length - 1);
+          return Column(
+            children: [
+              if (vs.length > 1)
+                _ViewTabs(
+                  views: vs,
+                  selected: idx,
+                  onSelect: (i) => setState(() => _selectedView = i),
+                ),
+              Expanded(child: _ViewBody(viewId: vs[idx].id, l10n: l10n)),
+            ],
+          );
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -69,41 +116,138 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 }
 
-class _TodayLens extends StatelessWidget {
-  const _TodayLens({required this.open});
+class _ViewTabs extends StatelessWidget {
+  const _ViewTabs(
+      {required this.views, required this.selected, required this.onSelect});
 
-  final List<Task> open;
+  final List<ViewRow> views;
+  final int selected;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
-          child: Text(
-            '${open.length} to do',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .5,
-                ),
-          ),
-        ),
-        Card(
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              for (var i = 0; i < open.length; i++) ...[
-                if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-                TaskTile(task: open[i]),
-              ],
-            ],
-          ),
-        ),
-      ],
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: views.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 4),
+        itemBuilder: (_, i) {
+          final on = i == selected;
+          return InkWell(
+            onTap: () => onSelect(i),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(views[i].name,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: on ? scheme.onSurface : scheme.outline)),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 3,
+                    width: 22,
+                    decoration: BoxDecoration(
+                      color: on ? scheme.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
+}
+
+class _ViewBody extends ConsumerWidget {
+  const _ViewBody({required this.viewId, required this.l10n});
+
+  final int viewId;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(viewStateProvider(viewId));
+    return state.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('$e')),
+      data: (vs) {
+        if (vs == null || vs.sections.every((s) => s.shown.isEmpty)) {
+          return _EmptyState(l10n: l10n);
+        }
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          children: [for (final s in vs.sections) _LensCard(section: s)],
+        );
+      },
+    );
+  }
+}
+
+class _LensCard extends StatelessWidget {
+  const _LensCard({required this.section});
+
+  final LensSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    if (section.shown.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(section.lens.name.toUpperCase(),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .5,
+                          color: scheme.outline)),
+                  Text(
+                    _breakdown(section.doneCount, section.missedCount,
+                        section.openCount),
+                    style:
+                        TextStyle(fontSize: 12, color: scheme.outline, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            for (var i = 0; i < section.shown.length; i++) ...[
+              if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+              TaskTile(task: section.shown[i]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The text-breakdown header (DESIGN_SYSTEM §3.2): "1 done · 1 missed · 2 left",
+/// zero parts omitted.
+String _breakdown(int done, int missed, int left) {
+  final parts = [
+    if (done > 0) '$done done',
+    if (missed > 0) '$missed missed',
+    if (left > 0) '$left left',
+  ];
+  return parts.isEmpty ? 'all done' : parts.join(' · ');
 }
 
 class _EmptyState extends StatelessWidget {
@@ -125,15 +269,39 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(l10n.emptyTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text(
-              l10n.emptyHint,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.outline),
-            ),
+            Text(l10n.emptyHint,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.outline)),
           ],
         ),
       ),
     );
   }
+}
+
+Future<String?> _promptName(BuildContext context, String title) async {
+  final controller = TextEditingController();
+  final name = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(hintText: 'Name'),
+        onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+        FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Create')),
+      ],
+    ),
+  );
+  controller.dispose();
+  return (name != null && name.isNotEmpty) ? name : null;
 }

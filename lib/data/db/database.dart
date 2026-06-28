@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../../domain/lens.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart';
 import '../../domain/window_rule.dart';
@@ -20,6 +21,11 @@ class Templates extends Table {
   BoolColumn get paused => boolean().withDefault(const Constant(false))();
   DateTimeColumn get resumeOn => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+
+  /// The Lens generated instances join by default (§4.2 stamping). Set to null
+  /// if its lens is deleted.
+  IntColumn get defaultLensId =>
+      integer().nullable().references(Lenses, #id, onDelete: KeyAction.setNull)();
 }
 
 /// The Task — the only object with a completion status (§2). `windowStart`/`End`
@@ -39,7 +45,70 @@ class Tasks extends Table {
   DateTimeColumn get resolvedAt => dateTime().nullable()();
 }
 
-@DriftDatabase(tables: [Templates, Tasks])
+/// A Lens — pure presentation (§4). `period` rides the recurrence converter
+/// (null = continuous).
+@DataClassName('LensRow')
+class Lenses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get showCount => integer().withDefault(const Constant(-1))();
+  IntColumn get ordering => intEnum<LensOrdering>()();
+  IntColumn get selection => intEnum<LensSelection>()();
+  TextColumn get period =>
+      text().map(const RecurrenceConverter()).nullable()();
+  IntColumn get dormantAfter => integer().nullable()();
+  IntColumn get sortIndex => integer().withDefault(const Constant(0))();
+}
+
+/// A View — the screen layer (§4.6).
+@DataClassName('ViewRow')
+class Views extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get sortIndex => integer().withDefault(const Constant(0))();
+}
+
+/// Task↔Lens membership (§4.2): per-pair order + dormancy timestamp + passed.
+@DataClassName('TaskLensRow')
+class TaskLens extends Table {
+  IntColumn get taskId =>
+      integer().references(Tasks, #id, onDelete: KeyAction.cascade)();
+  IntColumn get lensId =>
+      integer().references(Lenses, #id, onDelete: KeyAction.cascade)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get surfacedAt => dateTime().nullable()();
+  BoolColumn get passedThisPeriod =>
+      boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {taskId, lensId};
+}
+
+/// View↔Lens membership (§4.6): per-pair order + statusFilter (bitmask of
+/// terminal states to also show — done=1, skipped=2, missed=4; 0 = open-only).
+@DataClassName('ViewLensRow')
+class ViewLens extends Table {
+  IntColumn get viewId =>
+      integer().references(Views, #id, onDelete: KeyAction.cascade)();
+  IntColumn get lensId =>
+      integer().references(Lenses, #id, onDelete: KeyAction.cascade)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  IntColumn get statusFilter => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {viewId, lensId};
+}
+
+/// App-level vacation periods (§6).
+@DataClassName('VacationRow')
+class Vacations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get start => dateTime()();
+  DateTimeColumn get end => dateTime()();
+}
+
+@DriftDatabase(
+    tables: [Templates, Tasks, Lenses, Views, TaskLens, ViewLens, Vacations])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -47,5 +116,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(lenses);
+            await m.createTable(views);
+            await m.createTable(taskLens);
+            await m.createTable(viewLens);
+            await m.createTable(vacations);
+            await m.addColumn(templates, templates.defaultLensId);
+          }
+        },
+      );
 }
