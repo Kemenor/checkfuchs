@@ -173,10 +173,10 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "11e57f72809f10678a03ff9a64d35661813ab471"
+      resolved-ref: "4bc2dd2db34c03ee84d81f174c1f4d991778e728"
       url: "https://github.com/Kemenor/fuchsbau.git"
     source: git
-    version: "0.1.0"
+    version: "0.2.0"
   glob:
     dependency: transitive
     description:
