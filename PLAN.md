@@ -183,6 +183,26 @@ releasable. Note the model collapsed some of the old plan's phases: "hard dates"
 longer special (just a Task with an `end` shown in a due-date Lens), and the three
 visibility tiers are now Lens configurations, not code paths.
 
+> **Progress** — updated as we build (`git log --oneline` has the commit behind each).
+>
+> | Phase | Status |
+> |---|---|
+> | 0 · Scaffold | ✅ **done** |
+> | 1 · Domain engine + DB | ✅ **done** — recurrence · state machine · generation/back-fill · derive · drift schema · repository · Riverpod providers |
+> | 2 · Today surface (carrier MVP) | ✅ **done** — reconcile-on-launch/resume · tap-ring complete · swipe Skip · add flow |
+> | 3 · Templates & recurrence | 🟡 **in progress** — create-with-recurrence ✅ · rename/delete (this & series) ✅ · *edit-this-vs-series + turn-into-series: TODO* |
+> | 4 · Lenses, Views & dials | ⬜ todo — needs the lens/view DB tables + UI (pure `derive` already done & tested) |
+> | 5 · Reminders | ⬜ todo |
+> | 6 · Pause & Vacation | ⬜ todo |
+> | 7 · Analytics & avoidance | ⬜ todo |
+> | 8 · Polish & i18n | ⬜ todo |
+> | 9 · Release | ⬜ todo |
+>
+> **State:** ~73 tests green · CI green · dogfoodable. The hard part (the pure engine) is
+> complete; most remaining work is UI + the lens/view persistence. Known polish debts:
+> Material Icons not Material Symbols Rounded; the "N to do" header vs. the text-breakdown;
+> recurrence summary is English-only (l10n).
+
 - **Phase 0 — Scaffold.** Flutter project (`ch.checkfuchs.app`), Riverpod, M3 theme +
   fox-orange seed, l10n skeleton (en/de/fr/it), distrobox + CI (`flutter analyze` +
   `flutter test`), empty app shell that boots. *Done = green CI, app launches.*
