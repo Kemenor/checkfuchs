@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/task.dart';
 import '../providers.dart';
+import 'edit_repeat_sheet.dart';
 
 /// Tap a task → this sheet: rename, delete this occurrence, or delete the whole
 /// series (recurring only). Delete is the one sanctioned use of `error` red
@@ -82,7 +83,15 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 child: Text('Save'),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_repeat),
+              title: Text(recurring ? 'Edit repeat' : 'Make it a habit'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showEditRepeatSheet(context, ref, widget.task),
+            ),
+            const SizedBox(height: 4),
             TextButton.icon(
               onPressed: () => _delete(series: false),
               style: TextButton.styleFrom(foregroundColor: scheme.error),

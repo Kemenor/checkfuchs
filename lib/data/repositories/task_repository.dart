@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/generation.dart';
+import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
 import '../../domain/template.dart' as domain;
+import '../../domain/window_rule.dart';
 import '../db/database.dart';
 
 /// Bridges the drift database and the pure domain engine: maps rows ⇄ domain
@@ -74,6 +76,49 @@ class TaskRepository {
     await (db.delete(db.tasks)..where((t) => t.templateId.equals(templateId)))
         .go();
     await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
+  }
+
+  /// Turn a one-off into a series (§3.6): create the Template, drop the original
+  /// one-off, and reconcile so the first generated instance takes its place.
+  Future<void> turnIntoSeries(domain.Task task, Recurrence recurrence,
+      WindowRule windowRule, DateTime now) async {
+    await createTemplate(domain.Template(
+      name: task.name,
+      note: task.note,
+      recurrence: recurrence,
+      windowRule: windowRule,
+      createdAt: now,
+    ));
+    if (task.id != null) await deleteTask(task.id!);
+    await reconcileAll(now);
+  }
+
+  /// Edit a series prospectively (§5.2): update the Template's recurrence/window;
+  /// reconcile leaves the running instance and applies the change from the next.
+  Future<void> updateTemplateConfig(int templateId, Recurrence recurrence,
+      WindowRule windowRule, DateTime now) async {
+    await (db.update(db.templates)..where((t) => t.id.equals(templateId))).write(
+        TemplatesCompanion(
+            recurrence: Value(recurrence), windowRule: Value(windowRule)));
+    await reconcileAll(now);
+  }
+
+  /// Stop a series repeating: delete the Template but keep its existing Tasks as
+  /// standalone one-offs.
+  Future<void> stopRepeating(int templateId) async {
+    await (db.update(db.tasks)..where((t) => t.templateId.equals(templateId)))
+        .write(const TasksCompanion(templateId: Value(null)));
+    await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
+  }
+
+  Future<({Recurrence recurrence, WindowRule windowRule})?> templateConfig(
+      int templateId) async {
+    final row = await (db.select(db.templates)
+          ..where((t) => t.id.equals(templateId)))
+        .getSingleOrNull();
+    return row == null
+        ? null
+        : (recurrence: row.recurrence, windowRule: row.windowRule);
   }
 
   /// Run the pure engine over every template and persist the changes

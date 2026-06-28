@@ -115,4 +115,39 @@ void main() {
     await repo.renameTask((await repo.allTasks()).single.id!, 'Floss');
     expect((await repo.allTasks()).single.name, 'Floss');
   });
+
+  test('turnIntoSeries replaces a one-off with a recurring instance', () async {
+    await repo.createTask(Task(name: 'Call dentist', createdAt: d(2026, 6, 27)));
+    final oneOff = (await repo.allTasks()).single;
+    expect(oneOff.templateId, isNull);
+
+    await repo.turnIntoSeries(oneOff, Recurrence.daily(d(2026, 6, 27)),
+        const UntilNextOccurrence(), d(2026, 6, 27, 8));
+
+    final tasks = await repo.allTasks();
+    expect(tasks, hasLength(1));
+    expect(tasks.single.name, 'Call dentist');
+    expect(tasks.single.templateId, isNotNull); // now recurring
+  });
+
+  test('updateTemplateConfig changes the series rule', () async {
+    final tid = await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.updateTemplateConfig(
+        tid,
+        Recurrence.weekly(d(2026, 6, 27), on: {Weekday.mon}),
+        Slice.morning,
+        d(2026, 6, 27, 9));
+    expect((await repo.templateConfig(tid))!.recurrence.freq, Freq.weekly);
+  });
+
+  test('stopRepeating drops the template, keeps tasks as one-offs', () async {
+    final tid = await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.stopRepeating(tid);
+    final tasks = await repo.allTasks();
+    expect(tasks, hasLength(1));
+    expect(tasks.single.templateId, isNull);
+    expect(await repo.templateConfig(tid), isNull);
+  });
 }

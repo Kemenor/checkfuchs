@@ -12,11 +12,15 @@ class RecurrenceEditor extends StatefulWidget {
     super.key,
     required this.anchor,
     required this.onChanged,
+    this.initial,
   });
 
   /// The reference date intervals count from (typically the task's start/today).
   final DateTime anchor;
   final ValueChanged<Recurrence?> onChanged;
+
+  /// Pre-fill from an existing rule (editing a series); null = start at "Off".
+  final Recurrence? initial;
 
   @override
   State<RecurrenceEditor> createState() => _RecurrenceEditorState();
@@ -29,6 +33,25 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
   late int _monthDay = widget.anchor.day;
   bool _lastDay = false;
   late int _month = widget.anchor.month;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.initial;
+    if (r == null) return;
+    _freq = r.freq;
+    _interval = r.interval;
+    if (r.byWeekday.isNotEmpty) _weekdays = {...r.byWeekday};
+    final md = r.byMonthDay;
+    if (md != null) {
+      if (md == lastDayOfMonth) {
+        _lastDay = true;
+      } else {
+        _monthDay = md;
+      }
+    }
+    if (r.byMonth != null) _month = r.byMonth!;
+  }
 
   Recurrence? _build() {
     final a = widget.anchor;
