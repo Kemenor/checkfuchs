@@ -41,6 +41,26 @@ class TaskRepository {
   Future<int> createTask(domain.Task t) =>
       db.into(db.tasks).insert(_toCompanion(t));
 
+  /// Tap-the-ring / swipe Done. Applies the domain transition (no-op if not
+  /// currently completable), persists, then reconciles so the next instance is
+  /// generated immediately.
+  Future<void> completeTask(domain.Task task, DateTime now) async {
+    if (task.id == null || !domain.canComplete(task, now)) return;
+    await _writeTask(domain.complete(task, now));
+    await reconcileAll(now);
+  }
+
+  /// Swipe Skip — declines this instance, then reconciles.
+  Future<void> skipTask(domain.Task task, DateTime now) async {
+    if (task.id == null || !domain.canSkip(task, now)) return;
+    await _writeTask(domain.skip(task, now));
+    await reconcileAll(now);
+  }
+
+  Future<void> _writeTask(domain.Task t) =>
+      (db.update(db.tasks)..where((x) => x.id.equals(t.id!)))
+          .write(_toCompanion(t));
+
   /// Run the pure engine over every template and persist the changes
   /// (design-concept §3.4). Idempotent — safe to call on every open/resume.
   Future<void> reconcileAll(DateTime now, {bool vacationActive = false}) async {

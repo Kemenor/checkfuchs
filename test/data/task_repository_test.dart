@@ -70,4 +70,28 @@ void main() {
     final after = await repo.watchTasks().first;
     expect(after, hasLength(1));
   });
+
+  test('completeTask marks Done and generates the next instance', () async {
+    await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    final today = (await repo.allTasks()).single;
+
+    await repo.completeTask(today, d(2026, 6, 27, 8));
+
+    final byOcc = {for (final t in await repo.allTasks()) t.occurrence: t};
+    expect(byOcc[d(2026, 6, 27)]!.status, TaskStatus.done);
+    expect(byOcc[d(2026, 6, 28)]!.status, TaskStatus.open);
+  });
+
+  test('skipTask marks Skipped and generates the next', () async {
+    await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    final today = (await repo.allTasks()).single;
+
+    await repo.skipTask(today, d(2026, 6, 27, 8));
+
+    final byOcc = {for (final t in await repo.allTasks()) t.occurrence: t};
+    expect(byOcc[d(2026, 6, 27)]!.status, TaskStatus.skipped);
+    expect(byOcc[d(2026, 6, 28)]!.status, TaskStatus.open);
+  });
 }
