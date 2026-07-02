@@ -58,4 +58,4 @@ distrobox enter flutter -- bash -lc 'flutter run'
 
 ## License
 
-TBD
+[Apache-2.0](./LICENSE) — Copyright 2026 Kemenor.
