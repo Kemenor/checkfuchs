@@ -144,8 +144,9 @@ resolved_at`.
 dormant_after, created_at`.
 
 **`task_lens`** — the membership join (many-to-many): `task_id, lens_id, order,
-surfaced_at, passed_this_period`. Dormancy is **derived** from `surfaced_at` + the lens
-period (count rollovers to `now`), never a ticking counter. Templates also carry **default** lens memberships
+surfaced_at, passed_at`. Dormancy is **derived** from `surfaced_at` + the lens
+period (count rollovers to `now`), never a ticking counter; a Pass is likewise a raw
+`passed_at` timestamp scoped to its period by derivation, never a per-cycle flag to reset. Templates also carry **default** lens memberships
 (`template_lens_defaults: template_id, lens_id, default_order`) that seed each instance's
 join rows.
 
@@ -193,16 +194,18 @@ visibility tiers are now Lens configurations, not code paths.
 > | 3 · Templates & recurrence | ✅ **done** — recurrence editor · create (recurring/one-off) · rename/delete · edit-series · turn-into-series · stop-repeating |
 > | 4 · Lenses, Views & dials | ✅ **done (MVP)** — 5 tables + membership + derive-driven View tabs + lens cards + text-breakdown header. *Deferred: lens dial-editing + statusFilter UI* |
 > | 5 · Reminders | 🟡 **logic done** — model + fire-time + 64-cap selection, tested. *Flagged (device): flutter_local_notifications + workmanager runtime, the notifications schema column, permissions* |
-> | 6 · Pause & Vacation | ✅ **done** — vacation gating in reconcile + pause toggle + vacation screen |
-> | 7 · Analytics & avoidance | ✅ **done** — streak / completion-rate / avoidance, shown on recurring tasks |
-> | 8 · Polish & i18n | 🟡 **partial** — text-breakdown header ✅ · Settings (theme + font picker + reminder disclosure) ✅. *Flagged: Material Symbols Rounded bundling, full DE/FR/IT translation, ZIP backup/restore, onboarding* |
+> | 6 · Pause & Vacation | ✅ **done** — vacation gating in reconcile + pause toggle + vacation screen · gate-aware resume (no retroactive Misses) · vacation-start auto-Skip (open question 3 resolved) |
+> | 7 · Analytics & avoidance | ✅ **done** — streak / completion-rate on recurring tasks · avoidance surfacing (soft-amber marker past the consecutive-miss threshold) |
+> | 8 · Polish & i18n | 🟡 **partial** — text-breakdown header ✅ · Settings (theme + font picker + reminder disclosure) ✅ · full DE/FR/IT microcopy ✅. *Flagged: Material Symbols Rounded bundling, ZIP backup/restore, onboarding* |
 > | 9 · Release | ⬜ todo — fox icon, fastlane, signing |
 >
-> **State:** **93 tests green · CI green · dogfoodable.** The whole vertical works: create
-> (recurring/one-off) → complete/skip → edit/convert series → Views & lenses → pause &
-> vacation → streaks. Remaining is **platform** (notification runtime), **content** (full
-> DE/FR/IT translation), and **polish** (Material Symbols bundling, ZIP backup, lens
-> dial-editing UI, release). New UI strings are English-only pending the i18n pass.
+> **State:** **138 tests green · CI green · dogfoodable.** The whole vertical works: create
+> (recurring/one-off) → complete/skip/pass → edit/convert series → Views & lenses (incl.
+> periodic hold, Pass, dormancy) → pause & vacation (gate-aware resume, no retroactive
+> Misses) → streaks & avoidance, in all four languages. Remaining is **platform**
+> (notification runtime), and **polish** (Material Symbols bundling, ZIP backup, lens
+> dial-editing UI — the periodic/random lens features are engine-complete but not yet
+> configurable from the UI — and release).
 
 - **Phase 0 — Scaffold.** Flutter project (`ch.checkfuchs.app`), Riverpod, M3 theme +
   fox-orange seed, l10n skeleton (en/de/fr/it), distrobox + CI (`flutter analyze` +
@@ -245,7 +248,11 @@ visibility tiers are now Lens configurations, not code paths.
 
 1. Periodic-Lens freed-slot fill when `selection = top` vs `random` — default TBD.
 2. `showCount` configurable range per Lens.
-3. Vacation-start handling of the already-open instance: auto-`Skip` (leaning) vs leave.
+3. ~~Vacation-start handling of the already-open instance: auto-`Skip` (leaning) vs
+   leave.~~ **Resolved: auto-`Skip`.** An open instance whose window *cannot survive* the
+   vacation (its end falls inside the period) is Skipped — neutral, streak-preserving —
+   stamped at the vacation start; a window that outlasts the vacation stays open (still
+   doable after the return). One-off deadlines are untouched (§6: hard deadlines still pass).
 4. Snooze-until-date for a temporarily-blocked top item — v2 candidate.
 5. Smart/filter Lenses (auto-membership by query) atop explicit membership — later.
 6. Seed colour / fox identity for Checkfuchs (must differ from knabberfuchs green).

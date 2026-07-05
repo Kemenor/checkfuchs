@@ -34,18 +34,23 @@ reminder is computed locally from your tasks — nothing ever leaves the phone.
 
 ## Stack
 
-Flutter · drift (SQLite) · Riverpod · Material 3 · `flutter_local_notifications` ·
-local-first, serverless. Four languages: English, German, French, Italian. Part of the
+Flutter · drift (SQLite) · Riverpod · Material 3 · `flutter_local_notifications`
+(planned) · local-first, serverless. Four languages: English, German, French, Italian. Part of the
 **[Fuchsbau](https://github.com/Kemenor/fuchsbau)** family — the shared ethos, design
 system, and base stack behind the fox apps.
 
 ## Status
 
-**Design fully specified, build underway.** The model lives in
+**Dogfoodable — the whole vertical works.** Create (recurring or one-off) →
+complete/skip → edit or convert a series → Views & Lenses → pause & vacation →
+streaks: Phases 0–4, 6 and 7 are done. Reminders (Phase 5) are logic-complete and
+tested but await the on-device notification runtime; polish & i18n (Phase 8) is
+partial — new UI strings are English-only pending the translation pass; release
+(Phase 9) is still ahead. The model lives in
 [`design-concept.md`](./design-concept.md), the look in
 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) (with HTML mockups in
 [`examples/ui/`](./examples/ui/)), and the stack + phased roadmap in
-[`PLAN.md`](./PLAN.md). Phase 0 (scaffold) is done; the domain engine is next.
+[`PLAN.md`](./PLAN.md).
 
 ## Build & run
 
