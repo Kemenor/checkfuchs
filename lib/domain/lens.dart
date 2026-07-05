@@ -55,18 +55,20 @@ class Lens {
 }
 
 /// A Task's membership in a Lens + the per-pair display state (§4.2): stable
-/// `order`, the `surfacedAt` timestamp dormancy is derived from, and the
-/// per-cycle `passedThisPeriod` flag.
+/// `order`, plus two raw timestamps everything cyclical is *derived* from —
+/// `surfacedAt` (when the member last entered the shown set; null = never
+/// shown) and `passedAt` (when the user last said "not this one now"; a Pass
+/// only counts within the period it was made in).
 class LensMember {
   const LensMember({
     required this.task,
     this.order = 0,
     this.surfacedAt,
-    this.passedThisPeriod = false,
+    this.passedAt,
   });
 
   final Task task;
   final int order;
   final DateTime? surfacedAt;
-  final bool passedThisPeriod;
+  final DateTime? passedAt;
 }

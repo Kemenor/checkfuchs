@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fuchsbau/fuchsbau.dart';
 
 import '../data/db/database.dart';
 import '../data/repositories/view_repository.dart';
@@ -42,19 +43,25 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   Future<void> _startup() async {
+    final now = ref.read(clockProvider).now();
     await ref.read(viewRepositoryProvider).seedDefaults();
-    await ref
-        .read(taskRepositoryProvider)
-        .reconcileAll(ref.read(clockProvider).now());
+    await ref.read(taskRepositoryProvider).reconcileAll(now);
+    await ref.read(viewRepositoryProvider).refreshSurfaced(now);
   }
 
   Future<void> _newView() async {
-    final name = await _promptName(context, 'New view');
+    final name = await _promptName(
+      context,
+      AppLocalizations.of(context).newView,
+    );
     if (name != null) await ref.read(viewRepositoryProvider).createView(name);
   }
 
   Future<void> _newLens(int viewId) async {
-    final name = await _promptName(context, 'New lens');
+    final name = await _promptName(
+      context,
+      AppLocalizations.of(context).newLens,
+    );
     if (name != null) {
       await ref.read(viewRepositoryProvider).createLensInView(viewId, name);
     }
@@ -78,19 +85,21 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   _newLens(vs[_selectedView.clamp(0, vs.length - 1)].id);
                 }
                 if (v == 'vacation') {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const VacationScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const VacationScreen()),
+                  );
                 }
                 if (v == 'settings') {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const SettingsScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'view', child: Text('New view')),
-                PopupMenuItem(value: 'lens', child: Text('New lens here')),
-                PopupMenuItem(value: 'vacation', child: Text('Vacation')),
-                PopupMenuItem(value: 'settings', child: Text('Settings')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'view', child: Text(l10n.newView)),
+                PopupMenuItem(value: 'lens', child: Text(l10n.newLensHere)),
+                PopupMenuItem(value: 'vacation', child: Text(l10n.vacation)),
+                PopupMenuItem(value: 'settings', child: Text(l10n.settings)),
               ],
             ),
             orElse: () => const SizedBox.shrink(),
@@ -99,7 +108,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ),
       body: views.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
         data: (vs) {
           if (vs.isEmpty) {
             return const Center(child: CircularProgressIndicator()); // seeding
@@ -113,7 +122,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   selected: idx,
                   onSelect: (i) => setState(() => _selectedView = i),
                 ),
-              Expanded(child: _ViewBody(viewId: vs[idx].id, l10n: l10n)),
+              Expanded(
+                child: _ViewBody(viewId: vs[idx].id, l10n: l10n),
+              ),
             ],
           );
         },
@@ -129,8 +140,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
 }
 
 class _ViewTabs extends StatelessWidget {
-  const _ViewTabs(
-      {required this.views, required this.selected, required this.onSelect});
+  const _ViewTabs({
+    required this.views,
+    required this.selected,
+    required this.onSelect,
+  });
 
   final List<ViewRow> views;
   final int selected;
@@ -156,10 +170,13 @@ class _ViewTabs extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(views[i].name,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: on ? scheme.onSurface : scheme.outline)),
+                  Text(
+                    views[i].name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: on ? scheme.onSurface : scheme.outline,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Container(
                     height: 3,
@@ -190,7 +207,7 @@ class _ViewBody extends ConsumerWidget {
     final state = ref.watch(viewStateProvider(viewId));
     return state.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('$e')),
+      error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
       data: (vs) {
         if (vs == null || vs.sections.every((s) => s.shown.isEmpty)) {
           return _EmptyState(l10n: l10n);
@@ -225,24 +242,30 @@ class _LensCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(section.lens.name.toUpperCase(),
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: .5,
-                          color: scheme.outline)),
                   Text(
-                    _breakdown(section.doneCount, section.missedCount,
-                        section.openCount),
-                    style:
-                        TextStyle(fontSize: 12, color: scheme.outline, fontWeight: FontWeight.w600),
+                    section.lens.name.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: .5,
+                      color: scheme.outline,
+                    ),
+                  ),
+                  _Breakdown(
+                    done: section.doneCount,
+                    missed: section.missedCount,
+                    left: section.openCount,
                   ),
                 ],
               ),
             ),
             for (var i = 0; i < section.shown.length; i++) ...[
               if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-              TaskTile(task: section.shown[i]),
+              TaskTile(
+                task: section.shown[i],
+                lens: section.domainLens,
+                avoided: section.isAvoided(section.shown[i]),
+              ),
             ],
           ],
         ),
@@ -252,14 +275,51 @@ class _LensCard extends StatelessWidget {
 }
 
 /// The text-breakdown header (DESIGN_SYSTEM §3.2): "1 done · 1 missed · 2 left",
-/// zero parts omitted.
-String _breakdown(int done, int missed, int left) {
-  final parts = [
-    if (done > 0) '$done done',
-    if (missed > 0) '$missed missed',
-    if (left > 0) '$left left',
-  ];
-  return parts.isEmpty ? 'all done' : parts.join(' · ');
+/// zero parts omitted, the `missed` segment in taupe.
+class _Breakdown extends StatelessWidget {
+  const _Breakdown({
+    required this.done,
+    required this.missed,
+    required this.left,
+  });
+
+  final int done;
+  final int missed;
+  final int left;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final taupe = FuchsbauStatusColors.of(context).taupe;
+    final base = TextStyle(
+      fontSize: 12,
+      color: scheme.outline,
+      fontWeight: FontWeight.w600,
+    );
+
+    final parts = <TextSpan>[
+      if (done > 0) TextSpan(text: l10n.countDone(done)),
+      if (missed > 0)
+        TextSpan(
+          text: l10n.countMissed(missed),
+          style: TextStyle(color: taupe),
+        ),
+      if (left > 0) TextSpan(text: l10n.countLeft(left)),
+    ];
+    if (parts.isEmpty) return Text(l10n.allDone, style: base);
+    return Text.rich(
+      TextSpan(
+        style: base,
+        children: [
+          for (var i = 0; i < parts.length; i++) ...[
+            if (i > 0) const TextSpan(text: ' · '),
+            parts[i],
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _EmptyState extends StatelessWidget {
@@ -276,15 +336,21 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.task_alt_rounded,
-                size: 56, color: theme.colorScheme.primary),
+            Icon(
+              Icons.task_alt_rounded,
+              size: 56,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(l10n.emptyTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text(l10n.emptyHint,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.outline)),
+            Text(
+              l10n.emptyHint,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
           ],
         ),
       ),
@@ -293,27 +359,56 @@ class _EmptyState extends StatelessWidget {
 }
 
 Future<String?> _promptName(BuildContext context, String title) async {
-  final controller = TextEditingController();
   final name = await showDialog<String>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title),
+    builder: (_) => _NamePromptDialog(title: title),
+  );
+  return (name != null && name.isNotEmpty) ? name : null;
+}
+
+/// Owns its [TextEditingController] so it is disposed with the dialog's own
+/// lifecycle — disposing right after `showDialog` resolves races the pop
+/// transition, which may still be painting the field.
+class _NamePromptDialog extends StatefulWidget {
+  const _NamePromptDialog({required this.title});
+
+  final String title;
+
+  @override
+  State<_NamePromptDialog> createState() => _NamePromptDialogState();
+}
+
+class _NamePromptDialogState extends State<_NamePromptDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(widget.title),
       content: TextField(
-        controller: controller,
+        controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(hintText: 'Name'),
-        onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        decoration: InputDecoration(hintText: l10n.nameLabel),
+        onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
         FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('Create')),
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(l10n.create),
+        ),
       ],
-    ),
-  );
-  controller.dispose();
-  return (name != null && name.isNotEmpty) ? name : null;
+    );
+  }
 }

@@ -9,12 +9,28 @@ library;
 import 'recurrence.dart';
 
 const _weekdayLong = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ];
 const _weekdayShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const _monthLong = [
-  'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 String _ordinal(int n) {
@@ -47,8 +63,9 @@ String recurrenceSummary(Recurrence? r) {
 
     case Freq.monthly:
       final day = r.byMonthDay ?? r.anchor.day;
-      final phrase =
-          day == lastDayOfMonth ? 'the last day' : 'the ${_ordinal(day)}';
+      final phrase = day == lastDayOfMonth
+          ? 'the last day'
+          : 'the ${_ordinal(day)}';
       return n == 1
           ? 'On $phrase of every month'
           : 'Every $n months on $phrase';
@@ -56,6 +73,10 @@ String recurrenceSummary(Recurrence? r) {
     case Freq.yearly:
       final month = r.byMonth ?? r.anchor.month;
       final day = r.byMonthDay ?? r.anchor.day;
-      return 'Every ${n == 1 ? 'year' : '$n years'} on $day ${_monthLong[month - 1]}';
+      final monthName = _monthLong[month - 1];
+      final years = n == 1 ? 'year' : '$n years';
+      return day == lastDayOfMonth
+          ? 'Every $years on the last day of $monthName'
+          : 'Every $years on $day $monthName';
   }
 }

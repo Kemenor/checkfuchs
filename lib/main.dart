@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fuchsbau/fuchsbau.dart';
 
+import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
 import 'providers.dart';
 import 'ui/home_shell.dart';
@@ -19,8 +19,8 @@ class CheckfuchsApp extends ConsumerWidget {
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: fuchsbauTheme(Brightness.light, font: settings.font),
-      darkTheme: fuchsbauTheme(Brightness.dark, font: settings.font),
+      theme: CheckfuchsTheme.light(font: settings.font),
+      darkTheme: CheckfuchsTheme.dark(font: settings.font),
       themeMode: settings.themeMode,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

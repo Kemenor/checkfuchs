@@ -9,22 +9,26 @@ void main() {
     final end = dt(2026, 6, 27, 12);
 
     test('at start', () {
-      expect(const TaskNotification.atStart().fireTime(start: start, end: end),
-          start);
+      expect(
+        const TaskNotification.atStart().fireTime(start: start, end: end),
+        start,
+      );
     });
 
     test('upcoming (a day before start)', () {
       expect(
-        const TaskNotification.atStart(offset: Duration(days: -1))
-            .fireTime(start: start, end: end),
+        const TaskNotification.atStart(
+          offset: Duration(days: -1),
+        ).fireTime(start: start, end: end),
         dt(2026, 6, 26, 8),
       );
     });
 
     test('before due', () {
       expect(
-        const TaskNotification.atEnd(offset: Duration(hours: -2))
-            .fireTime(start: start, end: end),
+        const TaskNotification.atEnd(
+          offset: Duration(hours: -2),
+        ).fireTime(start: start, end: end),
         dt(2026, 6, 27, 10),
       );
     });
@@ -55,7 +59,9 @@ void main() {
     });
 
     test('caps at the limit (soonest kept)', () {
-      final all = [for (var i = 0; i < 100; i++) at(i, now.add(Duration(minutes: i + 1)))];
+      final all = [
+        for (var i = 0; i < 100; i++) at(i, now.add(Duration(minutes: i + 1))),
+      ];
       final picked = selectScheduled(all, now, cap: 64);
       expect(picked, hasLength(64));
       expect(picked.first.taskId, 0); // soonest

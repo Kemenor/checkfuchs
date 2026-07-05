@@ -26,7 +26,11 @@ class Template {
   /// Pause (§3.5): while paused the engine generates no new instances.
   final bool paused;
 
-  /// Optional auto-resume date (§3.5). Null + paused = indefinite.
+  /// The resume point (§3.5). While paused: the optional auto-resume date
+  /// (null = indefinite). It also serves as the engine's **generation floor** —
+  /// back-fill never materialises occurrences that ended before it, so a
+  /// paused stretch produces no retroactive Misses. The repository stamps it
+  /// with "now" on a manual unpause for the same reason.
   final DateTime? resumeOn;
 
   final DateTime createdAt;

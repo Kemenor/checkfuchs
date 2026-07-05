@@ -27,13 +27,13 @@ class RecurrenceConverter extends TypeConverter<Recurrence, String> {
 
   @override
   String toSql(Recurrence value) => jsonEncode({
-        'freq': value.freq.index,
-        'interval': value.interval,
-        'anchor': value.anchor.millisecondsSinceEpoch,
-        'byWeekday': value.byWeekday.map((w) => w.index).toList(),
-        'byMonthDay': value.byMonthDay,
-        'byMonth': value.byMonth,
-      });
+    'freq': value.freq.index,
+    'interval': value.interval,
+    'anchor': value.anchor.millisecondsSinceEpoch,
+    'byWeekday': value.byWeekday.map((w) => w.index).toList(),
+    'byMonthDay': value.byMonthDay,
+    'byMonth': value.byMonth,
+  });
 }
 
 /// Stores a [WindowRule] (sealed) as a JSON text column with a `kind` tag.
@@ -45,20 +45,28 @@ class WindowRuleConverter extends TypeConverter<WindowRule, String> {
     final m = jsonDecode(fromDb) as Map<String, dynamic>;
     return switch (m['kind'] as String) {
       'slice' => Slice(
-          from: Duration(microseconds: m['from'] as int),
-          to: Duration(microseconds: m['to'] as int),
-        ),
+        from: Duration(microseconds: m['from'] as int),
+        to: Duration(microseconds: m['to'] as int),
+      ),
       'duration' => FixedDuration(Duration(microseconds: m['length'] as int)),
-      _ => const UntilNextOccurrence(),
+      'untilNext' => const UntilNextOccurrence(),
+      // Fail loudly: silently mapping an unknown kind to a default would mask
+      // data corruption (or a forgotten migration) as a behaviour change.
+      final kind => throw FormatException('Unknown WindowRule kind: $kind'),
     };
   }
 
   @override
   String toSql(WindowRule value) => switch (value) {
-        Slice(:final from, :final to) => jsonEncode(
-            {'kind': 'slice', 'from': from.inMicroseconds, 'to': to.inMicroseconds}),
-        FixedDuration(:final length) =>
-          jsonEncode({'kind': 'duration', 'length': length.inMicroseconds}),
-        UntilNextOccurrence() => jsonEncode({'kind': 'untilNext'}),
-      };
+    Slice(:final from, :final to) => jsonEncode({
+      'kind': 'slice',
+      'from': from.inMicroseconds,
+      'to': to.inMicroseconds,
+    }),
+    FixedDuration(:final length) => jsonEncode({
+      'kind': 'duration',
+      'length': length.inMicroseconds,
+    }),
+    UntilNextOccurrence() => jsonEncode({'kind': 'untilNext'}),
+  };
 }

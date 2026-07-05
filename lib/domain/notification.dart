@@ -10,22 +10,26 @@ enum NotificationAnchor { start, end, absolute }
 /// `absolute` fires at a fixed [at]. The four UI presets (at start / upcoming /
 /// due / reminder) are all just an `(anchor, offset)` (§2.4).
 class TaskNotification {
-  const TaskNotification({required this.anchor, this.offset = Duration.zero, this.at});
+  const TaskNotification({
+    required this.anchor,
+    this.offset = Duration.zero,
+    this.at,
+  });
 
   /// Fire at the window start (use a negative [offset] for "upcoming").
   const TaskNotification.atStart({this.offset = Duration.zero})
-      : anchor = NotificationAnchor.start,
-        at = null;
+    : anchor = NotificationAnchor.start,
+      at = null;
 
   /// Fire at the due edge (use a negative [offset] for "2h before due").
   const TaskNotification.atEnd({this.offset = Duration.zero})
-      : anchor = NotificationAnchor.end,
-        at = null;
+    : anchor = NotificationAnchor.end,
+      at = null;
 
   const TaskNotification.absolute(DateTime when)
-      : anchor = NotificationAnchor.absolute,
-        offset = Duration.zero,
-        at = when;
+    : anchor = NotificationAnchor.absolute,
+      offset = Duration.zero,
+      at = when;
 
   final NotificationAnchor anchor;
   final Duration offset;
@@ -35,10 +39,10 @@ class TaskNotification {
   /// null when the anchor's date is missing (§2.4 validation: a `start`-anchored
   /// ping needs a `start`).
   DateTime? fireTime({DateTime? start, DateTime? end}) => switch (anchor) {
-        NotificationAnchor.start => start?.add(offset),
-        NotificationAnchor.end => end?.add(offset),
-        NotificationAnchor.absolute => at,
-      };
+    NotificationAnchor.start => start?.add(offset),
+    NotificationAnchor.end => end?.add(offset),
+    NotificationAnchor.absolute => at,
+  };
 }
 
 /// A reminder resolved to a concrete instant, tagged by its task.

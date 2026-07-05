@@ -1992,20 +1992,16 @@ class $TaskLensTable extends TaskLens
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _passedThisPeriodMeta = const VerificationMeta(
-    'passedThisPeriod',
+  static const VerificationMeta _passedAtMeta = const VerificationMeta(
+    'passedAt',
   );
   @override
-  late final GeneratedColumn<bool> passedThisPeriod = GeneratedColumn<bool>(
-    'passed_this_period',
+  late final GeneratedColumn<DateTime> passedAt = GeneratedColumn<DateTime>(
+    'passed_at',
     aliasedName,
-    false,
-    type: DriftSqlType.bool,
+    true,
+    type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("passed_this_period" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -2013,7 +2009,7 @@ class $TaskLensTable extends TaskLens
     lensId,
     sortOrder,
     surfacedAt,
-    passedThisPeriod,
+    passedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2055,13 +2051,10 @@ class $TaskLensTable extends TaskLens
         surfacedAt.isAcceptableOrUnknown(data['surfaced_at']!, _surfacedAtMeta),
       );
     }
-    if (data.containsKey('passed_this_period')) {
+    if (data.containsKey('passed_at')) {
       context.handle(
-        _passedThisPeriodMeta,
-        passedThisPeriod.isAcceptableOrUnknown(
-          data['passed_this_period']!,
-          _passedThisPeriodMeta,
-        ),
+        _passedAtMeta,
+        passedAt.isAcceptableOrUnknown(data['passed_at']!, _passedAtMeta),
       );
     }
     return context;
@@ -2089,10 +2082,10 @@ class $TaskLensTable extends TaskLens
         DriftSqlType.dateTime,
         data['${effectivePrefix}surfaced_at'],
       ),
-      passedThisPeriod: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}passed_this_period'],
-      )!,
+      passedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}passed_at'],
+      ),
     );
   }
 
@@ -2107,13 +2100,13 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
   final int lensId;
   final int sortOrder;
   final DateTime? surfacedAt;
-  final bool passedThisPeriod;
+  final DateTime? passedAt;
   const TaskLensRow({
     required this.taskId,
     required this.lensId,
     required this.sortOrder,
     this.surfacedAt,
-    required this.passedThisPeriod,
+    this.passedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2124,7 +2117,9 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
     if (!nullToAbsent || surfacedAt != null) {
       map['surfaced_at'] = Variable<DateTime>(surfacedAt);
     }
-    map['passed_this_period'] = Variable<bool>(passedThisPeriod);
+    if (!nullToAbsent || passedAt != null) {
+      map['passed_at'] = Variable<DateTime>(passedAt);
+    }
     return map;
   }
 
@@ -2136,7 +2131,9 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
       surfacedAt: surfacedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(surfacedAt),
-      passedThisPeriod: Value(passedThisPeriod),
+      passedAt: passedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(passedAt),
     );
   }
 
@@ -2150,7 +2147,7 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
       lensId: serializer.fromJson<int>(json['lensId']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       surfacedAt: serializer.fromJson<DateTime?>(json['surfacedAt']),
-      passedThisPeriod: serializer.fromJson<bool>(json['passedThisPeriod']),
+      passedAt: serializer.fromJson<DateTime?>(json['passedAt']),
     );
   }
   @override
@@ -2161,7 +2158,7 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
       'lensId': serializer.toJson<int>(lensId),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'surfacedAt': serializer.toJson<DateTime?>(surfacedAt),
-      'passedThisPeriod': serializer.toJson<bool>(passedThisPeriod),
+      'passedAt': serializer.toJson<DateTime?>(passedAt),
     };
   }
 
@@ -2170,13 +2167,13 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
     int? lensId,
     int? sortOrder,
     Value<DateTime?> surfacedAt = const Value.absent(),
-    bool? passedThisPeriod,
+    Value<DateTime?> passedAt = const Value.absent(),
   }) => TaskLensRow(
     taskId: taskId ?? this.taskId,
     lensId: lensId ?? this.lensId,
     sortOrder: sortOrder ?? this.sortOrder,
     surfacedAt: surfacedAt.present ? surfacedAt.value : this.surfacedAt,
-    passedThisPeriod: passedThisPeriod ?? this.passedThisPeriod,
+    passedAt: passedAt.present ? passedAt.value : this.passedAt,
   );
   TaskLensRow copyWithCompanion(TaskLensCompanion data) {
     return TaskLensRow(
@@ -2186,9 +2183,7 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
       surfacedAt: data.surfacedAt.present
           ? data.surfacedAt.value
           : this.surfacedAt,
-      passedThisPeriod: data.passedThisPeriod.present
-          ? data.passedThisPeriod.value
-          : this.passedThisPeriod,
+      passedAt: data.passedAt.present ? data.passedAt.value : this.passedAt,
     );
   }
 
@@ -2199,14 +2194,14 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
           ..write('lensId: $lensId, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('surfacedAt: $surfacedAt, ')
-          ..write('passedThisPeriod: $passedThisPeriod')
+          ..write('passedAt: $passedAt')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(taskId, lensId, sortOrder, surfacedAt, passedThisPeriod);
+      Object.hash(taskId, lensId, sortOrder, surfacedAt, passedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2215,7 +2210,7 @@ class TaskLensRow extends DataClass implements Insertable<TaskLensRow> {
           other.lensId == this.lensId &&
           other.sortOrder == this.sortOrder &&
           other.surfacedAt == this.surfacedAt &&
-          other.passedThisPeriod == this.passedThisPeriod);
+          other.passedAt == this.passedAt);
 }
 
 class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
@@ -2223,14 +2218,14 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
   final Value<int> lensId;
   final Value<int> sortOrder;
   final Value<DateTime?> surfacedAt;
-  final Value<bool> passedThisPeriod;
+  final Value<DateTime?> passedAt;
   final Value<int> rowid;
   const TaskLensCompanion({
     this.taskId = const Value.absent(),
     this.lensId = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.surfacedAt = const Value.absent(),
-    this.passedThisPeriod = const Value.absent(),
+    this.passedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskLensCompanion.insert({
@@ -2238,7 +2233,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
     required int lensId,
     this.sortOrder = const Value.absent(),
     this.surfacedAt = const Value.absent(),
-    this.passedThisPeriod = const Value.absent(),
+    this.passedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : taskId = Value(taskId),
        lensId = Value(lensId);
@@ -2247,7 +2242,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
     Expression<int>? lensId,
     Expression<int>? sortOrder,
     Expression<DateTime>? surfacedAt,
-    Expression<bool>? passedThisPeriod,
+    Expression<DateTime>? passedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2255,7 +2250,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
       if (lensId != null) 'lens_id': lensId,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (surfacedAt != null) 'surfaced_at': surfacedAt,
-      if (passedThisPeriod != null) 'passed_this_period': passedThisPeriod,
+      if (passedAt != null) 'passed_at': passedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2265,7 +2260,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
     Value<int>? lensId,
     Value<int>? sortOrder,
     Value<DateTime?>? surfacedAt,
-    Value<bool>? passedThisPeriod,
+    Value<DateTime?>? passedAt,
     Value<int>? rowid,
   }) {
     return TaskLensCompanion(
@@ -2273,7 +2268,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
       lensId: lensId ?? this.lensId,
       sortOrder: sortOrder ?? this.sortOrder,
       surfacedAt: surfacedAt ?? this.surfacedAt,
-      passedThisPeriod: passedThisPeriod ?? this.passedThisPeriod,
+      passedAt: passedAt ?? this.passedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2293,8 +2288,8 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
     if (surfacedAt.present) {
       map['surfaced_at'] = Variable<DateTime>(surfacedAt.value);
     }
-    if (passedThisPeriod.present) {
-      map['passed_this_period'] = Variable<bool>(passedThisPeriod.value);
+    if (passedAt.present) {
+      map['passed_at'] = Variable<DateTime>(passedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2309,7 +2304,7 @@ class TaskLensCompanion extends UpdateCompanion<TaskLensRow> {
           ..write('lensId: $lensId, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('surfacedAt: $surfacedAt, ')
-          ..write('passedThisPeriod: $passedThisPeriod, ')
+          ..write('passedAt: $passedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4975,7 +4970,7 @@ typedef $$TaskLensTableCreateCompanionBuilder =
       required int lensId,
       Value<int> sortOrder,
       Value<DateTime?> surfacedAt,
-      Value<bool> passedThisPeriod,
+      Value<DateTime?> passedAt,
       Value<int> rowid,
     });
 typedef $$TaskLensTableUpdateCompanionBuilder =
@@ -4984,7 +4979,7 @@ typedef $$TaskLensTableUpdateCompanionBuilder =
       Value<int> lensId,
       Value<int> sortOrder,
       Value<DateTime?> surfacedAt,
-      Value<bool> passedThisPeriod,
+      Value<DateTime?> passedAt,
       Value<int> rowid,
     });
 
@@ -5046,8 +5041,8 @@ class $$TaskLensTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get passedThisPeriod => $composableBuilder(
-    column: $table.passedThisPeriod,
+  ColumnFilters<DateTime> get passedAt => $composableBuilder(
+    column: $table.passedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5117,8 +5112,8 @@ class $$TaskLensTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get passedThisPeriod => $composableBuilder(
-    column: $table.passedThisPeriod,
+  ColumnOrderings<DateTime> get passedAt => $composableBuilder(
+    column: $table.passedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5186,10 +5181,8 @@ class $$TaskLensTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get passedThisPeriod => $composableBuilder(
-    column: $table.passedThisPeriod,
-    builder: (column) => column,
-  );
+  GeneratedColumn<DateTime> get passedAt =>
+      $composableBuilder(column: $table.passedAt, builder: (column) => column);
 
   $$TasksTableAnnotationComposer get taskId {
     final $$TasksTableAnnotationComposer composer = $composerBuilder(
@@ -5270,14 +5263,14 @@ class $$TaskLensTableTableManager
                 Value<int> lensId = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime?> surfacedAt = const Value.absent(),
-                Value<bool> passedThisPeriod = const Value.absent(),
+                Value<DateTime?> passedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskLensCompanion(
                 taskId: taskId,
                 lensId: lensId,
                 sortOrder: sortOrder,
                 surfacedAt: surfacedAt,
-                passedThisPeriod: passedThisPeriod,
+                passedAt: passedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5286,14 +5279,14 @@ class $$TaskLensTableTableManager
                 required int lensId,
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime?> surfacedAt = const Value.absent(),
-                Value<bool> passedThisPeriod = const Value.absent(),
+                Value<DateTime?> passedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskLensCompanion.insert(
                 taskId: taskId,
                 lensId: lensId,
                 sortOrder: sortOrder,
                 surfacedAt: surfacedAt,
-                passedThisPeriod: passedThisPeriod,
+                passedAt: passedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -17,20 +17,32 @@ class TaskRepository {
 
   // --- reads -----------------------------------------------------------------
 
-  /// All tasks, newest occurrence first — a reactive stream (drift re-emits on
-  /// any write).
-  Stream<List<domain.Task>> watchTasks() => (db.select(db.tasks)
-        ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-      .watch()
-      .map((rows) => rows.map(_toTask).toList());
+  /// All tasks, newest first (by creation, id as a stable tiebreak — one
+  /// back-fill pass stamps several instances with the same `createdAt`) — a
+  /// reactive stream (drift re-emits on any write).
+  Stream<List<domain.Task>> watchTasks() =>
+      (db.select(db.tasks)..orderBy([
+            (t) => OrderingTerm.desc(t.createdAt),
+            (t) => OrderingTerm.desc(t.id),
+          ]))
+          .watch()
+          .map((rows) => rows.map(_toTask).toList());
 
   Future<List<domain.Task>> allTasks() async =>
       (await db.select(db.tasks).get()).map(_toTask).toList();
 
+  Future<domain.Task?> taskById(int id) async {
+    final row = await (db.select(
+      db.tasks,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    return row == null ? null : _toTask(row);
+  }
+
   /// All instances of one series — the analytics source (§8).
   Future<List<domain.Task>> tasksForTemplate(int templateId) async =>
-      (await (db.select(db.tasks)..where((t) => t.templateId.equals(templateId)))
-              .get())
+      (await (db.select(
+            db.tasks,
+          )..where((t) => t.templateId.equals(templateId))).get())
           .map(_toTask)
           .toList();
 
@@ -38,96 +50,149 @@ class TaskRepository {
 
   Future<int> createTemplate(domain.Template t, {int? defaultLensId}) async {
     final lensId = defaultLensId ?? await _defaultLensId();
-    return db.into(db.templates).insert(TemplatesCompanion.insert(
-          name: t.name,
-          note: Value(t.note),
-          recurrence: t.recurrence,
-          windowRule: t.windowRule,
-          paused: Value(t.paused),
-          resumeOn: Value(t.resumeOn),
-          createdAt: t.createdAt,
-          defaultLensId: Value(lensId),
-        ));
+    return db
+        .into(db.templates)
+        .insert(
+          TemplatesCompanion.insert(
+            name: t.name,
+            note: Value(t.note),
+            recurrence: t.recurrence,
+            windowRule: t.windowRule,
+            paused: Value(t.paused),
+            resumeOn: Value(t.resumeOn),
+            createdAt: t.createdAt,
+            defaultLensId: Value(lensId),
+          ),
+        );
   }
 
-  Future<int> createTask(domain.Task t, {int? lensId}) async {
-    final id = await db.into(db.tasks).insert(_toCompanion(t));
-    final lid = lensId ?? await _defaultLensId();
-    if (lid != null) await addMembership(id, lid, t.createdAt);
-    return id;
-  }
+  Future<int> createTask(domain.Task t, {int? lensId}) =>
+      db.transaction(() async {
+        final id = await db.into(db.tasks).insert(_toCompanion(t));
+        final lid = lensId ?? await _defaultLensId();
+        if (lid != null) await addMembership(id, lid);
+        return id;
+      });
 
   /// The default lens new tasks join when none is specified — the first lens.
-  Future<int?> _defaultLensId() async => (await (db.select(db.lenses)
-            ..orderBy([(l) => OrderingTerm.asc(l.id)])
-            ..limit(1))
-          .getSingleOrNull())
-      ?.id;
+  Future<int?> _defaultLensId() async =>
+      (await (db.select(db.lenses)
+                ..orderBy([(l) => OrderingTerm.asc(l.id)])
+                ..limit(1))
+              .getSingleOrNull())
+          ?.id;
 
-  Future<void> addMembership(int taskId, int lensId, DateTime surfacedAt) =>
-      db.into(db.taskLens).insert(
-            TaskLensCompanion.insert(
-                taskId: taskId, lensId: lensId, surfacedAt: Value(surfacedAt)),
-            mode: InsertMode.insertOrIgnore,
-          );
+  /// Join a lens. `surfacedAt` stays null — it means "never yet shown" and is
+  /// stamped by [ViewRepository.refreshSurfaced] when the member actually
+  /// enters a shown set (dormancy must not accrue for members never displayed).
+  Future<void> addMembership(int taskId, int lensId) => db
+      .into(db.taskLens)
+      .insert(
+        TaskLensCompanion.insert(taskId: taskId, lensId: lensId),
+        mode: InsertMode.insertOrIgnore,
+      );
+
+  /// Pass (§4.4) — "not this one now, show me another this period". Purely
+  /// presentational: recorded on the membership, never touches task status.
+  Future<void> passTask(int taskId, int lensId, DateTime now) =>
+      (db.update(db.taskLens)
+            ..where((m) => m.taskId.equals(taskId) & m.lensId.equals(lensId)))
+          .write(TaskLensCompanion(passedAt: Value(now)));
 
   /// Tap-the-ring / swipe Done. Applies the domain transition (no-op if not
   /// currently completable), persists, then reconciles so the next instance is
   /// generated immediately.
   Future<void> completeTask(domain.Task task, DateTime now) async {
     if (task.id == null || !domain.canComplete(task, now)) return;
-    await _writeTask(domain.complete(task, now));
+    final done = domain.complete(task, now);
+    await _writeStatus(task.id!, done.status, done.resolvedAt);
     await reconcileAll(now);
   }
 
   /// Swipe Skip — declines this instance, then reconciles.
   Future<void> skipTask(domain.Task task, DateTime now) async {
     if (task.id == null || !domain.canSkip(task, now)) return;
-    await _writeTask(domain.skip(task, now));
+    final skipped = domain.skip(task, now);
+    await _writeStatus(task.id!, skipped.status, skipped.resolvedAt);
     await reconcileAll(now);
   }
 
-  Future<void> _writeTask(domain.Task t) =>
-      (db.update(db.tasks)..where((x) => x.id.equals(t.id!)))
-          .write(_toCompanion(t));
+  /// Status transitions write only `status` + `resolvedAt` — writing the full
+  /// row from the in-memory Task would clobber a concurrent field edit (e.g. a
+  /// rename landing between the UI capturing the Task and the swipe).
+  Future<void> _writeStatus(
+    int id,
+    domain.TaskStatus status,
+    DateTime? resolvedAt,
+  ) => (db.update(db.tasks)..where((x) => x.id.equals(id))).write(
+    TasksCompanion(status: Value(status), resolvedAt: Value(resolvedAt)),
+  );
 
-  Future<void> renameTask(int id, String name) =>
-      (db.update(db.tasks)..where((t) => t.id.equals(id)))
-          .write(TasksCompanion(name: Value(name)));
+  Future<void> renameTask(int id, String name) => (db.update(
+    db.tasks,
+  )..where((t) => t.id.equals(id))).write(TasksCompanion(name: Value(name)));
 
   /// Delete a single Task (this occurrence).
   Future<void> deleteTask(int id) =>
       (db.delete(db.tasks)..where((t) => t.id.equals(id))).go();
 
   /// Delete a whole series — the Template and every Task it generated.
-  Future<void> deleteTemplate(int templateId) async {
-    await (db.delete(db.tasks)..where((t) => t.templateId.equals(templateId)))
-        .go();
+  Future<void> deleteTemplate(int templateId) => db.transaction(() async {
+    await (db.delete(
+      db.tasks,
+    )..where((t) => t.templateId.equals(templateId))).go();
     await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
-  }
+  });
 
   /// Turn a one-off into a series (§3.6): create the Template, drop the original
   /// one-off, and reconcile so the first generated instance takes its place.
-  Future<void> turnIntoSeries(domain.Task task, Recurrence recurrence,
-      WindowRule windowRule, DateTime now) async {
-    await createTemplate(domain.Template(
-      name: task.name,
-      note: task.note,
-      recurrence: recurrence,
-      windowRule: windowRule,
-      createdAt: now,
-    ));
+  /// The one-off's lens membership carries over — a task living in a custom
+  /// lens must not jump to the global default when it becomes a series.
+  Future<void> turnIntoSeries(
+    domain.Task task,
+    Recurrence recurrence,
+    WindowRule windowRule,
+    DateTime now,
+  ) => db.transaction(() async {
+    int? lensId;
+    if (task.id != null) {
+      final membership =
+          await (db.select(db.taskLens)
+                ..where((m) => m.taskId.equals(task.id!))
+                ..limit(1))
+              .getSingleOrNull();
+      lensId = membership?.lensId;
+    }
+    await createTemplate(
+      domain.Template(
+        name: task.name,
+        note: task.note,
+        recurrence: recurrence,
+        windowRule: windowRule,
+        createdAt: now,
+      ),
+      defaultLensId: lensId,
+    );
     if (task.id != null) await deleteTask(task.id!);
     await reconcileAll(now);
-  }
+  });
 
   /// Edit a series prospectively (§5.2): update the Template's recurrence/window;
   /// reconcile leaves the running instance and applies the change from the next.
-  Future<void> updateTemplateConfig(int templateId, Recurrence recurrence,
-      WindowRule windowRule, DateTime now) async {
-    await (db.update(db.templates)..where((t) => t.id.equals(templateId))).write(
-        TemplatesCompanion(
-            recurrence: Value(recurrence), windowRule: Value(windowRule)));
+  Future<void> updateTemplateConfig(
+    int templateId,
+    Recurrence recurrence,
+    WindowRule windowRule,
+    DateTime now,
+  ) async {
+    await (db.update(
+      db.templates,
+    )..where((t) => t.id.equals(templateId))).write(
+      TemplatesCompanion(
+        recurrence: Value(recurrence),
+        windowRule: Value(windowRule),
+      ),
+    );
     await reconcileAll(now);
   }
 
@@ -141,113 +206,152 @@ class TaskRepository {
 
   // --- pause & vacation (§3.5, §6) ---------------------------------------------
 
-  Future<void> pauseTemplate(int templateId, bool paused,
-          {DateTime? resumeOn}) =>
-      (db.update(db.templates)..where((t) => t.id.equals(templateId))).write(
-          TemplatesCompanion(
-              paused: Value(paused), resumeOn: Value(resumeOn)));
+  /// Pause or resume a series. Resuming stamps `resumeOn` with [now] — the
+  /// engine's generation floor — and reconciles immediately, so the paused
+  /// stretch is skipped over instead of back-filled as a wall of Misses.
+  Future<void> pauseTemplate(
+    int templateId,
+    bool paused,
+    DateTime now, {
+    DateTime? resumeOn,
+  }) => db.transaction(() async {
+    await (db.update(
+      db.templates,
+    )..where((t) => t.id.equals(templateId))).write(
+      TemplatesCompanion(
+        paused: Value(paused),
+        resumeOn: Value(paused ? resumeOn : now),
+      ),
+    );
+    if (!paused) await reconcileAll(now);
+  });
 
   Future<bool> isTemplatePaused(int templateId) async {
-    final row = await (db.select(db.templates)
-          ..where((t) => t.id.equals(templateId)))
-        .getSingleOrNull();
+    final row = await (db.select(
+      db.templates,
+    )..where((t) => t.id.equals(templateId))).getSingleOrNull();
     return row?.paused ?? false;
   }
 
   /// True when [now] falls inside any vacation period (treadmill paused, §6).
   Future<bool> isOnVacation(DateTime now) async {
     final rows = await db.select(db.vacations).get();
-    return rows
-        .any((v) => !now.isBefore(v.start) && !now.isAfter(v.end));
+    return rows.any((v) => !now.isBefore(v.start) && !now.isAfter(v.end));
   }
 
-  Stream<List<VacationRow>> watchVacations() => (db.select(db.vacations)
-        ..orderBy([(v) => OrderingTerm.asc(v.start)]))
-      .watch();
+  Stream<List<VacationRow>> watchVacations() => (db.select(
+    db.vacations,
+  )..orderBy([(v) => OrderingTerm.asc(v.start)])).watch();
 
-  Future<int> addVacation(DateTime start, DateTime end) =>
-      db.into(db.vacations).insert(
-          VacationsCompanion.insert(start: start, end: end));
+  Future<int> addVacation(DateTime start, DateTime end) => db
+      .into(db.vacations)
+      .insert(VacationsCompanion.insert(start: start, end: end));
 
   Future<void> deleteVacation(int id) =>
       (db.delete(db.vacations)..where((v) => v.id.equals(id))).go();
 
   Future<({Recurrence recurrence, WindowRule windowRule})?> templateConfig(
-      int templateId) async {
-    final row = await (db.select(db.templates)
-          ..where((t) => t.id.equals(templateId)))
-        .getSingleOrNull();
+    int templateId,
+  ) async {
+    final row = await (db.select(
+      db.templates,
+    )..where((t) => t.id.equals(templateId))).getSingleOrNull();
     return row == null
         ? null
         : (recurrence: row.recurrence, windowRule: row.windowRule);
   }
 
   /// Run the pure engine over every template and persist the changes
-  /// (design-concept §3.4). Idempotent — safe to call on every open/resume.
-  Future<void> reconcileAll(DateTime now, {bool? vacationActive}) async {
-    final vac = vacationActive ?? await isOnVacation(now);
+  /// (design-concept §3.4). Also expires standalone one-offs whose window has
+  /// passed — they have no template, so nothing else would ever Miss them.
+  /// Idempotent, and transactional so concurrent invocations serialise instead
+  /// of double-inserting, and a crash can't leave a task without its
+  /// membership row.
+  Future<void> reconcileAll(DateTime now) => db.transaction(() async {
+    final vacations = await vacationPeriods();
     final templates = await db.select(db.templates).get();
     for (final row in templates) {
       final template = _toTemplate(row);
-      final existing = await (db.select(db.tasks)
-            ..where((t) => t.templateId.equals(row.id)))
-          .get();
+      final existing = await (db.select(
+        db.tasks,
+      )..where((t) => t.templateId.equals(row.id))).get();
       final result = reconcileTemplate(
         template,
         existing.map(_toTask).toList(),
         now,
-        vacationActive: vac,
+        vacations: vacations,
       );
       for (final task in result.changed) {
         if (task.id == null) {
           final newId = await db.into(db.tasks).insert(_toCompanion(task));
           if (row.defaultLensId != null) {
-            await addMembership(newId, row.defaultLensId!, now);
+            await addMembership(newId, row.defaultLensId!);
           }
         } else {
-          await (db.update(db.tasks)..where((t) => t.id.equals(task.id!)))
-              .write(_toCompanion(task));
+          await _writeStatus(task.id!, task.status, task.resolvedAt);
         }
       }
     }
+
+    // Standalone one-offs: expiry sweep (hard deadlines pass even on
+    // vacation, §6 — only the recurring treadmill is gated).
+    final standalone =
+        await (db.select(db.tasks)..where(
+              (t) =>
+                  t.templateId.isNull() &
+                  t.status.equals(domain.TaskStatus.open.index),
+            ))
+            .get();
+    for (final row in standalone) {
+      final missed = domain.expireIfDue(_toTask(row), now);
+      if (missed != null) {
+        await _writeStatus(row.id, missed.status, missed.resolvedAt);
+      }
+    }
+  });
+
+  /// All vacation rows as engine periods.
+  Future<List<DatePeriod>> vacationPeriods() async {
+    final rows = await db.select(db.vacations).get();
+    return [for (final v in rows) (start: v.start, end: v.end)];
   }
 
   // --- mapping ---------------------------------------------------------------
 
   domain.Template _toTemplate(TemplateRow r) => domain.Template(
-        id: r.id,
-        name: r.name,
-        note: r.note,
-        recurrence: r.recurrence,
-        windowRule: r.windowRule,
-        paused: r.paused,
-        resumeOn: r.resumeOn,
-        createdAt: r.createdAt,
-      );
+    id: r.id,
+    name: r.name,
+    note: r.note,
+    recurrence: r.recurrence,
+    windowRule: r.windowRule,
+    paused: r.paused,
+    resumeOn: r.resumeOn,
+    createdAt: r.createdAt,
+  );
 
   domain.Task _toTask(TaskRow r) => domain.Task(
-        id: r.id,
-        templateId: r.templateId,
-        occurrence: r.occurrence,
-        name: r.name,
-        note: r.note,
-        status: r.status,
-        start: r.windowStart,
-        end: r.windowEnd,
-        createdAt: r.createdAt,
-        resolvedAt: r.resolvedAt,
-      );
+    id: r.id,
+    templateId: r.templateId,
+    occurrence: r.occurrence,
+    name: r.name,
+    note: r.note,
+    status: r.status,
+    start: r.windowStart,
+    end: r.windowEnd,
+    createdAt: r.createdAt,
+    resolvedAt: r.resolvedAt,
+  );
 
   TasksCompanion _toCompanion(domain.Task t) => TasksCompanion(
-        id: t.id == null ? const Value.absent() : Value(t.id!),
-        templateId: Value(t.templateId),
-        occurrence: Value(t.occurrence),
-        name: Value(t.name),
-        note: Value(t.note),
-        status: Value(t.status),
-        windowStart: Value(t.start),
-        windowEnd: Value(t.end),
-        createdAt: Value(t.createdAt),
-        resolvedAt: Value(t.resolvedAt),
-      );
+    id: t.id == null ? const Value.absent() : Value(t.id!),
+    templateId: Value(t.templateId),
+    occurrence: Value(t.occurrence),
+    name: Value(t.name),
+    note: Value(t.note),
+    status: Value(t.status),
+    windowStart: Value(t.start),
+    windowEnd: Value(t.end),
+    createdAt: Value(t.createdAt),
+    resolvedAt: Value(t.resolvedAt),
+  );
 }

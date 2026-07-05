@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
 
+import '../l10n/app_localizations.dart';
 import '../providers.dart';
 
 /// Settings (Phase 8): theme override, the Fuchsbau accessibility typeface
@@ -11,46 +12,53 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final settings = ref.watch(settingsProvider);
     final controller = ref.read(settingsProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _Section('Appearance'),
+          _Section(l10n.appearanceSection),
           SegmentedButton<ThemeMode>(
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: ThemeMode.system, label: Text('System')),
-              ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-              ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+            segments: [
+              ButtonSegment(
+                value: ThemeMode.system,
+                label: Text(l10n.themeSystem),
+              ),
+              ButtonSegment(
+                value: ThemeMode.light,
+                label: Text(l10n.themeLight),
+              ),
+              ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark)),
             ],
             selected: {settings.themeMode},
             onSelectionChanged: (s) => controller.setThemeMode(s.first),
           ),
           const SizedBox(height: 24),
-          const _Section('Typeface'),
+          _Section(l10n.typefaceSection),
           for (final font in FuchsbauFont.values)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(font.label,
-                  style: TextStyle(fontFamily: font.family)),
+              title: Text(
+                font.label,
+                style: TextStyle(fontFamily: font.family),
+              ),
               trailing: settings.font == font
                   ? Icon(Icons.check, color: scheme.primary)
                   : null,
               onTap: () => controller.setFont(font),
             ),
           const SizedBox(height: 24),
-          const _Section('Reminders'),
+          _Section(l10n.remindersSection),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Reminders are scheduled locally on your device — no server, no '
-              'account. If you don\'t open Checkfuchs for a long stretch, some '
-              'reminders may stop firing until you come back.',
+              l10n.reminderDisclosure,
               style: TextStyle(color: scheme.outline),
             ),
           ),
@@ -71,10 +79,10 @@ class _Section extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .6,
-            ),
+          color: Theme.of(context).colorScheme.outline,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .6,
+        ),
       ),
     );
   }

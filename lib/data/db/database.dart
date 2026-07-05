@@ -24,8 +24,11 @@ class Templates extends Table {
 
   /// The Lens generated instances join by default (§4.2 stamping). Set to null
   /// if its lens is deleted.
-  IntColumn get defaultLensId =>
-      integer().nullable().references(Lenses, #id, onDelete: KeyAction.setNull)();
+  IntColumn get defaultLensId => integer().nullable().references(
+    Lenses,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 }
 
 /// The Task — the only object with a completion status (§2). `windowStart`/`End`
@@ -33,8 +36,7 @@ class Templates extends Table {
 @DataClassName('TaskRow')
 class Tasks extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get templateId =>
-      integer().nullable().references(Templates, #id)();
+  IntColumn get templateId => integer().nullable().references(Templates, #id)();
   DateTimeColumn get occurrence => dateTime().nullable()();
   TextColumn get name => text()();
   TextColumn get note => text().nullable()();
@@ -54,8 +56,7 @@ class Lenses extends Table {
   IntColumn get showCount => integer().withDefault(const Constant(-1))();
   IntColumn get ordering => intEnum<LensOrdering>()();
   IntColumn get selection => intEnum<LensSelection>()();
-  TextColumn get period =>
-      text().map(const RecurrenceConverter()).nullable()();
+  TextColumn get period => text().map(const RecurrenceConverter()).nullable()();
   IntColumn get dormantAfter => integer().nullable()();
   IntColumn get sortIndex => integer().withDefault(const Constant(0))();
 }
@@ -68,7 +69,10 @@ class Views extends Table {
   IntColumn get sortIndex => integer().withDefault(const Constant(0))();
 }
 
-/// Task↔Lens membership (§4.2): per-pair order + dormancy timestamp + passed.
+/// Task↔Lens membership (§4.2): per-pair order + the two raw timestamps the
+/// cyclical behaviours derive from — `surfacedAt` (last entered the shown set;
+/// null = never shown) and `passedAt` (last Pass; only counts within the
+/// period it was made in, so no per-rollover reset is needed).
 @DataClassName('TaskLensRow')
 class TaskLens extends Table {
   IntColumn get taskId =>
@@ -77,8 +81,7 @@ class TaskLens extends Table {
       integer().references(Lenses, #id, onDelete: KeyAction.cascade)();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get surfacedAt => dateTime().nullable()();
-  BoolColumn get passedThisPeriod =>
-      boolean().withDefault(const Constant(false))();
+  DateTimeColumn get passedAt => dateTime().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {taskId, lensId};
@@ -120,16 +123,18 @@ class AppSettings extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [
-  Templates,
-  Tasks,
-  Lenses,
-  Views,
-  TaskLens,
-  ViewLens,
-  Vacations,
-  AppSettings,
-])
+@DriftDatabase(
+  tables: [
+    Templates,
+    Tasks,
+    Lenses,
+    Views,
+    TaskLens,
+    ViewLens,
+    Vacations,
+    AppSettings,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -137,23 +142,36 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(lenses);
-            await m.createTable(views);
-            await m.createTable(taskLens);
-            await m.createTable(viewLens);
-            await m.createTable(vacations);
-            await m.addColumn(templates, templates.defaultLensId);
-          }
-          if (from < 3) {
-            await m.createTable(appSettings);
-          }
-        },
-      );
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(lenses);
+        await m.createTable(views);
+        await m.createTable(taskLens);
+        await m.createTable(viewLens);
+        await m.createTable(vacations);
+        await m.addColumn(templates, templates.defaultLensId);
+      }
+      if (from < 3) {
+        await m.createTable(appSettings);
+      }
+      if (from < 4) {
+        // passedThisPeriod (bool) → passedAt (timestamp): "passed" is now a
+        // raw fact scoped to its period by derivation, not a stored flag.
+        await m.addColumn(taskLens, taskLens.passedAt);
+        await m.database.customStatement(
+          'ALTER TABLE task_lens DROP COLUMN passed_this_period',
+        );
+      }
+    },
+    // SQLite ships with foreign keys OFF; without this every onDelete
+    // cascade/setNull declared above is silently unenforced.
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 }

@@ -8,14 +8,13 @@ Task taskWith({
   DateTime? start,
   DateTime? end,
   TaskStatus status = TaskStatus.open,
-}) =>
-    Task(
-      name: 'Brush teeth',
-      status: status,
-      start: start,
-      end: end,
-      createdAt: dt(2026, 6, 1),
-    );
+}) => Task(
+  name: 'Brush teeth',
+  status: status,
+  start: start,
+  end: end,
+  createdAt: dt(2026, 6, 1),
+);
 
 void main() {
   final morning = dt(2026, 6, 27, 8); // inside an 00:00–12:00 window
@@ -70,6 +69,38 @@ void main() {
     });
   });
 
+  group('copyWith clearing', () {
+    final full = Task(
+      name: 'Brush teeth',
+      note: 'gently',
+      status: TaskStatus.done,
+      start: dt(2026, 6, 27),
+      end: dt(2026, 6, 27, 12),
+      occurrence: dt(2026, 6, 27),
+      createdAt: dt(2026, 6, 1),
+      resolvedAt: dt(2026, 6, 27, 8),
+    );
+
+    test('an explicit null clears end/note/resolvedAt/occurrence', () {
+      final cleared = full.copyWith(
+        end: null,
+        note: null,
+        resolvedAt: null,
+        occurrence: null,
+      );
+      expect(cleared.end, isNull);
+      expect(cleared.note, isNull);
+      expect(cleared.resolvedAt, isNull);
+      expect(cleared.occurrence, isNull);
+      expect(cleared.start, full.start); // untouched fields survive
+      expect(cleared.name, full.name);
+    });
+
+    test('omitting the arguments keeps the current values', () {
+      expect(full.copyWith(), full);
+    });
+  });
+
   group('transitions', () {
     test('complete → Done with resolvedAt = now', () {
       final t = taskWith(start: dt(2026, 6, 27), end: dt(2026, 6, 27, 12));
@@ -94,15 +125,27 @@ void main() {
       expect(missed.resolvedAt, end); // when it actually failed, not "now"
     });
 
-    test('expireIfDue is a no-op for active / pending / unbounded / terminal', () {
-      final active = taskWith(start: dt(2026, 6, 27), end: dt(2026, 6, 27, 12));
-      expect(expireIfDue(active, morning), isNull);
-      expect(expireIfDue(taskWith(), morning), isNull); // unbounded, never fails
-      expect(
-        expireIfDue(active.copyWith(status: TaskStatus.done), dt(2026, 6, 27, 13)),
-        isNull, // already terminal
-      );
-    });
+    test(
+      'expireIfDue is a no-op for active / pending / unbounded / terminal',
+      () {
+        final active = taskWith(
+          start: dt(2026, 6, 27),
+          end: dt(2026, 6, 27, 12),
+        );
+        expect(expireIfDue(active, morning), isNull);
+        expect(
+          expireIfDue(taskWith(), morning),
+          isNull,
+        ); // unbounded, never fails
+        expect(
+          expireIfDue(
+            active.copyWith(status: TaskStatus.done),
+            dt(2026, 6, 27, 13),
+          ),
+          isNull, // already terminal
+        );
+      },
+    );
 
     test('window opened AND closed while away → straight to Missed', () {
       // created in advance for a 14–25 Jul window; opened the app in August.

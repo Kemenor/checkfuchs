@@ -30,6 +30,12 @@ class HabitStats {
   final int consecutiveMisses;
 
   bool get hasData => done + missed + skipped > 0;
+
+  /// Avoidance surfacing (§8): past this many consecutive misses the item is
+  /// *rendered* differently (soft amber) — information, never a forced action.
+  static const int avoidanceThreshold = 3;
+
+  bool get isAvoided => consecutiveMisses >= avoidanceThreshold;
 }
 
 DateTime _key(Task t) => t.occurrence ?? t.resolvedAt ?? t.createdAt;

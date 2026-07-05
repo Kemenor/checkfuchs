@@ -39,11 +39,21 @@ class Recurrence {
     this.byWeekday = const {},
     this.byMonthDay,
     this.byMonth,
-  }) : assert(interval >= 1, 'interval must be >= 1');
+  }) : assert(interval >= 1, 'interval must be >= 1'),
+       assert(
+         byMonthDay == null ||
+             byMonthDay == lastDayOfMonth ||
+             (byMonthDay >= 1 && byMonthDay <= 31),
+         'byMonthDay must be 1–31 or lastDayOfMonth',
+       ),
+       assert(
+         byMonth == null || (byMonth >= 1 && byMonth <= 12),
+         'byMonth must be 1–12',
+       );
 
   /// every day.
   const Recurrence.daily(DateTime anchor, {int interval = 1})
-      : this(freq: Freq.daily, anchor: anchor, interval: interval);
+    : this(freq: Freq.daily, anchor: anchor, interval: interval);
 
   /// weekly on the given days (defaults to the anchor's weekday if empty).
   const Recurrence.weekly(
@@ -51,32 +61,35 @@ class Recurrence {
     int interval = 1,
     Set<Weekday> on = const {},
   }) : this(
-          freq: Freq.weekly,
-          anchor: anchor,
-          interval: interval,
-          byWeekday: on,
-        );
+         freq: Freq.weekly,
+         anchor: anchor,
+         interval: interval,
+         byWeekday: on,
+       );
 
   /// monthly on a day-of-month ([lastDayOfMonth] for the last day; defaults to
   /// the anchor's day).
   const Recurrence.monthly(DateTime anchor, {int interval = 1, int? day})
-      : this(
-          freq: Freq.monthly,
-          anchor: anchor,
-          interval: interval,
-          byMonthDay: day,
-        );
+    : this(
+        freq: Freq.monthly,
+        anchor: anchor,
+        interval: interval,
+        byMonthDay: day,
+      );
 
   /// yearly on a month + day (defaults to the anchor's month/day).
-  const Recurrence.yearly(DateTime anchor,
-      {int interval = 1, int? month, int? day})
-      : this(
-          freq: Freq.yearly,
-          anchor: anchor,
-          interval: interval,
-          byMonth: month,
-          byMonthDay: day,
-        );
+  const Recurrence.yearly(
+    DateTime anchor, {
+    int interval = 1,
+    int? month,
+    int? day,
+  }) : this(
+         freq: Freq.yearly,
+         anchor: anchor,
+         interval: interval,
+         byMonth: month,
+         byMonthDay: day,
+       );
 
   final Freq freq;
   final int interval;
@@ -110,9 +123,12 @@ int _epochDay(DateTime d) =>
 DateTime _mondayOf(DateTime d) => _addDays(d, -(d.weekday - 1));
 
 /// Resolve a day-of-month against a real month (clamp overflow; [lastDayOfMonth]).
+/// Out-of-range values that slipped past validation (release builds skip the
+/// asserts) are clamped rather than rolled into a neighbouring month.
 int _resolveDay(int year, int month, int day) {
   final dim = _daysInMonth(year, month);
   if (day == lastDayOfMonth) return dim;
+  if (day < 1) return 1;
   return day < dim ? day : dim;
 }
 
@@ -136,9 +152,10 @@ Iterable<DateTime> occurrences(Recurrence r, {DateTime? from}) sync* {
       }
 
     case Freq.weekly:
-      final days = (r.byWeekday.isEmpty ? {Weekday.fromDateTime(anchor)} : r.byWeekday)
-          .toList()
-        ..sort((a, b) => a.dateTimeWeekday - b.dateTimeWeekday);
+      final days =
+          (r.byWeekday.isEmpty ? {Weekday.fromDateTime(anchor)} : r.byWeekday)
+              .toList()
+            ..sort((a, b) => a.dateTimeWeekday - b.dateTimeWeekday);
       final anchorMonday = _mondayOf(anchor);
       final weeksToLower = _daysBetween(anchorMonday, _mondayOf(lower)) ~/ 7;
       final startStep = weeksToLower <= 0 ? 0 : weeksToLower ~/ r.interval;
@@ -154,13 +171,19 @@ Iterable<DateTime> occurrences(Recurrence r, {DateTime? from}) sync* {
     case Freq.monthly:
       final anchorMi = anchor.year * 12 + (anchor.month - 1);
       final lowerMi = lower.year * 12 + (lower.month - 1);
-      final startK = lowerMi <= anchorMi ? 0 : (lowerMi - anchorMi) ~/ r.interval;
+      final startK = lowerMi <= anchorMi
+          ? 0
+          : (lowerMi - anchorMi) ~/ r.interval;
       var k = startK;
       while (true) {
         final mi = anchorMi + k * r.interval;
         final y = mi ~/ 12;
         final m = mi % 12 + 1;
-        final occ = DateTime(y, m, _resolveDay(y, m, r.byMonthDay ?? anchor.day));
+        final occ = DateTime(
+          y,
+          m,
+          _resolveDay(y, m, r.byMonthDay ?? anchor.day),
+        );
         if (ok(occ)) yield occ;
         k++;
       }
@@ -168,8 +191,9 @@ Iterable<DateTime> occurrences(Recurrence r, {DateTime? from}) sync* {
     case Freq.yearly:
       final month = r.byMonth ?? anchor.month;
       final day = r.byMonthDay ?? anchor.day;
-      final startK =
-          lower.year <= anchor.year ? 0 : (lower.year - anchor.year) ~/ r.interval;
+      final startK = lower.year <= anchor.year
+          ? 0
+          : (lower.year - anchor.year) ~/ r.interval;
       var k = startK;
       while (true) {
         final y = anchor.year + k * r.interval;

@@ -5,6 +5,7 @@ import '../domain/recurrence.dart';
 import '../domain/task.dart';
 import '../domain/template.dart';
 import '../domain/window_rule.dart';
+import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'recurrence_editor.dart';
 
@@ -21,34 +22,50 @@ Future<void> showCreateTaskSheet(BuildContext context, WidgetRef ref) {
 }
 
 enum _WindowChoice {
-  anytime('Anytime'),
-  morning('Morning'),
-  afternoon('Afternoon'),
-  evening('Evening');
+  anytime,
+  morning,
+  afternoon,
+  evening;
 
-  const _WindowChoice(this.label);
-  final String label;
+  String label(AppLocalizations l10n) => switch (this) {
+    _WindowChoice.anytime => l10n.windowAnytime,
+    _WindowChoice.morning => l10n.windowMorning,
+    _WindowChoice.afternoon => l10n.windowAfternoon,
+    _WindowChoice.evening => l10n.windowEvening,
+  };
 
   WindowRule toRule() => switch (this) {
-        _WindowChoice.anytime => const UntilNextOccurrence(),
-        _WindowChoice.morning => Slice.morning,
-        _WindowChoice.afternoon => Slice.afternoon,
-        _WindowChoice.evening => Slice.evening,
-      };
+    _WindowChoice.anytime => const UntilNextOccurrence(),
+    _WindowChoice.morning => Slice.morning,
+    _WindowChoice.afternoon => Slice.afternoon,
+    _WindowChoice.evening => Slice.evening,
+  };
 
-  /// (start, end) for a one-off on [today]. "Anytime" = unbounded (never misses).
-  (DateTime?, DateTime?) oneOffWindow(DateTime today) => switch (this) {
-        _WindowChoice.anytime => (null, null),
-        _WindowChoice.morning => (today, today.add(const Duration(hours: 12))),
-        _WindowChoice.afternoon => (
-            today.add(const Duration(hours: 12)),
-            today.add(const Duration(hours: 18))
-          ),
-        _WindowChoice.evening => (
-            today.add(const Duration(hours: 18)),
-            today.add(const Duration(hours: 24))
-          ),
-      };
+  /// (start, end) for a one-off created at [now]. "Anytime" = unbounded (never
+  /// misses). A slice whose window has already fully passed today rolls to
+  /// tomorrow — otherwise a "Morning" task created in the afternoon would be
+  /// born expired: uncompletable, unskippable, and dead on arrival. Bounds are
+  /// built civilly (calendar date + wall-clock time), so they're DST-safe.
+  (DateTime?, DateTime?) oneOffWindow(DateTime now) {
+    final (int fromHour, int toHour) = switch (this) {
+      _WindowChoice.anytime => (0, 0),
+      _WindowChoice.morning => (0, 12),
+      _WindowChoice.afternoon => (12, 18),
+      _WindowChoice.evening => (18, 24),
+    };
+    if (this == _WindowChoice.anytime) return (null, null);
+
+    DateTime at(DateTime d, int hour) =>
+        DateTime(d.year, d.month, d.day + (hour ~/ 24), hour % 24);
+
+    var day = DateTime(now.year, now.month, now.day);
+    var end = at(day, toHour);
+    if (!end.isAfter(now)) {
+      day = DateTime(day.year, day.month, day.day + 1);
+      end = at(day, toHour);
+    }
+    return (at(day, fromHour), end);
+  }
 }
 
 class _CreateTaskSheet extends ConsumerStatefulWidget {
@@ -74,19 +91,21 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     if (name.isEmpty) return;
     final repo = ref.read(taskRepositoryProvider);
     final now = ref.read(clockProvider).now();
-    final today = DateTime(now.year, now.month, now.day);
 
     if (_recurrence != null) {
-      await repo.createTemplate(Template(
-        name: name,
-        recurrence: _recurrence!,
-        windowRule: _window.toRule(),
-        createdAt: now,
-      ));
+      await repo.createTemplate(
+        Template(
+          name: name,
+          recurrence: _recurrence!,
+          windowRule: _window.toRule(),
+          createdAt: now,
+        ),
+      );
     } else {
-      final (start, end) = _window.oneOffWindow(today);
+      final (start, end) = _window.oneOffWindow(now);
       await repo.createTask(
-          Task(name: name, start: start, end: end, createdAt: now));
+        Task(name: name, start: start, end: end, createdAt: now),
+      );
     }
     await repo.reconcileAll(now);
     if (mounted) Navigator.of(context).pop();
@@ -94,6 +113,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final now = ref.read(clockProvider).now();
     final anchor = DateTime(now.year, now.month, now.day);
@@ -107,35 +127,35 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('New task', style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.newTask, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'e.g. Brush teeth',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.nameLabel,
+                  hintText: l10n.taskNameHint,
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 20),
-              _SectionLabel('Active window'),
+              _SectionLabel(l10n.activeWindowSection),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [
                   for (final w in _WindowChoice.values)
                     ChoiceChip(
-                      label: Text(w.label),
+                      label: Text(w.label(l10n)),
                       selected: _window == w,
                       onSelected: (_) => setState(() => _window = w),
                     ),
                 ],
               ),
               const SizedBox(height: 20),
-              _SectionLabel('Repeat'),
+              _SectionLabel(l10n.repeatSection),
               const SizedBox(height: 10),
               RecurrenceEditor(
                 anchor: anchor,
@@ -144,9 +164,9 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _controller.text.trim().isEmpty ? null : _save,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4),
-                  child: Text('Save'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(l10n.save),
                 ),
               ),
             ],
@@ -166,10 +186,10 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-            fontWeight: FontWeight.w700,
-            letterSpacing: .6,
-          ),
+        color: Theme.of(context).colorScheme.outline,
+        fontWeight: FontWeight.w700,
+        letterSpacing: .6,
+      ),
     );
   }
 }

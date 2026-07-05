@@ -15,5 +15,412 @@
   "addTask": "Add",
   "@addTask": {
     "description": "Label of the add (FAB) action."
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Generic dialog dismiss button."
+  },
+  "create": "Create",
+  "@create": {
+    "description": "Confirm button of the name-prompt dialog."
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Generic save/confirm button on sheets."
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Generic delete tooltip/action."
+  },
+  "somethingWentWrong": "Something went wrong",
+  "@somethingWentWrong": {
+    "description": "Generic error state shown when a stream/query fails."
+  },
+  "newView": "New view",
+  "@newView": {
+    "description": "Overflow-menu item and dialog title for creating a View."
+  },
+  "newLens": "New lens",
+  "@newLens": {
+    "description": "Dialog title for creating a Lens."
+  },
+  "newLensHere": "New lens here",
+  "@newLensHere": {
+    "description": "Overflow-menu item: create a Lens in the current View."
+  },
+  "vacation": "Vacation",
+  "@vacation": {
+    "description": "Overflow-menu item and screen title for vacation periods."
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Overflow-menu item and screen title for settings."
+  },
+  "nameLabel": "Name",
+  "@nameLabel": {
+    "description": "Label/hint of a name text field."
+  },
+  "allDone": "all done",
+  "@allDone": {
+    "description": "Lens-card breakdown when no open/done/missed counts remain."
+  },
+  "countDone": "{count, plural, one{1 done} other{{count} done}}",
+  "@countDone": {
+    "description": "Lens-card breakdown segment: completed tasks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countMissed": "{count, plural, one{1 missed} other{{count} missed}}",
+  "@countMissed": {
+    "description": "Lens-card breakdown segment: missed tasks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countLeft": "{count, plural, one{1 left} other{{count} left}}",
+  "@countLeft": {
+    "description": "Lens-card breakdown segment: tasks still open.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newTask": "New task",
+  "@newTask": {
+    "description": "Title of the create-task sheet."
+  },
+  "taskNameHint": "e.g. Brush teeth",
+  "@taskNameHint": {
+    "description": "Example hint inside the task-name field."
+  },
+  "activeWindowSection": "Active window",
+  "@activeWindowSection": {
+    "description": "Section label above the active-window chips."
+  },
+  "repeatSection": "Repeat",
+  "@repeatSection": {
+    "description": "Section label above the recurrence editor."
+  },
+  "windowAnytime": "Anytime",
+  "@windowAnytime": {
+    "description": "Active-window chip: no time bound."
+  },
+  "windowMorning": "Morning",
+  "@windowMorning": {
+    "description": "Active-window chip: morning slice."
+  },
+  "windowAfternoon": "Afternoon",
+  "@windowAfternoon": {
+    "description": "Active-window chip: afternoon slice."
+  },
+  "windowEvening": "Evening",
+  "@windowEvening": {
+    "description": "Active-window chip: evening slice."
+  },
+  "dayStreak": "{count, plural, one{1-day streak} other{{count}-day streak}}",
+  "@dayStreak": {
+    "description": "Current habit streak in the task detail sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "percentDone": "{percent}% done",
+  "@percentDone": {
+    "description": "Habit completion rate in the task detail sheet.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "editRepeat": "Edit repeat",
+  "@editRepeat": {
+    "description": "Row/sheet title: edit an existing repeat rule."
+  },
+  "makeItAHabit": "Make it a habit",
+  "@makeItAHabit": {
+    "description": "Row/sheet title: give a one-off task a repeat rule."
+  },
+  "paused": "Paused",
+  "@paused": {
+    "description": "Switch title: series generation is paused."
+  },
+  "pausedSubtitle": "Stop generating new instances",
+  "@pausedSubtitle": {
+    "description": "Subtitle explaining the paused switch."
+  },
+  "deleteThisTask": "Delete this task",
+  "@deleteThisTask": {
+    "description": "Delete one occurrence of a recurring task."
+  },
+  "deleteTask": "Delete task",
+  "@deleteTask": {
+    "description": "Delete a one-off task."
+  },
+  "deleteWholeSeries": "Delete the whole series",
+  "@deleteWholeSeries": {
+    "description": "Delete a template and all its tasks."
+  },
+  "vacationIntro": "Vacation pauses your recurring tasks for the dates you pick — no missed-habit pile-up while you're away. Real deadlines still pass.",
+  "@vacationIntro": {
+    "description": "Explainer at the top of the vacation screen."
+  },
+  "noVacations": "No vacations scheduled",
+  "@noVacations": {
+    "description": "Empty state of the vacation list."
+  },
+  "markDone": "Mark done",
+  "@markDone": {
+    "description": "Tooltip of the completion ring on a task row."
+  },
+  "soonPill": "SOON",
+  "@soonPill": {
+    "description": "Uppercase status pill on a pending (not yet active) task."
+  },
+  "swipeDone": "Done",
+  "@swipeDone": {
+    "description": "Right-swipe action label: complete the task."
+  },
+  "swipeSkip": "Skip",
+  "@swipeSkip": {
+    "description": "Left-swipe action label: deliberately decline the task."
+  },
+  "swipePass": "Pass",
+  "@swipePass": {
+    "description": "Left-swipe action label in a periodic lens: pass this period."
+  },
+  "appearanceSection": "Appearance",
+  "@appearanceSection": {
+    "description": "Settings section: theme."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme segment: follow the system."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme segment: light mode."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme segment: dark mode."
+  },
+  "typefaceSection": "Typeface",
+  "@typefaceSection": {
+    "description": "Settings section: font picker."
+  },
+  "remindersSection": "Reminders",
+  "@remindersSection": {
+    "description": "Settings section: reminders."
+  },
+  "reminderDisclosure": "Reminders are scheduled locally on your device — no server, no account. If you don't open Checkfuchs for a long stretch, some reminders may stop firing until you come back.",
+  "@reminderDisclosure": {
+    "description": "Honest disclosure about local-only reminder scheduling."
+  },
+  "freqOff": "Off",
+  "@freqOff": {
+    "description": "Frequency segment: doesn't repeat."
+  },
+  "freqDay": "Day",
+  "@freqDay": {
+    "description": "Frequency segment: daily."
+  },
+  "freqWeek": "Week",
+  "@freqWeek": {
+    "description": "Frequency segment: weekly."
+  },
+  "freqMonth": "Month",
+  "@freqMonth": {
+    "description": "Frequency segment: monthly."
+  },
+  "freqYear": "Year",
+  "@freqYear": {
+    "description": "Frequency segment: yearly."
+  },
+  "every": "Every",
+  "@every": {
+    "description": "Label of the interval stepper (Every [n] weeks)."
+  },
+  "unitDays": "{count, plural, one{day} other{days}}",
+  "@unitDays": {
+    "description": "Interval stepper unit, daily.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitWeeks": "{count, plural, one{week} other{weeks}}",
+  "@unitWeeks": {
+    "description": "Interval stepper unit, weekly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitMonths": "{count, plural, one{month} other{months}}",
+  "@unitMonths": {
+    "description": "Interval stepper unit, monthly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitYears": "{count, plural, one{year} other{years}}",
+  "@unitYears": {
+    "description": "Interval stepper unit, yearly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onDay": "On day",
+  "@onDay": {
+    "description": "Label of the monthly day-of-month stepper."
+  },
+  "lastDay": "Last day",
+  "@lastDay": {
+    "description": "Chip: repeat on the last day of the month."
+  },
+  "monthLabel": "Month",
+  "@monthLabel": {
+    "description": "Label of the yearly month dropdown."
+  },
+  "dayLabel": "Day",
+  "@dayLabel": {
+    "description": "Label of the yearly day stepper."
+  },
+  "starts": "Starts",
+  "@starts": {
+    "description": "Row label: the recurrence anchor date."
+  },
+  "increase": "Increase",
+  "@increase": {
+    "description": "Tooltip of the stepper + button."
+  },
+  "decrease": "Decrease",
+  "@decrease": {
+    "description": "Tooltip of the stepper - button."
+  },
+  "weekdayInitialMon": "M",
+  "@weekdayInitialMon": {
+    "description": "Weekday chip initial: Monday."
+  },
+  "weekdayInitialTue": "T",
+  "@weekdayInitialTue": {
+    "description": "Weekday chip initial: Tuesday."
+  },
+  "weekdayInitialWed": "W",
+  "@weekdayInitialWed": {
+    "description": "Weekday chip initial: Wednesday."
+  },
+  "weekdayInitialThu": "T",
+  "@weekdayInitialThu": {
+    "description": "Weekday chip initial: Thursday."
+  },
+  "weekdayInitialFri": "F",
+  "@weekdayInitialFri": {
+    "description": "Weekday chip initial: Friday."
+  },
+  "weekdayInitialSat": "S",
+  "@weekdayInitialSat": {
+    "description": "Weekday chip initial: Saturday."
+  },
+  "weekdayInitialSun": "S",
+  "@weekdayInitialSun": {
+    "description": "Weekday chip initial: Sunday."
+  },
+  "summaryNoRepeat": "Doesn't repeat",
+  "@summaryNoRepeat": {
+    "description": "Recurrence summary: no rule."
+  },
+  "summaryDaily": "{count, plural, one{Every day} other{Every {count} days}}",
+  "@summaryDaily": {
+    "description": "Recurrence summary: daily every n days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryWeeklySingle": "Every {weekday}",
+  "@summaryWeeklySingle": {
+    "description": "Recurrence summary: weekly, one day, interval 1. {weekday} is a full localized weekday name.",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryWeeklyOn": "{count, plural, one{Every week on {days}} other{Every {count} weeks on {days}}}",
+  "@summaryWeeklyOn": {
+    "description": "Recurrence summary: weekly on listed days. {days} is a comma-joined list of abbreviated weekday names.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryMonthlyDay": "{count, plural, one{On day {day} of every month} other{Every {count} months on day {day}}}",
+  "@summaryMonthlyDay": {
+    "description": "Recurrence summary: monthly on a day of the month.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryMonthlyLastDay": "{count, plural, one{On the last day of every month} other{Every {count} months on the last day}}",
+  "@summaryMonthlyLastDay": {
+    "description": "Recurrence summary: monthly on the last day of the month.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryYearly": "{count, plural, one{Every year on {day} {month}} other{Every {count} years on {day} {month}}}",
+  "@summaryYearly": {
+    "description": "Recurrence summary: yearly on a day + month. {month} is a full localized month name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryYearlyLastDay": "{count, plural, one{Every year on the last day of {month}} other{Every {count} years on the last day of {month}}}",
+  "@summaryYearlyLastDay": {
+    "description": "Recurrence summary: yearly on the last day of a month. {month} may carry a locale-required preposition (French elision).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
   }
 }

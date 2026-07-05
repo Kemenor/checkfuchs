@@ -57,29 +57,40 @@ class Task {
   bool get isOpen => status == TaskStatus.open;
   bool get isTerminal => !isOpen;
 
+  /// Nullable fields use a sentinel default so they can be *cleared* by passing
+  /// an explicit `null` (e.g. removing a due date, or nulling `resolvedAt` for
+  /// a Missed→Done correction) — `?? this.x` could never express that.
+  static const _unset = Object();
+
   Task copyWith({
     int? id,
-    int? templateId,
+    Object? templateId = _unset,
     String? name,
-    String? note,
+    Object? note = _unset,
     TaskStatus? status,
-    DateTime? start,
-    DateTime? end,
-    DateTime? occurrence,
+    Object? start = _unset,
+    Object? end = _unset,
+    Object? occurrence = _unset,
     DateTime? createdAt,
-    DateTime? resolvedAt,
+    Object? resolvedAt = _unset,
   }) {
     return Task(
       id: id ?? this.id,
-      templateId: templateId ?? this.templateId,
+      templateId: identical(templateId, _unset)
+          ? this.templateId
+          : templateId as int?,
       name: name ?? this.name,
-      note: note ?? this.note,
+      note: identical(note, _unset) ? this.note : note as String?,
       status: status ?? this.status,
-      start: start ?? this.start,
-      end: end ?? this.end,
-      occurrence: occurrence ?? this.occurrence,
+      start: identical(start, _unset) ? this.start : start as DateTime?,
+      end: identical(end, _unset) ? this.end : end as DateTime?,
+      occurrence: identical(occurrence, _unset)
+          ? this.occurrence
+          : occurrence as DateTime?,
       createdAt: createdAt ?? this.createdAt,
-      resolvedAt: resolvedAt ?? this.resolvedAt,
+      resolvedAt: identical(resolvedAt, _unset)
+          ? this.resolvedAt
+          : resolvedAt as DateTime?,
     );
   }
 
@@ -99,17 +110,17 @@ class Task {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        templateId,
-        name,
-        note,
-        status,
-        start,
-        end,
-        occurrence,
-        createdAt,
-        resolvedAt,
-      );
+    id,
+    templateId,
+    name,
+    note,
+    status,
+    start,
+    end,
+    occurrence,
+    createdAt,
+    resolvedAt,
+  );
 
   @override
   String toString() => 'Task(#$id "$name" $status start:$start end:$end)';

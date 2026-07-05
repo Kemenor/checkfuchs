@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/app_localizations.dart';
 import '../providers.dart';
 
 /// Vacation periods (design-concept §6) — schedule time away in advance.
@@ -11,45 +12,57 @@ class VacationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final vacations = ref.watch(vacationsProvider);
-    final fmt = DateFormat.MMMd();
+    final fmt = DateFormat.MMMd(Localizations.localeOf(context).toString());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Vacation')),
+      appBar: AppBar(title: Text(l10n.vacation)),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Vacation pauses your recurring tasks for the dates you pick — no '
-              'missed-habit pile-up while you\'re away. Real deadlines still pass.',
+              l10n.vacationIntro,
               style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
           ),
           Expanded(
             child: vacations.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('$e')),
+              error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
               data: (list) => list.isEmpty
                   ? Center(
-                      child: Text('No vacations scheduled',
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.outline)))
+                      child: Text(
+                        l10n.noVacations,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    )
                   : ListView(
                       children: [
                         for (final v in list)
                           ListTile(
                             leading: const Icon(Icons.beach_access_outlined),
-                            title: Text('${fmt.format(v.start)} – ${fmt.format(v.end)}'),
+                            title: Text(
+                              '${fmt.format(v.start)} – ${fmt.format(v.end)}',
+                            ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete_outline,
-                                  color: Theme.of(context).colorScheme.error),
+                              tooltip: l10n.delete,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                               onPressed: () async {
                                 await ref
                                     .read(taskRepositoryProvider)
                                     .deleteVacation(v.id);
-                                await ref.read(taskRepositoryProvider).reconcileAll(
-                                    ref.read(clockProvider).now());
+                                await ref
+                                    .read(taskRepositoryProvider)
+                                    .reconcileAll(
+                                      ref.read(clockProvider).now(),
+                                    );
                               },
                             ),
                           ),
@@ -63,7 +76,7 @@ class VacationScreen extends ConsumerWidget {
         heroTag: 'addVacation',
         onPressed: () => _add(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add'),
+        label: Text(l10n.addTask),
       ),
     );
   }

@@ -3,12 +3,12 @@ import 'package:checkfuchs/domain/task.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Task t(int day, TaskStatus s) => Task(
-      name: 'x',
-      status: s,
-      occurrence: DateTime(2026, 6, day),
-      createdAt: DateTime(2026, 6, 1),
-      resolvedAt: DateTime(2026, 6, day),
-    );
+  name: 'x',
+  status: s,
+  occurrence: DateTime(2026, 6, day),
+  createdAt: DateTime(2026, 6, 1),
+  resolvedAt: DateTime(2026, 6, day),
+);
 
 void main() {
   test('no resolved instances → empty, rate 1.0', () {

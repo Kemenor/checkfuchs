@@ -8,6 +8,23 @@ typedef Window = ({DateTime start, DateTime end});
 
 DateTime _midnight(DateTime d) => DateTime(d.year, d.month, d.day);
 
+/// Civil (DST-safe) offset from a day's midnight: whole days advance the
+/// calendar date, the sub-day remainder sets the wall-clock time. Adding a raw
+/// `Duration` instead would drift by an hour across a DST transition ("all day"
+/// would end at 23:00 on the fall-back Sunday).
+DateTime _atCivilOffset(DateTime day, Duration offset) {
+  final days = offset.inDays;
+  final rest = offset - Duration(days: days);
+  return DateTime(
+    day.year,
+    day.month,
+    day.day + days,
+    rest.inHours,
+    rest.inMinutes % 60,
+    rest.inSeconds % 60,
+  );
+}
+
 sealed class WindowRule {
   const WindowRule();
 
@@ -17,10 +34,8 @@ sealed class WindowRule {
 }
 
 /// A band on the occurrence day — e.g. *morning* = 00:00–12:00. [from]/[to] are
-/// durations from the occurrence's midnight.
-///
-/// (DST caveat: on the ~2 transition days a year a duration-based band can be an
-/// hour off; acceptable for v1, revisit if it ever bites.)
+/// wall-clock offsets from the occurrence's midnight, resolved civilly so the
+/// band keeps its clock times across DST transitions.
 class Slice extends WindowRule {
   const Slice({required this.from, required this.to});
 
@@ -29,19 +44,26 @@ class Slice extends WindowRule {
 
   static const allDay = Slice(from: Duration.zero, to: Duration(hours: 24));
   static const morning = Slice(from: Duration.zero, to: Duration(hours: 12));
-  static const afternoon =
-      Slice(from: Duration(hours: 12), to: Duration(hours: 18));
-  static const evening = Slice(from: Duration(hours: 18), to: Duration(hours: 24));
+  static const afternoon = Slice(
+    from: Duration(hours: 12),
+    to: Duration(hours: 18),
+  );
+  static const evening = Slice(
+    from: Duration(hours: 18),
+    to: Duration(hours: 24),
+  );
 
   @override
   Window resolve(DateTime occurrence, DateTime _) {
     final base = _midnight(occurrence);
-    return (start: base.add(from), end: base.add(to));
+    return (start: _atCivilOffset(base, from), end: _atCivilOffset(base, to));
   }
 }
 
 /// `start = occurrence midnight`, `end = start + length` (e.g. "active for the
-/// week from the occurrence").
+/// week from the occurrence"). The length is resolved civilly: its day part
+/// counts calendar days, so "7 days" ends at the same wall-clock time even when
+/// a DST transition falls inside the window.
 class FixedDuration extends WindowRule {
   const FixedDuration(this.length);
 
@@ -50,7 +72,7 @@ class FixedDuration extends WindowRule {
   @override
   Window resolve(DateTime occurrence, DateTime _) {
     final base = _midnight(occurrence);
-    return (start: base, end: base.add(length));
+    return (start: base, end: _atCivilOffset(base, length));
   }
 }
 
