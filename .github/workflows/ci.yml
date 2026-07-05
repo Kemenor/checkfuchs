@@ -5,18 +5,47 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly canary for the build-apk job (Gradle/AGP/Kotlin breakage).
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           flutter-version: 3.44.4
           cache: true
       - run: flutter pub get
       - run: flutter gen-l10n
+      # Drift codegen freshness guard: database.g.dart is committed, so fail
+      # if regenerating it produces a different file (stale codegen).
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: git diff --exit-code -- lib/data/db/database.g.dart
+      - run: dart format --set-exit-if-changed --output=none .
       - run: flutter analyze
       - run: flutter test
+
+  build-apk:
+    # Debug APK canary — catches Gradle/AGP/Kotlin toolchain breakage.
+    # Too slow for every push; runs weekly (cron above) and on demand.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.44.4
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build apk --debug
