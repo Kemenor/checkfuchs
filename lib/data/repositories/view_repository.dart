@@ -301,17 +301,47 @@ class ViewRepository {
       }
     }
 
+    final dayStart = DateTime(now.year, now.month, now.day);
+
     final sections = <LensSection>[];
     for (final entry in lensById.entries) {
       final lens = _toLens(entry.value);
       final ms = members[entry.key]!;
       final filter = filterById[entry.key]!;
 
+      // statusFilter surfaces each habit's CURRENT outcome, never history
+      // (the Habitify shape: today's check stays in the list; yesterday's
+      // belongs to analytics). A terminal template instance is current while
+      // it is the template's latest non-future slot — so a completed daily
+      // shows ✓ until tomorrow's slot arrives, a completed weekly all week.
+      // Terminal one-offs are current on the day they were resolved.
+      final latestByTemplate = <int, DateTime>{};
+      for (final m in ms) {
+        final t = m.task;
+        final occ = t.occurrence;
+        if (t.templateId == null || occ == null || occ.isAfter(now)) continue;
+        final cur = latestByTemplate[t.templateId!];
+        if (cur == null || occ.isAfter(cur)) {
+          latestByTemplate[t.templateId!] = occ;
+        }
+      }
+      bool isCurrentTerminal(domain.Task t) {
+        if (!t.isTerminal) return false;
+        if (t.templateId != null) {
+          final occ = t.occurrence;
+          return occ != null &&
+              !occ.isAfter(now) &&
+              occ.isAtSameMomentAs(latestByTemplate[t.templateId!]!);
+        }
+        return t.resolvedAt != null && !t.resolvedAt!.isBefore(dayStart);
+      }
+
       final projected = projectLens(lens, ms, now);
       final projectedIds = {for (final x in projected) x.id};
       final terminals = <domain.Task>[
         for (final m in ms)
-          if (_terminalMatches(m.task, filter) &&
+          if (isCurrentTerminal(m.task) &&
+              _terminalMatches(m.task, filter) &&
               !projectedIds.contains(m.task.id))
             m.task,
       ];
@@ -328,16 +358,26 @@ class ViewRepository {
           if (computeStats(e.value).isAvoided) e.key,
       };
 
+      // Header counts scope to the same current slots — "1 done · 2 left" is
+      // a statement about NOW, not an ever-growing all-time tally.
       sections.add(
         LensSection(
           lens: entry.value,
           domainLens: lens,
           shown: [...projected, ...terminals],
           doneCount: ms
-              .where((m) => m.task.status == domain.TaskStatus.done)
+              .where(
+                (m) =>
+                    m.task.status == domain.TaskStatus.done &&
+                    isCurrentTerminal(m.task),
+              )
               .length,
           missedCount: ms
-              .where((m) => m.task.status == domain.TaskStatus.missed)
+              .where(
+                (m) =>
+                    m.task.status == domain.TaskStatus.missed &&
+                    isCurrentTerminal(m.task),
+              )
               .length,
           openCount: ms.where((m) => m.task.isOpen).length,
           avoidedTemplateIds: avoided,

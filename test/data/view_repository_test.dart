@@ -153,6 +153,56 @@ void main() {
       );
     });
 
+    test('statusFilter shows current outcomes only, never history', () async {
+      final lensId = await viewRepo.seedDefaults();
+      await taskRepo.createTemplate(
+        Template(
+          name: 'Brush teeth',
+          recurrence: Recurrence.daily(d(2026, 6, 27)),
+          windowRule: Slice.morning,
+          createdAt: d(2026, 6, 27),
+        ),
+      );
+      final home = (await viewRepo.watchViews().first).single;
+      await viewRepo.setStatusFilter(home.id, lensId, 5); // done + missed
+
+      // Day 1: complete it.
+      await taskRepo.reconcileAll(d(2026, 6, 27, 8));
+      final day1 = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
+      await taskRepo.completeTask(day1, d(2026, 6, 27, 8));
+
+      var state = (await viewRepo
+          .watchViewState(home.id, FixedClock(d(2026, 6, 27, 9)))
+          .first)!;
+      expect(state.sections.single.doneCount, 1); // today's ✓ is current
+
+      // Day 3: day-1's Done is history now; day-2 Missed is also stale —
+      // only day-3's open slot plus nothing terminal.
+      await taskRepo.reconcileAll(d(2026, 6, 29, 8));
+      state = (await viewRepo
+          .watchViewState(home.id, FixedClock(d(2026, 6, 29, 8)))
+          .first)!;
+      final shown = state.sections.single.shown;
+      expect(
+        shown.where((t) => t.isTerminal),
+        isEmpty,
+        reason: 'old outcomes must not pile up as history rows',
+      );
+      expect(state.sections.single.doneCount, 0);
+      expect(state.sections.single.missedCount, 0);
+
+      // Miss day 3 (window passes): the miss IS the current outcome.
+      await taskRepo.reconcileAll(d(2026, 6, 29, 13));
+      state = (await viewRepo
+          .watchViewState(home.id, FixedClock(d(2026, 6, 29, 13)))
+          .first)!;
+      expect(state.sections.single.missedCount, 1);
+      expect(
+        state.sections.single.shown.map((t) => t.status),
+        contains(domain.TaskStatus.missed),
+      );
+    });
+
     test('deleteLens cascades memberships; tasks survive', () async {
       final lensId = await viewRepo.seedDefaults();
       await taskRepo.createTemplate(

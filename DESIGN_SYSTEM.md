@@ -64,8 +64,12 @@ screens use them.
 
 ### 3.2 Lens card → `examples/ui/04-lens-view.html`
 - A `lg`(20) card. Header = lens name + the **text-breakdown summary**
-  ("1 done · 1 missed · 1 left", `missed` in taupe, zero parts omitted). **The header
-  summarises the *full* lens even in a filtered View** (calm list, honest header).
+  ("1 done · 1 missed · 1 left", `missed` in taupe, zero parts omitted). Header counts
+  and the `statusFilter` rows cover the lens's **current outcomes only** — a terminal
+  instance is shown while it is its habit's latest non-future slot (a completed daily
+  shows ✓ until tomorrow's slot arrives, a weekly all week; resolved one-offs for the
+  rest of the day). Never a history list — history lives in analytics. (The Habitify
+  shape: today's check stays in place at the bottom of the card, yesterday's is gone.)
 - Periodic lens: focus row uses the Focus marker + `FOCUS` pill; quota-met → "done this week".
 
 ### 3.3 View navigation
