@@ -86,5 +86,7 @@
   "remindBeforeDue": "2 heures avant l'échéance",
   "remindAtDue": "À l'échéance",
   "moreLabel": "Plus",
-  "structureTooltip": "Vues & lentilles"
+  "structureTooltip": "Vues & lentilles",
+  "aboutSection": "À propos",
+  "aboutBody": "Habitudes et tâches dans une seule app : une habitude quotidienne vous fait revenir chaque jour, et tout le reste suit. Local d'abord — pas de compte, pas de pub, vos données restent sur votre téléphone."
 }

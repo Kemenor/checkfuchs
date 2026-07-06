@@ -86,5 +86,7 @@
   "remindBeforeDue": "2 ore prima della scadenza",
   "remindAtDue": "Alla scadenza",
   "moreLabel": "Altro",
-  "structureTooltip": "Viste & lenti"
+  "structureTooltip": "Viste & lenti",
+  "aboutSection": "Informazioni",
+  "aboutBody": "Abitudini e cose da fare in un'unica app: un'abitudine quotidiana ti fa tornare ogni giorno e tutto il resto ti segue. Local-first — niente account, niente pubblicità, i tuoi dati restano sul tuo telefono."
 }

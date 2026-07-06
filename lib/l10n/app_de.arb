@@ -86,5 +86,7 @@
   "remindBeforeDue": "2 Stunden vor Ablauf",
   "remindAtDue": "Bei Fälligkeit",
   "moreLabel": "Mehr",
-  "structureTooltip": "Ansichten & Linsen"
+  "structureTooltip": "Ansichten & Linsen",
+  "aboutSection": "Über",
+  "aboutBody": "Gewohnheiten und To-dos in einer App: Eine tägliche Gewohnheit bringt dich jeden Tag zurück, alles andere läuft mit. Local-first — keine Konten, keine Werbung, deine Daten bleiben auf deinem Gerät."
 }

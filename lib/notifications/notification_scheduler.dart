@@ -73,6 +73,16 @@ class NotificationScheduler {
     }
   }
 
+  /// What the OS currently has scheduled — for the debug menu.
+  Future<List<PendingNotificationRequest>> pending() async {
+    if (!await _ensureReady()) return const [];
+    try {
+      return await _plugin.pendingNotificationRequests();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Re-fill the OS schedule from [tasks]: open instances' reminders resolved
   /// to instants, future-only, soonest-first, capped at 64 (the iOS limit,
   /// PLAN "≤ 64 pending" — Android follows the same budget).

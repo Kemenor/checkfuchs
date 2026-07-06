@@ -442,5 +442,13 @@
   "structureTooltip": "Views & lenses",
   "@structureTooltip": {
     "description": "Tooltip/sheet title of the small secondary FAB with the structure actions"
+  },
+  "aboutSection": "About",
+  "aboutBody": "A combined habit & to-do app: one daily habit keeps you opening the app, and everything else rides along. Local-first — no accounts, no ads, your data stays on your phone.",
+  "@aboutSection": {
+    "description": "Settings section header for the About entry"
+  },
+  "@aboutBody": {
+    "description": "Body text of the About dialog"
   }
 }

@@ -3070,8 +3070,28 @@ class $AppSettingsTable extends AppSettings
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _debugMenuMeta = const VerificationMeta(
+    'debugMenu',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, themeModeIndex, fontIndex];
+  late final GeneratedColumn<bool> debugMenu = GeneratedColumn<bool>(
+    'debug_menu',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("debug_menu" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    themeModeIndex,
+    fontIndex,
+    debugMenu,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3102,6 +3122,12 @@ class $AppSettingsTable extends AppSettings
         fontIndex.isAcceptableOrUnknown(data['font_index']!, _fontIndexMeta),
       );
     }
+    if (data.containsKey('debug_menu')) {
+      context.handle(
+        _debugMenuMeta,
+        debugMenu.isAcceptableOrUnknown(data['debug_menu']!, _debugMenuMeta),
+      );
+    }
     return context;
   }
 
@@ -3123,6 +3149,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.int,
         data['${effectivePrefix}font_index'],
       )!,
+      debugMenu: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}debug_menu'],
+      )!,
     );
   }
 
@@ -3136,10 +3166,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final int id;
   final int themeModeIndex;
   final int fontIndex;
+
+  /// Hidden developer section (unlocked by long-pressing the About title).
+  final bool debugMenu;
   const AppSettingsRow({
     required this.id,
     required this.themeModeIndex,
     required this.fontIndex,
+    required this.debugMenu,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3147,6 +3181,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['id'] = Variable<int>(id);
     map['theme_mode_index'] = Variable<int>(themeModeIndex);
     map['font_index'] = Variable<int>(fontIndex);
+    map['debug_menu'] = Variable<bool>(debugMenu);
     return map;
   }
 
@@ -3155,6 +3190,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       id: Value(id),
       themeModeIndex: Value(themeModeIndex),
       fontIndex: Value(fontIndex),
+      debugMenu: Value(debugMenu),
     );
   }
 
@@ -3167,6 +3203,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       id: serializer.fromJson<int>(json['id']),
       themeModeIndex: serializer.fromJson<int>(json['themeModeIndex']),
       fontIndex: serializer.fromJson<int>(json['fontIndex']),
+      debugMenu: serializer.fromJson<bool>(json['debugMenu']),
     );
   }
   @override
@@ -3176,15 +3213,21 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'id': serializer.toJson<int>(id),
       'themeModeIndex': serializer.toJson<int>(themeModeIndex),
       'fontIndex': serializer.toJson<int>(fontIndex),
+      'debugMenu': serializer.toJson<bool>(debugMenu),
     };
   }
 
-  AppSettingsRow copyWith({int? id, int? themeModeIndex, int? fontIndex}) =>
-      AppSettingsRow(
-        id: id ?? this.id,
-        themeModeIndex: themeModeIndex ?? this.themeModeIndex,
-        fontIndex: fontIndex ?? this.fontIndex,
-      );
+  AppSettingsRow copyWith({
+    int? id,
+    int? themeModeIndex,
+    int? fontIndex,
+    bool? debugMenu,
+  }) => AppSettingsRow(
+    id: id ?? this.id,
+    themeModeIndex: themeModeIndex ?? this.themeModeIndex,
+    fontIndex: fontIndex ?? this.fontIndex,
+    debugMenu: debugMenu ?? this.debugMenu,
+  );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
       id: data.id.present ? data.id.value : this.id,
@@ -3192,6 +3235,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? data.themeModeIndex.value
           : this.themeModeIndex,
       fontIndex: data.fontIndex.present ? data.fontIndex.value : this.fontIndex,
+      debugMenu: data.debugMenu.present ? data.debugMenu.value : this.debugMenu,
     );
   }
 
@@ -3200,45 +3244,52 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return (StringBuffer('AppSettingsRow(')
           ..write('id: $id, ')
           ..write('themeModeIndex: $themeModeIndex, ')
-          ..write('fontIndex: $fontIndex')
+          ..write('fontIndex: $fontIndex, ')
+          ..write('debugMenu: $debugMenu')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, themeModeIndex, fontIndex);
+  int get hashCode => Object.hash(id, themeModeIndex, fontIndex, debugMenu);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppSettingsRow &&
           other.id == this.id &&
           other.themeModeIndex == this.themeModeIndex &&
-          other.fontIndex == this.fontIndex);
+          other.fontIndex == this.fontIndex &&
+          other.debugMenu == this.debugMenu);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> id;
   final Value<int> themeModeIndex;
   final Value<int> fontIndex;
+  final Value<bool> debugMenu;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
+    this.debugMenu = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
+    this.debugMenu = const Value.absent(),
   });
   static Insertable<AppSettingsRow> custom({
     Expression<int>? id,
     Expression<int>? themeModeIndex,
     Expression<int>? fontIndex,
+    Expression<bool>? debugMenu,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (themeModeIndex != null) 'theme_mode_index': themeModeIndex,
       if (fontIndex != null) 'font_index': fontIndex,
+      if (debugMenu != null) 'debug_menu': debugMenu,
     });
   }
 
@@ -3246,11 +3297,13 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? id,
     Value<int>? themeModeIndex,
     Value<int>? fontIndex,
+    Value<bool>? debugMenu,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       themeModeIndex: themeModeIndex ?? this.themeModeIndex,
       fontIndex: fontIndex ?? this.fontIndex,
+      debugMenu: debugMenu ?? this.debugMenu,
     );
   }
 
@@ -3266,6 +3319,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (fontIndex.present) {
       map['font_index'] = Variable<int>(fontIndex.value);
     }
+    if (debugMenu.present) {
+      map['debug_menu'] = Variable<bool>(debugMenu.value);
+    }
     return map;
   }
 
@@ -3274,7 +3330,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     return (StringBuffer('AppSettingsCompanion(')
           ..write('id: $id, ')
           ..write('themeModeIndex: $themeModeIndex, ')
-          ..write('fontIndex: $fontIndex')
+          ..write('fontIndex: $fontIndex, ')
+          ..write('debugMenu: $debugMenu')
           ..write(')'))
         .toString();
   }
@@ -6142,12 +6199,14 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> id,
       Value<int> themeModeIndex,
       Value<int> fontIndex,
+      Value<bool> debugMenu,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
       Value<int> id,
       Value<int> themeModeIndex,
       Value<int> fontIndex,
+      Value<bool> debugMenu,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -6171,6 +6230,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<int> get fontIndex => $composableBuilder(
     column: $table.fontIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get debugMenu => $composableBuilder(
+    column: $table.debugMenu,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6198,6 +6262,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.fontIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get debugMenu => $composableBuilder(
+    column: $table.debugMenu,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -6219,6 +6288,9 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<int> get fontIndex =>
       $composableBuilder(column: $table.fontIndex, builder: (column) => column);
+
+  GeneratedColumn<bool> get debugMenu =>
+      $composableBuilder(column: $table.debugMenu, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager
@@ -6255,20 +6327,24 @@ class $$AppSettingsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
+                Value<bool> debugMenu = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
+                debugMenu: debugMenu,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
+                Value<bool> debugMenu = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
+                debugMenu: debugMenu,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

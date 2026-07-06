@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart' show FuchsbauFont;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'data/db/database.dart';
 import 'data/repositories/task_repository.dart';
@@ -109,6 +110,12 @@ final notificationSyncProvider = Provider<void>((ref) {
   }, fireImmediately: true);
 });
 
+/// App version string for the About dialog, e.g. "0.0.1 (1)".
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return '${info.version} (${info.buildNumber})';
+});
+
 // --- settings (Phase 8) ------------------------------------------------------
 
 /// User settings — theme override + typeface (the Fuchsbau accessibility picker).
@@ -116,12 +123,23 @@ class Settings {
   const Settings({
     this.themeMode = ThemeMode.system,
     this.font = FuchsbauFont.figtree,
+    this.debugMenu = false,
   });
   final ThemeMode themeMode;
   final FuchsbauFont font;
 
-  Settings copyWith({ThemeMode? themeMode, FuchsbauFont? font}) =>
-      Settings(themeMode: themeMode ?? this.themeMode, font: font ?? this.font);
+  /// Hidden developer section on (unlocked via the About easter egg).
+  final bool debugMenu;
+
+  Settings copyWith({
+    ThemeMode? themeMode,
+    FuchsbauFont? font,
+    bool? debugMenu,
+  }) => Settings(
+    themeMode: themeMode ?? this.themeMode,
+    font: font ?? this.font,
+    debugMenu: debugMenu ?? this.debugMenu,
+  );
 }
 
 /// Loads the singleton settings row once (no drift *watch* → no widget-test
@@ -146,8 +164,18 @@ class SettingsController extends Notifier<Settings> {
         themeMode: ThemeMode.values[row.themeModeIndex.clamp(0, 2)],
         font: FuchsbauFont
             .values[row.fontIndex.clamp(0, FuchsbauFont.values.length - 1)],
+        debugMenu: row.debugMenu,
       );
     }
+  }
+
+  /// The About easter egg: toggles the hidden developer section. Returns the
+  /// new state so the caller can announce it.
+  Future<bool> toggleDebugMenu() async {
+    _touched = true;
+    state = state.copyWith(debugMenu: !state.debugMenu);
+    await _persist();
+    return state.debugMenu;
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
@@ -171,6 +199,7 @@ class SettingsController extends Notifier<Settings> {
             id: const Value(1),
             themeModeIndex: Value(state.themeMode.index),
             fontIndex: Value(state.font.index),
+            debugMenu: Value(state.debugMenu),
           ),
         );
   }
