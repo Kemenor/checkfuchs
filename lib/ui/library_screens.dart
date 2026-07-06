@@ -29,6 +29,11 @@ final _lensTaskCountsProvider = StreamProvider.autoDispose<Map<int, int>>(
   (ref) => ref.watch(viewRepositoryProvider).watchLensTaskCounts(),
 );
 
+final _lensViewNamesProvider =
+    StreamProvider.autoDispose<Map<int, List<String>>>(
+      (ref) => ref.watch(viewRepositoryProvider).watchLensViewNames(),
+    );
+
 final _lensTasksProvider = StreamProvider.autoDispose
     .family<List<domain.Task>, int>(
       (ref, lensId) => ref.watch(viewRepositoryProvider).watchLensTasks(lensId),
@@ -120,6 +125,7 @@ class AllLensesScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final lenses = ref.watch(_allLensesProvider).asData?.value;
     final counts = ref.watch(_lensTaskCountsProvider).asData?.value ?? {};
+    final viewNames = ref.watch(_lensViewNamesProvider).asData?.value ?? {};
     return Scaffold(
       appBar: AppBar(title: Text(l10n.allLensesTitle)),
       body: lenses == null
@@ -134,11 +140,16 @@ class AllLensesScreen extends ConsumerWidget {
                     for (final lens in lenses)
                       ListTile(
                         contentPadding: fuchsbauCardRowPadding,
+                        isThreeLine: true,
                         leading: const Icon(Symbols.filter_alt_rounded),
                         title: Text(lens.name),
                         subtitle: Text(
                           '${l10n.taskCount(counts[lens.id] ?? 0)} · '
-                          '${lens.period == null ? l10n.periodContinuous : localizedRecurrenceSummary(context, lens.period)}',
+                          '${lens.period == null ? l10n.periodContinuous : localizedRecurrenceSummary(context, lens.period)}\n'
+                          '${switch (viewNames[lens.id]) {
+                            null || [] => l10n.lensNoView,
+                            final names => l10n.lensInViews(names.join(', ')),
+                          }}',
                         ),
                         trailing: const Icon(Symbols.chevron_right_rounded),
                         onTap: () => Navigator.of(context).push(

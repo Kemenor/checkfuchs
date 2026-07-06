@@ -95,6 +95,24 @@ class ViewRepository {
         return counts;
       });
 
+  /// Which views each lens appears in (lens id → view names, bar order) —
+  /// the Library browse notes where a lens is mounted, and an empty entry
+  /// exposes an orphaned lens.
+  Stream<Map<int, List<String>>> watchLensViewNames() {
+    final q = db.select(db.viewLens).join([
+      innerJoin(db.views, db.views.id.equalsExp(db.viewLens.viewId)),
+    ])..orderBy([OrderingTerm.asc(db.views.sortIndex)]);
+    return q.watch().map((rows) {
+      final map = <int, List<String>>{};
+      for (final r in rows) {
+        map
+            .putIfAbsent(r.readTable(db.viewLens).lensId, () => [])
+            .add(r.readTable(db.views).name);
+      }
+      return map;
+    });
+  }
+
   /// Every instance in a lens's pool, unfiltered — the Library drill-in shows
   /// the raw pool a lens draws from, not what its dials currently surface.
   Stream<List<domain.Task>> watchLensTasks(int lensId) {

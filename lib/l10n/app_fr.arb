@@ -171,5 +171,7 @@
   "allViewsTitle": "Toutes les vues",
   "openSection": "Ouvertes",
   "resolvedSection": "Terminées",
-  "taskCount": "{count, plural, =1{1 tâche} other{{count} tâches}}"
+  "taskCount": "{count, plural, =1{1 tâche} other{{count} tâches}}",
+  "lensInViews": "Dans {views}",
+  "lensNoView": "Dans aucune vue"
 }

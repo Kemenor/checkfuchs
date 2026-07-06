@@ -802,5 +802,18 @@
         "type": "int"
       }
     }
+  },
+  "lensInViews": "In {views}",
+  "lensNoView": "Not in any view",
+  "@lensInViews": {
+    "description": "Library lens subtitle: comma-separated view names the lens is mounted in",
+    "placeholders": {
+      "views": {
+        "type": "String"
+      }
+    }
+  },
+  "@lensNoView": {
+    "description": "Library lens subtitle when the lens is in no view (orphaned)"
   }
 }
