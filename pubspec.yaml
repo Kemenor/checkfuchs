@@ -21,10 +21,12 @@ dependencies:
   drift_flutter: ^0.3.0
 
   # Shared design system (theme, triad palette, Figtree, status colours).
+  # Pinned to a tag: a `ref: main` pin can die in an upstream history rewrite
+  # (an orphaned resolved-ref broke CI once); tags are stable fetch targets.
   fuchsbau:
     git:
       url: https://github.com/Kemenor/fuchsbau.git
-      ref: main
+      ref: v0.2.0
 
 dev_dependencies:
   flutter_test:
