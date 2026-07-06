@@ -308,7 +308,18 @@ class _ViewBody extends ConsumerWidget {
         }
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-          children: [for (final s in vs.sections) _LensCard(section: s)],
+          children: [
+            for (final s in vs.sections)
+              _LensCard(
+                section: s,
+                onAddTask: () => showCreateTaskSheet(
+                  context,
+                  ref,
+                  viewId: viewId,
+                  lensId: s.lens.id,
+                ),
+              ),
+          ],
         );
       },
     );
@@ -319,9 +330,12 @@ class _ViewBody extends ConsumerWidget {
 /// statusFilter keeps some of those rows out of the list, tapping the header
 /// peeks at them (a transient expand — the persisted filter is untouched).
 class _LensCard extends StatefulWidget {
-  const _LensCard({required this.section});
+  const _LensCard({required this.section, required this.onAddTask});
 
   final LensSection section;
+
+  /// Opens the create sheet with this lens preselected (the header +).
+  final VoidCallback onAddTask;
 
   @override
   State<_LensCard> createState() => _LensCardState();
@@ -347,15 +361,17 @@ class _LensCardState extends State<_LensCard> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    section.lens.name.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: .5,
-                      color: scheme.outline,
+                  Expanded(
+                    child: Text(
+                      section.lens.name.toUpperCase(),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .5,
+                        color: scheme.outline,
+                      ),
                     ),
                   ),
                   if (hidden.isEmpty)
@@ -398,6 +414,16 @@ class _LensCardState extends State<_LensCard> {
                         ),
                       ),
                     ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    iconSize: 20,
+                    tooltip: l10n.addTask,
+                    icon: Icon(Symbols.add_rounded, color: scheme.outline),
+                    onPressed: widget.onAddTask,
+                  ),
                 ],
               ),
             ),

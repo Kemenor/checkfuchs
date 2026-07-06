@@ -15,27 +15,38 @@ final _lensesProvider = StreamProvider.autoDispose<List<LensRow>>(
   (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
 );
 
-/// Create a task or habit (Phase 3): name + lens (the bucket it lives in,
-/// defaulting to the current view's first lens) + recurrence (Off = one-off)
-/// + an active-window picker. A recurrence makes a Template; "Off" makes a
+final _viewLensesProvider = StreamProvider.autoDispose
+    .family<List<LensRow>, int>(
+      (ref, viewId) => ref
+          .watch(viewRepositoryProvider)
+          .watchViewLenses(viewId)
+          .map((entries) => [for (final e in entries) e.lens]),
+    );
+
+/// Create a task or habit (Phase 3): name + lens (the bucket it lives in —
+/// only this view's lenses are offered, preselected to [lensId] when the
+/// sheet was opened from a lens card's +) + recurrence (Off = one-off) + an
+/// active-window picker. A recurrence makes a Template; "Off" makes a
 /// one-off Task. Reconciles so the first instance appears immediately.
 Future<void> showCreateTaskSheet(
   BuildContext context,
   WidgetRef ref, {
   int? viewId,
+  int? lensId,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _CreateTaskSheet(viewId: viewId),
+    builder: (_) => _CreateTaskSheet(viewId: viewId, lensId: lensId),
   );
 }
 
 class _CreateTaskSheet extends ConsumerStatefulWidget {
-  const _CreateTaskSheet({this.viewId});
+  const _CreateTaskSheet({this.viewId, this.lensId});
 
   final int? viewId;
+  final int? lensId;
 
   @override
   ConsumerState<_CreateTaskSheet> createState() => _CreateTaskSheetState();
@@ -46,14 +57,15 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   Recurrence? _recurrence;
   WindowChoice _window = WindowChoice.anytime;
   Set<ReminderPreset> _reminders = const {};
-  int? _lensId;
+  late int? _lensId = widget.lensId;
 
   @override
   void initState() {
     super.initState();
-    // Default bucket: the first lens of the view the sheet was opened from.
+    // Default bucket when none was preselected: the first lens of the view
+    // the sheet was opened from.
     final viewId = widget.viewId;
-    if (viewId != null) {
+    if (_lensId == null && viewId != null) {
       ref.read(viewRepositoryProvider).watchViewLenses(viewId).first.then((
         entries,
       ) {
@@ -135,8 +147,15 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 onChanged: (_) => setState(() {}),
               ),
               // The bucket: which lens this task lives in (concept §4.6 —
-              // membership is data; views merely arrange lenses).
-              ...switch (ref.watch(_lensesProvider).asData?.value) {
+              // membership is data; views merely arrange lenses). Scoped to
+              // the current view's lenses — the detail sheet can move a task
+              // anywhere later.
+              ...switch (widget.viewId == null
+                  ? ref.watch(_lensesProvider).asData?.value
+                  : ref
+                        .watch(_viewLensesProvider(widget.viewId!))
+                        .asData
+                        ?.value) {
                 null || [] || [_] => const [],
                 final lenses => [
                   const SizedBox(height: 20),
