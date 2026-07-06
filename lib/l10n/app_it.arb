@@ -164,5 +164,12 @@
   "pillToday": "Oggi",
   "pillTomorrow": "Domani",
   "showOutcomes": "Mostra risultati",
-  "hideOutcomes": "Nascondi risultati"
+  "hideOutcomes": "Nascondi risultati",
+  "librarySection": "Libreria",
+  "allTasksTitle": "Tutte le attività",
+  "allLensesTitle": "Tutte le lenti",
+  "allViewsTitle": "Tutte le viste",
+  "openSection": "Aperte",
+  "resolvedSection": "Concluse",
+  "taskCount": "{count, plural, =1{1 attività} other{{count} attività}}"
 }

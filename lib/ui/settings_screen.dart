@@ -8,6 +8,7 @@ import '../data/backup/backup_service.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'debug_section.dart';
+import 'library_screens.dart';
 import 'vacation_screen.dart';
 
 /// Settings (Phase 8): theme override, the Fuchsbau accessibility typeface
@@ -66,6 +67,38 @@ class SettingsScreen extends ConsumerWidget {
                   FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
                 },
                 onChanged: controller.setFont,
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.librarySection),
+          FuchsbauSettingsCard(
+            children: [
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.task_alt_rounded),
+                title: Text(l10n.allTasksTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllTasksScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.filter_alt_rounded),
+                title: Text(l10n.allLensesTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllLensesScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.dashboard_rounded),
+                title: Text(l10n.allViewsTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllViewsScreen()),
+                ),
               ),
             ],
           ),

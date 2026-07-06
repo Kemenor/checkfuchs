@@ -164,5 +164,12 @@
   "pillToday": "Auj.",
   "pillTomorrow": "Demain",
   "showOutcomes": "Afficher les résultats",
-  "hideOutcomes": "Masquer les résultats"
+  "hideOutcomes": "Masquer les résultats",
+  "librarySection": "Bibliothèque",
+  "allTasksTitle": "Toutes les tâches",
+  "allLensesTitle": "Toutes les lentilles",
+  "allViewsTitle": "Toutes les vues",
+  "openSection": "Ouvertes",
+  "resolvedSection": "Terminées",
+  "taskCount": "{count, plural, =1{1 tâche} other{{count} tâches}}"
 }

@@ -769,5 +769,38 @@
   },
   "@hideOutcomes": {
     "description": "Tooltip on the lens breakdown header when tapping collapses the peeked outcomes"
+  },
+  "librarySection": "Library",
+  "allTasksTitle": "All tasks",
+  "allLensesTitle": "All lenses",
+  "allViewsTitle": "All views",
+  "openSection": "Open",
+  "resolvedSection": "Resolved",
+  "taskCount": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@librarySection": {
+    "description": "Settings section header for the browse-everything screens"
+  },
+  "@allTasksTitle": {
+    "description": "Library: every task instance"
+  },
+  "@allLensesTitle": {
+    "description": "Library: every lens"
+  },
+  "@allViewsTitle": {
+    "description": "Library: every view"
+  },
+  "@openSection": {
+    "description": "Library task list: open instances"
+  },
+  "@resolvedSection": {
+    "description": "Library task list: terminal instances"
+  },
+  "@taskCount": {
+    "description": "Lens subtitle: member count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

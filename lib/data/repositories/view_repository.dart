@@ -81,6 +81,31 @@ class ViewRepository {
     db.views,
   )..orderBy([(v) => OrderingTerm.asc(v.sortIndex)])).watch();
 
+  Stream<List<LensRow>> watchAllLenses() => (db.select(
+    db.lenses,
+  )..orderBy([(l) => OrderingTerm.asc(l.sortIndex)])).watch();
+
+  /// Live member count per lens id (the Library browse subtitles).
+  Stream<Map<int, int>> watchLensTaskCounts() =>
+      db.select(db.taskLens).watch().map((rows) {
+        final counts = <int, int>{};
+        for (final r in rows) {
+          counts[r.lensId] = (counts[r.lensId] ?? 0) + 1;
+        }
+        return counts;
+      });
+
+  /// Every instance in a lens's pool, unfiltered — the Library drill-in shows
+  /// the raw pool a lens draws from, not what its dials currently surface.
+  Stream<List<domain.Task>> watchLensTasks(int lensId) {
+    final q = db.select(db.tasks).join([
+      innerJoin(db.taskLens, db.taskLens.taskId.equalsExp(db.tasks.id)),
+    ])..where(db.taskLens.lensId.equals(lensId));
+    return q.watch().map(
+      (rows) => [for (final r in rows) _toTask(r.readTable(db.tasks))],
+    );
+  }
+
   /// First-run defaults: a "Home" View showing one continuous "All tasks" Lens.
   /// Returns the default lens id (new tasks join it). Idempotent, and
   /// transactional — a partial seed (lens without its view) would otherwise
