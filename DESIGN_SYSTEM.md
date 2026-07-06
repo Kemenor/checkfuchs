@@ -106,6 +106,10 @@ screens use them.
 ### 3.6 Pills & FAB
 - Status pill = uppercase `labelSmall`, `full` radius, tinted fill (§1). NOW/ACTIVE
   tangerine · FOCUS indigo · due amber.
+- Tile pills are **informative, never vague**: pending rows show *when the window
+  opens* in muted grey ("18:00" · "TOMORROW" · "SAT" · "12 JUL"), active rows with a
+  deadline show *when it's due* in amber (same scale). Anytime tasks carry no pill.
+  An end at midnight reads as its evening's day ("TODAY"), never "00:00".
 - **FAB pair** (the knabberfuchs pattern): the Fuchsbau extended full-pill `+ Add`
   (create task/habit — THE action, one tap), with a **small secondary FAB** beside it
   opening a bottom sheet of structure actions (new view · new lens here; later the

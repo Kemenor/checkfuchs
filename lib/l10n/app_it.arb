@@ -39,7 +39,6 @@
   "vacationIntro": "Le vacanze mettono in pausa le attività ricorrenti per le date che scegli — niente abitudini mancate che si accumulano mentre sei via. Le scadenze vere passano comunque.",
   "noVacations": "Nessuna vacanza in programma",
   "markDone": "Segna come fatta",
-  "soonPill": "PRESTO",
   "swipeDone": "Fatto",
   "swipeSkip": "Salta",
   "swipePass": "Passa",
@@ -161,5 +160,7 @@
   "demoTrainTickets": "Prenotare i biglietti del treno",
   "demoBikeLight": "Riparare la luce della bici",
   "demoBirthday": "Organizzare la cena di compleanno",
-  "demoPostcard": "Scrivere una cartolina alla nonna"
+  "demoPostcard": "Scrivere una cartolina alla nonna",
+  "pillToday": "Oggi",
+  "pillTomorrow": "Domani"
 }

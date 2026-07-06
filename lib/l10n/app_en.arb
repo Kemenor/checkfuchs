@@ -181,10 +181,6 @@
   "@markDone": {
     "description": "Tooltip of the completion ring on a task row."
   },
-  "soonPill": "SOON",
-  "@soonPill": {
-    "description": "Uppercase status pill on a pending (not yet active) task."
-  },
   "swipeDone": "Done",
   "@swipeDone": {
     "description": "Right-swipe action label: complete the task."
@@ -757,5 +753,13 @@
   },
   "@demoPostcard": {
     "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "pillToday": "Today",
+  "pillTomorrow": "Tomorrow",
+  "@pillToday": {
+    "description": "Tile pill: due/opens today (rendered uppercase)"
+  },
+  "@pillTomorrow": {
+    "description": "Tile pill: due/opens tomorrow (rendered uppercase)"
   }
 }

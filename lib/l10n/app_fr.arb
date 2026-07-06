@@ -39,7 +39,6 @@
   "vacationIntro": "Les vacances mettent en pause vos tâches récurrentes pour les dates choisies — pas d'habitudes manquées qui s'accumulent pendant votre absence. Les vraies échéances continuent de s'appliquer.",
   "noVacations": "Aucunes vacances prévues",
   "markDone": "Marquer comme fait",
-  "soonPill": "BIENTÔT",
   "swipeDone": "Fait",
   "swipeSkip": "Ignorer",
   "swipePass": "Passer",
@@ -161,5 +160,7 @@
   "demoTrainTickets": "Réserver les billets de train",
   "demoBikeLight": "Réparer la lumière du vélo",
   "demoBirthday": "Organiser le dîner d'anniversaire",
-  "demoPostcard": "Écrire une carte postale à mamie"
+  "demoPostcard": "Écrire une carte postale à mamie",
+  "pillToday": "Auj.",
+  "pillTomorrow": "Demain"
 }

@@ -39,7 +39,6 @@
   "vacationIntro": "Ferien pausieren deine wiederkehrenden Aufgaben für die gewählten Tage — kein Stau verpasster Gewohnheiten, während du weg bist. Echte Fristen laufen trotzdem ab.",
   "noVacations": "Keine Ferien geplant",
   "markDone": "Als erledigt markieren",
-  "soonPill": "BALD",
   "swipeDone": "Erledigt",
   "swipeSkip": "Überspringen",
   "swipePass": "Passen",
@@ -161,5 +160,7 @@
   "demoTrainTickets": "Zugtickets buchen",
   "demoBikeLight": "Velolicht flicken",
   "demoBirthday": "Geburtstagsessen planen",
-  "demoPostcard": "Postkarte an Oma schreiben"
+  "demoPostcard": "Postkarte an Oma schreiben",
+  "pillToday": "Heute",
+  "pillTomorrow": "Morgen"
 }

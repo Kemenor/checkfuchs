@@ -8,6 +8,7 @@ import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'task_detail_sheet.dart';
+import 'when_label.dart';
 
 /// A single Task row (DESIGN_SYSTEM §3.1): the state marker on the left (tap
 /// the ring to complete), the name, and swipe actions — right-swipe **Done**,
@@ -96,9 +97,31 @@ class TaskTile extends ConsumerWidget {
           decorationColor: status.taupe,
         ),
       ),
-      trailing: task.isOpen && phase == TaskPhase.pending
-          ? _StatusPill(label: l10n.soonPill, color: scheme.outline)
-          : null,
+      // Informative pills (§3.6): pending → when the window opens (muted);
+      // active with a deadline → when it's due (amber). Anytime stays bare.
+      trailing: switch (phase) {
+        TaskPhase.pending when task.isOpen && task.start != null => _StatusPill(
+          label: whenLabel(
+            l10n,
+            Localizations.localeOf(context).toString(),
+            now,
+            task.start!,
+            isEnd: false,
+          ),
+          color: scheme.outline,
+        ),
+        TaskPhase.active when task.isOpen && task.end != null => _StatusPill(
+          label: whenLabel(
+            l10n,
+            Localizations.localeOf(context).toString(),
+            now,
+            task.end!,
+            isEnd: true,
+          ),
+          color: status.amber,
+        ),
+        _ => null,
+      },
     );
 
     // Terminal rows are display-only — no swipe affordances.
@@ -160,7 +183,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(99),
       ),
       child: Text(
-        label,
+        label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: color,
           fontWeight: FontWeight.w700,
