@@ -21,71 +21,80 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
+      // The knabberfuchs settings anatomy: uppercase section headers + white
+      // cards grouping the rows, hairline dividers between rows.
       body: ListView(
-        padding: const EdgeInsets.all(16),
         children: [
-          // The shared collapsible pickers (knabberfuchs parity): current
-          // choice as the collapsed subtitle, radio list when expanded. The
-          // tiles are self-titled, so no section headers here.
-          FuchsbauChoicePicker<ThemeMode>(
-            icon: Icons.brightness_6_rounded,
-            title: l10n.appearanceSection,
-            value: settings.themeMode,
-            options: {
-              ThemeMode.system: l10n.themeSystem,
-              ThemeMode.light: l10n.themeLight,
-              ThemeMode.dark: l10n.themeDark,
-            },
-            onChanged: controller.setThemeMode,
+          SectionHeader(l10n.appearanceSection),
+          SettingsCard(
+            children: [
+              FuchsbauChoicePicker<ThemeMode>(
+                icon: Icons.brightness_6_rounded,
+                title: l10n.appearanceSection,
+                value: settings.themeMode,
+                options: {
+                  ThemeMode.system: l10n.themeSystem,
+                  ThemeMode.light: l10n.themeLight,
+                  ThemeMode.dark: l10n.themeDark,
+                },
+                onChanged: controller.setThemeMode,
+              ),
+              FuchsbauChoicePicker<String>(
+                icon: Icons.translate_rounded,
+                title: l10n.languageSection,
+                value: settings.localeCode,
+                options: {
+                  'system': l10n.languageSystem,
+                  'en': l10n.languageEnglish,
+                  'de': l10n.languageGerman,
+                  'fr': l10n.languageFrench,
+                  'it': l10n.languageItalian,
+                },
+                onChanged: controller.setLocaleCode,
+              ),
+              FuchsbauChoicePicker<FuchsbauFont>(
+                icon: Icons.text_fields_rounded,
+                title: l10n.typefaceSection,
+                value: settings.font,
+                options: {for (final f in FuchsbauFont.values) f: f.label},
+                subtitles: {
+                  FuchsbauFont.figtree: l10n.typefaceDefault,
+                  FuchsbauFont.atkinsonHyperlegible: l10n.typefaceLowVision,
+                  FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
+                },
+                onChanged: controller.setFont,
+              ),
+            ],
           ),
-          FuchsbauChoicePicker<FuchsbauFont>(
-            icon: Icons.text_fields_rounded,
-            title: l10n.typefaceSection,
-            value: settings.font,
-            options: {for (final f in FuchsbauFont.values) f: f.label},
-            subtitles: {
-              FuchsbauFont.figtree: l10n.typefaceDefault,
-              FuchsbauFont.atkinsonHyperlegible: l10n.typefaceLowVision,
-              FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
-            },
-            onChanged: controller.setFont,
+          SectionHeader(l10n.vacation),
+          SettingsCard(
+            children: [
+              ListTile(
+                contentPadding: cardRowPadding,
+                leading: const Icon(Icons.beach_access_outlined),
+                title: Text(l10n.vacation),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const VacationScreen()),
+                ),
+              ),
+            ],
           ),
-          FuchsbauChoicePicker<String>(
-            icon: Icons.translate_rounded,
-            title: l10n.languageSection,
-            value: settings.localeCode,
-            options: {
-              'system': l10n.languageSystem,
-              'en': l10n.languageEnglish,
-              'de': l10n.languageGerman,
-              'fr': l10n.languageFrench,
-              'it': l10n.languageItalian,
-            },
-            onChanged: controller.setLocaleCode,
+          SectionHeader(l10n.remindersSection),
+          SettingsCard(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Text(
+                  l10n.reminderDisclosure,
+                  style: TextStyle(color: scheme.outline),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          _Section(l10n.vacation),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.beach_access_outlined),
-            title: Text(l10n.vacation),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const VacationScreen())),
-          ),
-          const SizedBox(height: 24),
-          _Section(l10n.remindersSection),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              l10n.reminderDisclosure,
-              style: TextStyle(color: scheme.outline),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _Section(l10n.aboutSection),
-          const _AboutTile(),
+          SectionHeader(l10n.aboutSection),
+          const SettingsCard(children: [_AboutTile()]),
+          // Hidden developer section — unlocked via the About easter egg.
           if (settings.debugMenu) const DebugSection(),
         ],
       ),
@@ -105,7 +114,7 @@ class _AboutTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final version = ref.watch(appVersionProvider).asData?.value;
     return ListTile(
-      contentPadding: EdgeInsets.zero,
+      contentPadding: cardRowPadding,
       leading: const Icon(Icons.info_outline_rounded),
       title: const Text('Checkfuchs'),
       subtitle: version == null ? null : Text(version),
@@ -163,20 +172,50 @@ class _AboutTile extends ConsumerWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section(this.title);
+/// Row inset inside a [SettingsCard] (knabberfuchs `_cardRowPadding`).
+const cardRowPadding = EdgeInsets.symmetric(horizontal: 12);
+
+/// Groups a section's rows inside a single [Card], inserting a hairline
+/// divider between consecutive rows. Card fill/border/radius come from the
+/// theme — do not override them here. (Shared with [DebugSection].)
+class SettingsCard extends StatelessWidget {
+  const SettingsCard({super.key, required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) {
+        rows.add(const Divider(height: 1, indent: 16, endIndent: 16));
+      }
+      rows.add(children[i]);
+    }
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(children: rows),
+    );
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  const SectionHeader(this.title, {super.key});
   final String title;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).colorScheme.outline,
-          fontWeight: FontWeight.w700,
-          letterSpacing: .6,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title.toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.outline,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .6,
+          ),
         ),
       ),
     );

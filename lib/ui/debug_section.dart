@@ -8,6 +8,7 @@ import '../domain/task.dart';
 import '../domain/template.dart';
 import '../domain/window_rule.dart';
 import '../providers.dart';
+import 'settings_screen.dart' show SettingsCard, cardRowPadding;
 
 /// Hidden developer/tester section, unlocked by long-pressing the app name in
 /// the About dialog (the knabberfuchs pattern). Deliberately English-only
@@ -23,7 +24,7 @@ class DebugSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 16, bottom: 8),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Text(
             'DEBUG',
             style: theme.textTheme.labelSmall?.copyWith(
@@ -33,26 +34,30 @@ class DebugSection extends ConsumerWidget {
             ),
           ),
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.science_outlined),
-          title: const Text('Load test data'),
-          subtitle: const Text('Seed demo habits + one-offs'),
-          onTap: () => _seed(context, ref),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.sync),
-          title: const Text('Reconcile now'),
-          subtitle: const Text('Run the expiry sweep + generation'),
-          onTap: () => _reconcile(context, ref),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.notifications_active_outlined),
-          title: const Text('Pending notifications'),
-          subtitle: const Text('What the OS has scheduled'),
-          onTap: () => _showPending(context, ref),
+        SettingsCard(
+          children: [
+            ListTile(
+              contentPadding: cardRowPadding,
+              leading: const Icon(Icons.science_outlined),
+              title: const Text('Load test data'),
+              subtitle: const Text('Seed demo habits + one-offs'),
+              onTap: () => _seed(context, ref),
+            ),
+            ListTile(
+              contentPadding: cardRowPadding,
+              leading: const Icon(Icons.sync),
+              title: const Text('Reconcile now'),
+              subtitle: const Text('Run the expiry sweep + generation'),
+              onTap: () => _reconcile(context, ref),
+            ),
+            ListTile(
+              contentPadding: cardRowPadding,
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Pending notifications'),
+              subtitle: const Text('What the OS has scheduled'),
+              onTap: () => _showPending(context, ref),
+            ),
+          ],
         ),
       ],
     );
