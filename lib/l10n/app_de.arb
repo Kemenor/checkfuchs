@@ -144,5 +144,22 @@
   "backupRestored": "Backup wiederhergestellt.",
   "backupImportNewerVersion": "Dieses Backup stammt aus einer neueren App-Version. Aktualisiere die App und importiere es dann erneut.",
   "backupImportFailed": "Import fehlgeschlagen: {error}",
-  "backupExportFailed": "Export fehlgeschlagen: {error}"
+  "backupExportFailed": "Export fehlgeschlagen: {error}",
+  "demoViewHabits": "Gewohnheiten",
+  "demoViewLongterm": "Langfristig",
+  "demoLensDaily": "Tägliche Gewohnheiten",
+  "demoLensTodos": "To-dos",
+  "demoLensWeekly": "Diese Woche",
+  "demoLensBacklog": "Backlog",
+  "demoBrushTeeth": "Zähne putzen",
+  "demoStretch": "Dehnen",
+  "demoJournal": "Tagebuch",
+  "demoWaterPlants": "Pflanzen giessen",
+  "demoVacuum": "Staubsaugen",
+  "demoCallDentist": "Zahnarzt anrufen",
+  "demoLibraryBooks": "Bibliotheksbücher zurückbringen",
+  "demoTrainTickets": "Zugtickets buchen",
+  "demoBikeLight": "Velolicht flicken",
+  "demoBirthday": "Geburtstagsessen planen",
+  "demoPostcard": "Postkarte an Oma schreiben"
 }

@@ -689,5 +689,73 @@
         "type": "String"
       }
     }
+  },
+  "demoViewHabits": "Habits",
+  "demoViewLongterm": "Long-term",
+  "demoLensDaily": "Daily habits",
+  "demoLensTodos": "To-dos",
+  "demoLensWeekly": "This week",
+  "demoLensBacklog": "Backlog",
+  "demoBrushTeeth": "Brush teeth",
+  "demoStretch": "Stretch",
+  "demoJournal": "Journal",
+  "demoWaterPlants": "Water plants",
+  "demoVacuum": "Vacuum",
+  "demoCallDentist": "Call the dentist",
+  "demoLibraryBooks": "Return library books",
+  "demoTrainTickets": "Book train tickets",
+  "demoBikeLight": "Fix bike light",
+  "demoBirthday": "Plan birthday dinner",
+  "demoPostcard": "Write postcard to Oma",
+  "@demoViewHabits": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoViewLongterm": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensDaily": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensTodos": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensWeekly": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensBacklog": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBrushTeeth": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoStretch": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoJournal": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoWaterPlants": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoVacuum": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoCallDentist": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLibraryBooks": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoTrainTickets": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBikeLight": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBirthday": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoPostcard": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
   }
 }

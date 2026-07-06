@@ -144,5 +144,22 @@
   "backupRestored": "Sauvegarde restaurée.",
   "backupImportNewerVersion": "Cette sauvegarde a été créée par une version plus récente de l'app. Mettez à jour l'app, puis réessayez l'import.",
   "backupImportFailed": "Échec de l'import : {error}",
-  "backupExportFailed": "Échec de l'export : {error}"
+  "backupExportFailed": "Échec de l'export : {error}",
+  "demoViewHabits": "Habitudes",
+  "demoViewLongterm": "Long terme",
+  "demoLensDaily": "Habitudes quotidiennes",
+  "demoLensTodos": "À faire",
+  "demoLensWeekly": "Cette semaine",
+  "demoLensBacklog": "En attente",
+  "demoBrushTeeth": "Se brosser les dents",
+  "demoStretch": "Étirements",
+  "demoJournal": "Journal",
+  "demoWaterPlants": "Arroser les plantes",
+  "demoVacuum": "Passer l'aspirateur",
+  "demoCallDentist": "Appeler le dentiste",
+  "demoLibraryBooks": "Rendre les livres à la bibliothèque",
+  "demoTrainTickets": "Réserver les billets de train",
+  "demoBikeLight": "Réparer la lumière du vélo",
+  "demoBirthday": "Organiser le dîner d'anniversaire",
+  "demoPostcard": "Écrire une carte postale à mamie"
 }

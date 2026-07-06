@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fuchsbau/fuchsbau.dart'
+    show FuchsbauSettingsCard, fuchsbauCardRowPadding;
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../domain/notification.dart';
-import '../domain/recurrence.dart';
-import '../domain/task.dart';
-import '../domain/template.dart';
-import '../domain/window_rule.dart';
+import '../data/debug/demo_data.dart';
+import '../l10n/app_localizations.dart';
 import '../notifications/background_refresh.dart';
 import '../providers.dart';
-import 'package:fuchsbau/fuchsbau.dart'
-    show FuchsbauSettingsCard, fuchsbauCardRowPadding;
 
 /// Hidden developer/tester section, unlocked by long-pressing the app name in
 /// the About dialog (the knabberfuchs pattern). Deliberately English-only
@@ -42,9 +39,11 @@ class DebugSection extends ConsumerWidget {
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
               leading: const Icon(Symbols.science_rounded),
-              title: const Text('Load test data'),
-              subtitle: const Text('Seed demo habits + one-offs'),
-              onTap: () => _seed(context, ref),
+              title: const Text('Load demo suite'),
+              subtitle: const Text(
+                'Wipe everything, seed the full demo dataset',
+              ),
+              onTap: () => _loadDemoSuite(context, ref),
             ),
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
@@ -81,40 +80,38 @@ class DebugSection extends ConsumerWidget {
     );
   }
 
-  Future<void> _seed(BuildContext context, WidgetRef ref) async {
+  /// Wipe + seed the full demo suite (localized content — the same dataset
+  /// backs the store screenshots). Confirm first: it replaces everything.
+  Future<void> _loadDemoSuite(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final repo = ref.read(taskRepositoryProvider);
-    final now = ref.read(clockProvider).now();
-    final today = DateTime(now.year, now.month, now.day);
-    await repo.createTemplate(
-      Template(
-        name: 'Brush teeth',
-        recurrence: Recurrence.daily(today),
-        windowRule: Slice.evening,
-        createdAt: now,
-        notifications: const [TaskNotification.atStart()],
+    final l10n = AppLocalizations.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Load demo suite?'),
+        content: const Text(
+          'This wipes all tasks, habits, views, lenses and vacations, then '
+          'seeds the demo dataset.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Load'),
+          ),
+        ],
       ),
     );
-    await repo.createTemplate(
-      Template(
-        name: 'Water plants',
-        recurrence: Recurrence.weekly(today, on: {Weekday.sat}),
-        createdAt: now,
-      ),
+    if (ok != true) return;
+    await loadDemoData(
+      ref.read(databaseProvider),
+      ref.read(clockProvider).now(),
+      l10n,
     );
-    await repo.createTemplate(
-      Template(
-        name: 'Stretch',
-        recurrence: Recurrence.daily(today),
-        windowRule: Slice.morning,
-        createdAt: now,
-      ),
-    );
-    await repo.createTask(Task(name: 'Call the dentist', createdAt: now));
-    await repo.reconcileAll(now);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Seeded 3 habits + 1 one-off')),
-    );
+    messenger.showSnackBar(const SnackBar(content: Text('Demo suite loaded')));
   }
 
   Future<void> _reconcile(BuildContext context, WidgetRef ref) async {
