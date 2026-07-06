@@ -24,28 +24,20 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _Section(l10n.appearanceSection),
-          SegmentedButton<ThemeMode>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text(l10n.themeSystem),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text(l10n.themeLight),
-              ),
-              ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark)),
-            ],
-            selected: {settings.themeMode},
-            onSelectionChanged: (s) => controller.setThemeMode(s.first),
+          // The shared collapsible pickers (knabberfuchs parity): current
+          // choice as the collapsed subtitle, radio list when expanded. The
+          // tiles are self-titled, so no section headers here.
+          FuchsbauChoicePicker<ThemeMode>(
+            icon: Icons.brightness_6_rounded,
+            title: l10n.appearanceSection,
+            value: settings.themeMode,
+            options: {
+              ThemeMode.system: l10n.themeSystem,
+              ThemeMode.light: l10n.themeLight,
+              ThemeMode.dark: l10n.themeDark,
+            },
+            onChanged: controller.setThemeMode,
           ),
-          const SizedBox(height: 24),
-          _Section(l10n.typefaceSection),
-          // The shared collapsible picker (knabberfuchs parity): current choice
-          // as the collapsed subtitle, radio list with accessibility-intent
-          // subtitles when expanded.
           FuchsbauChoicePicker<FuchsbauFont>(
             icon: Icons.text_fields_rounded,
             title: l10n.typefaceSection,
@@ -57,6 +49,19 @@ class SettingsScreen extends ConsumerWidget {
               FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
             },
             onChanged: controller.setFont,
+          ),
+          FuchsbauChoicePicker<String>(
+            icon: Icons.translate_rounded,
+            title: l10n.languageSection,
+            value: settings.localeCode,
+            options: {
+              'system': l10n.languageSystem,
+              'en': l10n.languageEnglish,
+              'de': l10n.languageGerman,
+              'fr': l10n.languageFrench,
+              'it': l10n.languageItalian,
+            },
+            onChanged: controller.setLocaleCode,
           ),
           const SizedBox(height: 24),
           _Section(l10n.vacation),

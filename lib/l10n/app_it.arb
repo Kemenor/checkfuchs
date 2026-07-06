@@ -91,5 +91,11 @@
   "aboutBody": "Abitudini e cose da fare in un'unica app: un'abitudine quotidiana ti fa tornare ogni giorno e tutto il resto ti segue. Local-first — niente account, niente pubblicità, i tuoi dati restano sul tuo telefono.",
   "typefaceDefault": "Predefinito",
   "typefaceLowVision": "Leggibilità (ipovisione)",
-  "typefaceDyslexia": "Dislessia"
+  "typefaceDyslexia": "Dislessia",
+  "languageSection": "Lingua dell'app",
+  "languageSystem": "Predefinita di sistema",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "languageFrench": "Français",
+  "languageItalian": "Italiano"
 }

@@ -91,5 +91,11 @@
   "aboutBody": "Gewohnheiten und To-dos in einer App: Eine tägliche Gewohnheit bringt dich jeden Tag zurück, alles andere läuft mit. Local-first — keine Konten, keine Werbung, deine Daten bleiben auf deinem Gerät.",
   "typefaceDefault": "Standard",
   "typefaceLowVision": "Bessere Lesbarkeit (Sehschwäche)",
-  "typefaceDyslexia": "Legasthenie"
+  "typefaceDyslexia": "Legasthenie",
+  "languageSection": "App-Sprache",
+  "languageSystem": "Systemstandard",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "languageFrench": "Français",
+  "languageItalian": "Italiano"
 }

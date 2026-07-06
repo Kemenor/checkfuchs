@@ -462,5 +462,29 @@
   },
   "@typefaceDyslexia": {
     "description": "Typeface option subtitle: OpenDyslexic"
+  },
+  "languageSection": "App language",
+  "languageSystem": "System default",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "languageFrench": "Français",
+  "languageItalian": "Italiano",
+  "@languageSection": {
+    "description": "Settings picker: app language override"
+  },
+  "@languageSystem": {
+    "description": "Language option: follow the system locale"
+  },
+  "@languageEnglish": {
+    "description": "Language endonym"
+  },
+  "@languageGerman": {
+    "description": "Language endonym"
+  },
+  "@languageFrench": {
+    "description": "Language endonym"
+  },
+  "@languageItalian": {
+    "description": "Language endonym"
   }
 }

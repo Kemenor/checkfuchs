@@ -3085,12 +3085,25 @@ class $AppSettingsTable extends AppSettings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _localeCodeMeta = const VerificationMeta(
+    'localeCode',
+  );
+  @override
+  late final GeneratedColumn<String> localeCode = GeneratedColumn<String>(
+    'locale_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('system'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     themeModeIndex,
     fontIndex,
     debugMenu,
+    localeCode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3128,6 +3141,12 @@ class $AppSettingsTable extends AppSettings
         debugMenu.isAcceptableOrUnknown(data['debug_menu']!, _debugMenuMeta),
       );
     }
+    if (data.containsKey('locale_code')) {
+      context.handle(
+        _localeCodeMeta,
+        localeCode.isAcceptableOrUnknown(data['locale_code']!, _localeCodeMeta),
+      );
+    }
     return context;
   }
 
@@ -3153,6 +3172,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}debug_menu'],
       )!,
+      localeCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locale_code'],
+      )!,
     );
   }
 
@@ -3169,11 +3192,15 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
 
   /// Hidden developer section (unlocked by long-pressing the About title).
   final bool debugMenu;
+
+  /// App-language override ('system' = follow the OS locale).
+  final String localeCode;
   const AppSettingsRow({
     required this.id,
     required this.themeModeIndex,
     required this.fontIndex,
     required this.debugMenu,
+    required this.localeCode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3182,6 +3209,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['theme_mode_index'] = Variable<int>(themeModeIndex);
     map['font_index'] = Variable<int>(fontIndex);
     map['debug_menu'] = Variable<bool>(debugMenu);
+    map['locale_code'] = Variable<String>(localeCode);
     return map;
   }
 
@@ -3191,6 +3219,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       themeModeIndex: Value(themeModeIndex),
       fontIndex: Value(fontIndex),
       debugMenu: Value(debugMenu),
+      localeCode: Value(localeCode),
     );
   }
 
@@ -3204,6 +3233,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       themeModeIndex: serializer.fromJson<int>(json['themeModeIndex']),
       fontIndex: serializer.fromJson<int>(json['fontIndex']),
       debugMenu: serializer.fromJson<bool>(json['debugMenu']),
+      localeCode: serializer.fromJson<String>(json['localeCode']),
     );
   }
   @override
@@ -3214,6 +3244,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'themeModeIndex': serializer.toJson<int>(themeModeIndex),
       'fontIndex': serializer.toJson<int>(fontIndex),
       'debugMenu': serializer.toJson<bool>(debugMenu),
+      'localeCode': serializer.toJson<String>(localeCode),
     };
   }
 
@@ -3222,11 +3253,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? themeModeIndex,
     int? fontIndex,
     bool? debugMenu,
+    String? localeCode,
   }) => AppSettingsRow(
     id: id ?? this.id,
     themeModeIndex: themeModeIndex ?? this.themeModeIndex,
     fontIndex: fontIndex ?? this.fontIndex,
     debugMenu: debugMenu ?? this.debugMenu,
+    localeCode: localeCode ?? this.localeCode,
   );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
@@ -3236,6 +3269,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           : this.themeModeIndex,
       fontIndex: data.fontIndex.present ? data.fontIndex.value : this.fontIndex,
       debugMenu: data.debugMenu.present ? data.debugMenu.value : this.debugMenu,
+      localeCode: data.localeCode.present
+          ? data.localeCode.value
+          : this.localeCode,
     );
   }
 
@@ -3245,13 +3281,15 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('id: $id, ')
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
-          ..write('debugMenu: $debugMenu')
+          ..write('debugMenu: $debugMenu, ')
+          ..write('localeCode: $localeCode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, themeModeIndex, fontIndex, debugMenu);
+  int get hashCode =>
+      Object.hash(id, themeModeIndex, fontIndex, debugMenu, localeCode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3259,7 +3297,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.id == this.id &&
           other.themeModeIndex == this.themeModeIndex &&
           other.fontIndex == this.fontIndex &&
-          other.debugMenu == this.debugMenu);
+          other.debugMenu == this.debugMenu &&
+          other.localeCode == this.localeCode);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
@@ -3267,29 +3306,34 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> themeModeIndex;
   final Value<int> fontIndex;
   final Value<bool> debugMenu;
+  final Value<String> localeCode;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
+    this.localeCode = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
+    this.localeCode = const Value.absent(),
   });
   static Insertable<AppSettingsRow> custom({
     Expression<int>? id,
     Expression<int>? themeModeIndex,
     Expression<int>? fontIndex,
     Expression<bool>? debugMenu,
+    Expression<String>? localeCode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (themeModeIndex != null) 'theme_mode_index': themeModeIndex,
       if (fontIndex != null) 'font_index': fontIndex,
       if (debugMenu != null) 'debug_menu': debugMenu,
+      if (localeCode != null) 'locale_code': localeCode,
     });
   }
 
@@ -3298,12 +3342,14 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? themeModeIndex,
     Value<int>? fontIndex,
     Value<bool>? debugMenu,
+    Value<String>? localeCode,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       themeModeIndex: themeModeIndex ?? this.themeModeIndex,
       fontIndex: fontIndex ?? this.fontIndex,
       debugMenu: debugMenu ?? this.debugMenu,
+      localeCode: localeCode ?? this.localeCode,
     );
   }
 
@@ -3322,6 +3368,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (debugMenu.present) {
       map['debug_menu'] = Variable<bool>(debugMenu.value);
     }
+    if (localeCode.present) {
+      map['locale_code'] = Variable<String>(localeCode.value);
+    }
     return map;
   }
 
@@ -3331,7 +3380,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('id: $id, ')
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
-          ..write('debugMenu: $debugMenu')
+          ..write('debugMenu: $debugMenu, ')
+          ..write('localeCode: $localeCode')
           ..write(')'))
         .toString();
   }
@@ -6200,6 +6250,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> themeModeIndex,
       Value<int> fontIndex,
       Value<bool> debugMenu,
+      Value<String> localeCode,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -6207,6 +6258,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<int> themeModeIndex,
       Value<int> fontIndex,
       Value<bool> debugMenu,
+      Value<String> localeCode,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -6235,6 +6287,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get debugMenu => $composableBuilder(
     column: $table.debugMenu,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localeCode => $composableBuilder(
+    column: $table.localeCode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6267,6 +6324,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.debugMenu,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get localeCode => $composableBuilder(
+    column: $table.localeCode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -6291,6 +6353,11 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get debugMenu =>
       $composableBuilder(column: $table.debugMenu, builder: (column) => column);
+
+  GeneratedColumn<String> get localeCode => $composableBuilder(
+    column: $table.localeCode,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -6328,11 +6395,13 @@ class $$AppSettingsTableTableManager
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
+                Value<String> localeCode = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
+                localeCode: localeCode,
               ),
           createCompanionCallback:
               ({
@@ -6340,11 +6409,13 @@ class $$AppSettingsTableTableManager
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
+                Value<String> localeCode = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
+                localeCode: localeCode,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -22,6 +22,7 @@ class CheckfuchsApp extends ConsumerWidget {
       theme: CheckfuchsTheme.light(font: settings.font),
       darkTheme: CheckfuchsTheme.dark(font: settings.font),
       themeMode: settings.themeMode,
+      locale: settings.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const HomeShell(),

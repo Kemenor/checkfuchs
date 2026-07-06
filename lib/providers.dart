@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/material.dart' show Locale, ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart' show FuchsbauFont;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -124,6 +124,7 @@ class Settings {
     this.themeMode = ThemeMode.system,
     this.font = FuchsbauFont.figtree,
     this.debugMenu = false,
+    this.localeCode = 'system',
   });
   final ThemeMode themeMode;
   final FuchsbauFont font;
@@ -131,14 +132,22 @@ class Settings {
   /// Hidden developer section on (unlocked via the About easter egg).
   final bool debugMenu;
 
+  /// App-language override ('system' = follow the OS locale).
+  final String localeCode;
+
+  /// What MaterialApp.locale wants: null = system.
+  Locale? get locale => localeCode == 'system' ? null : Locale(localeCode);
+
   Settings copyWith({
     ThemeMode? themeMode,
     FuchsbauFont? font,
     bool? debugMenu,
+    String? localeCode,
   }) => Settings(
     themeMode: themeMode ?? this.themeMode,
     font: font ?? this.font,
     debugMenu: debugMenu ?? this.debugMenu,
+    localeCode: localeCode ?? this.localeCode,
   );
 }
 
@@ -165,8 +174,15 @@ class SettingsController extends Notifier<Settings> {
         font: FuchsbauFont
             .values[row.fontIndex.clamp(0, FuchsbauFont.values.length - 1)],
         debugMenu: row.debugMenu,
+        localeCode: row.localeCode,
       );
     }
+  }
+
+  Future<void> setLocaleCode(String code) async {
+    _touched = true;
+    state = state.copyWith(localeCode: code);
+    await _persist();
   }
 
   /// The About easter egg: toggles the hidden developer section. Returns the
@@ -200,6 +216,7 @@ class SettingsController extends Notifier<Settings> {
             themeModeIndex: Value(state.themeMode.index),
             fontIndex: Value(state.font.index),
             debugMenu: Value(state.debugMenu),
+            localeCode: Value(state.localeCode),
           ),
         );
   }
