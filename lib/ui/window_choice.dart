@@ -49,4 +49,30 @@ enum WindowChoice {
     }
     return (at(day, fromHour), end);
   }
+
+  /// A one-off window pinned to explicit dates: [startDate]/[dueDate] choose
+  /// the days, the slice supplies the wall-clock edges within them ("due
+  /// morning of the 29th"). Anytime spans whole days — a bare due date means
+  /// "open from now until the end of that day", a start+due pair spans the
+  /// range ("the month of May"). Unset dates fall back to [oneOffWindow].
+  (DateTime?, DateTime?) datedWindow(
+    DateTime now,
+    DateTime? startDate,
+    DateTime? dueDate,
+  ) {
+    final (int fromHour, int toHour) = switch (this) {
+      WindowChoice.anytime => (0, 24),
+      WindowChoice.morning => (0, 12),
+      WindowChoice.afternoon => (12, 18),
+      WindowChoice.evening => (18, 24),
+    };
+    DateTime at(DateTime d, int hour) =>
+        DateTime(d.year, d.month, d.day + (hour ~/ 24), hour % 24);
+
+    final (defaultStart, defaultEnd) = oneOffWindow(now);
+    return (
+      startDate == null ? defaultStart : at(startDate, fromHour),
+      dueDate == null ? defaultEnd : at(dueDate, toHour),
+    );
+  }
 }

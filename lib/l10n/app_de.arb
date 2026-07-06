@@ -178,5 +178,8 @@
   "todosSection": "To-dos",
   "showAllResolved": "Alle {count} anzeigen",
   "emptyLensCard": "Nichts zu tun. Gut gemacht 🦊",
-  "lensSection": "Linse"
+  "lensSection": "Linse",
+  "startsNow": "Jetzt",
+  "dueLabel": "Fällig",
+  "noDueDate": "Kein Fälligkeitsdatum"
 }

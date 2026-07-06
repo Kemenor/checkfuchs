@@ -178,5 +178,8 @@
   "todosSection": "À faire",
   "showAllResolved": "Tout afficher ({count})",
   "emptyLensCard": "Rien à faire. Bien joué 🦊",
-  "lensSection": "Lentille"
+  "lensSection": "Lentille",
+  "startsNow": "Maintenant",
+  "dueLabel": "Échéance",
+  "noDueDate": "Sans échéance"
 }

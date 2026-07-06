@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
 import '../domain/recurrence.dart';
@@ -58,6 +60,8 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   WindowChoice _window = WindowChoice.anytime;
   Set<ReminderPreset> _reminders = const {};
   late int? _lensId = widget.lensId;
+  DateTime? _startDate;
+  DateTime? _dueDate;
 
   @override
   void initState() {
@@ -101,7 +105,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
         defaultLensId: _lensId,
       );
     } else {
-      final (start, end) = _window.oneOffWindow(now);
+      final (start, end) = _window.datedWindow(now, _startDate, _dueDate);
       await repo.createTask(
         Task(
           name: name,
@@ -188,6 +192,30 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                     ),
                 ],
               ),
+              // Date-pinned windows (one-offs only — a habit's window comes
+              // from its slice rule): the slice shapes the hours, these pick
+              // the days. "Month of May" = starts 1.5 + due 31.5; a bare due
+              // date = open from now until the end of that day.
+              if (_recurrence == null) ...[
+                _DateRow(
+                  icon: Symbols.today_rounded,
+                  label: l10n.starts,
+                  value: _startDate,
+                  placeholder: l10n.startsNow,
+                  today: anchor,
+                  lastDate: _dueDate,
+                  onChanged: (d) => setState(() => _startDate = d),
+                ),
+                _DateRow(
+                  icon: Symbols.flag_rounded,
+                  label: l10n.dueLabel,
+                  value: _dueDate,
+                  placeholder: l10n.noDueDate,
+                  today: anchor,
+                  firstDate: _startDate,
+                  onChanged: (d) => setState(() => _dueDate = d),
+                ),
+              ],
               const SizedBox(height: 20),
               _SectionLabel(l10n.remindersSection),
               const SizedBox(height: 8),
@@ -214,6 +242,62 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One optional date edge of the window: tap to pick, clear restores the
+/// slice default.
+class _DateRow extends StatelessWidget {
+  const _DateRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.placeholder,
+    required this.today,
+    required this.onChanged,
+    this.firstDate,
+    this.lastDate,
+  });
+
+  final IconData icon;
+  final String label;
+  final DateTime? value;
+  final String placeholder;
+  final DateTime today;
+  final ValueChanged<DateTime?> onChanged;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final locale = Localizations.localeOf(context).toString();
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(label),
+      subtitle: Text(
+        value == null ? placeholder : DateFormat.yMMMEd(locale).format(value!),
+        style: value == null ? TextStyle(color: scheme.outline) : null,
+      ),
+      trailing: value == null
+          ? const Icon(Symbols.chevron_right_rounded)
+          : IconButton(
+              tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+              icon: const Icon(Symbols.close_rounded),
+              onPressed: () => onChanged(null),
+            ),
+      onTap: () async {
+        final first = firstDate ?? today;
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? (first.isAfter(today) ? first : today),
+          firstDate: first,
+          lastDate: lastDate ?? DateTime(today.year + 5, 12, 31),
+        );
+        if (picked != null) onChanged(picked);
+      },
     );
   }
 }

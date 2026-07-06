@@ -178,5 +178,8 @@
   "todosSection": "Da fare",
   "showAllResolved": "Mostra tutte ({count})",
   "emptyLensCard": "Niente da fare. Ben fatto 🦊",
-  "lensSection": "Lente"
+  "lensSection": "Lente",
+  "startsNow": "Adesso",
+  "dueLabel": "Scadenza",
+  "noDueDate": "Nessuna scadenza"
 }

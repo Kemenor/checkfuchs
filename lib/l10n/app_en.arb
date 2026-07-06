@@ -840,5 +840,17 @@
   "lensSection": "Lens",
   "@lensSection": {
     "description": "Label for the lens (bucket) a task lives in — create sheet section + detail sheet row"
+  },
+  "startsNow": "Now",
+  "dueLabel": "Due",
+  "noDueDate": "No due date",
+  "@startsNow": {
+    "description": "Create sheet: start-date row placeholder — window opens immediately"
+  },
+  "@dueLabel": {
+    "description": "Create sheet: due-date row label"
+  },
+  "@noDueDate": {
+    "description": "Create sheet: due-date row placeholder — no deadline"
   }
 }
