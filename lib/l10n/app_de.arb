@@ -175,5 +175,6 @@
   "lensInViews": "In {views}",
   "lensNoView": "In keiner Ansicht",
   "habitsSection": "Gewohnheiten",
-  "todosSection": "To-dos"
+  "todosSection": "To-dos",
+  "showAllResolved": "Alle {count} anzeigen"
 }

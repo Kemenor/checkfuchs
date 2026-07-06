@@ -823,5 +823,14 @@
   },
   "@todosSection": {
     "description": "Library All-tasks header: open one-off tasks"
+  },
+  "showAllResolved": "Show all {count}",
+  "@showAllResolved": {
+    "description": "Library: load resolved tasks older than 30 days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
