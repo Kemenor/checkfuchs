@@ -71,6 +71,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final views = ref.watch(viewsProvider);
+    // Activate the reminder sync (Phase 5): the provider listens to the task
+    // stream and re-fills the OS schedule on every change.
+    ref.watch(notificationSyncProvider);
 
     return Scaffold(
       appBar: AppBar(

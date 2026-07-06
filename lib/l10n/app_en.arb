@@ -422,5 +422,17 @@
         "type": "String"
       }
     }
+  },
+  "remindWhenOpens": "When it opens",
+  "remindBeforeDue": "2 hours before due",
+  "remindAtDue": "When it's due",
+  "@remindWhenOpens": {
+    "description": "Reminder preset: ping when the task window opens"
+  },
+  "@remindBeforeDue": {
+    "description": "Reminder preset: ping two hours before the window ends"
+  },
+  "@remindAtDue": {
+    "description": "Reminder preset: ping at the window end"
   }
 }

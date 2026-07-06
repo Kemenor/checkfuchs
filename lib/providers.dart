@@ -10,6 +10,7 @@ import 'data/repositories/task_repository.dart';
 import 'data/repositories/view_repository.dart';
 import 'domain/clock.dart';
 import 'domain/task.dart';
+import 'notifications/notification_scheduler.dart';
 
 /// The injected clock — overridden with a [FixedClock] in tests.
 final clockProvider = Provider<Clock>((ref) => const SystemClock());
@@ -79,6 +80,33 @@ final viewStateProvider = StreamProvider.autoDispose.family<ViewState?, int>((
     }
     return vs;
   });
+});
+
+// --- reminders (Phase 5) -----------------------------------------------------
+
+final notificationSchedulerProvider = Provider<NotificationScheduler>(
+  (ref) => NotificationScheduler(),
+);
+
+/// Keeps the OS notification schedule in sync with the open tasks (concept §9:
+/// "reminders reschedule on every state change"). Rides the same reactive
+/// task stream as the UI — any write re-emits → debounce → re-fill the
+/// discrete schedule. Activated by HomeShell watching it.
+final notificationSyncProvider = Provider<void>((ref) {
+  final scheduler = ref.watch(notificationSchedulerProvider);
+  final clock = ref.watch(clockProvider);
+
+  Timer? debounce;
+  ref.onDispose(() => debounce?.cancel());
+
+  ref.listen(tasksProvider, (_, next) {
+    final tasks = next.value;
+    if (tasks == null) return;
+    debounce?.cancel();
+    debounce = Timer(const Duration(milliseconds: 400), () {
+      scheduler.sync(tasks, clock.now());
+    });
+  }, fireImmediately: true);
 });
 
 // --- settings (Phase 8) ------------------------------------------------------

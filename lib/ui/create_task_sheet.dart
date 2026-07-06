@@ -8,6 +8,7 @@ import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'recurrence_editor.dart';
+import 'reminder_presets.dart';
 
 /// Create a task or habit (Phase 3): name + recurrence (Off = one-off) + an
 /// active-window picker. A recurrence makes a Template; "Off" makes a one-off
@@ -79,6 +80,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
   Recurrence? _recurrence;
   _WindowChoice _window = _WindowChoice.anytime;
+  Set<ReminderPreset> _reminders = const {};
 
   @override
   void dispose() {
@@ -92,6 +94,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     final repo = ref.read(taskRepositoryProvider);
     final now = ref.read(clockProvider).now();
 
+    final notifications = ReminderPreset.toNotifications(_reminders);
     if (_recurrence != null) {
       await repo.createTemplate(
         Template(
@@ -99,12 +102,19 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           recurrence: _recurrence!,
           windowRule: _window.toRule(),
           createdAt: now,
+          notifications: notifications,
         ),
       );
     } else {
       final (start, end) = _window.oneOffWindow(now);
       await repo.createTask(
-        Task(name: name, start: start, end: end, createdAt: now),
+        Task(
+          name: name,
+          start: start,
+          end: end,
+          createdAt: now,
+          notifications: notifications,
+        ),
       );
     }
     await repo.reconcileAll(now);
@@ -153,6 +163,13 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                       onSelected: (_) => setState(() => _window = w),
                     ),
                 ],
+              ),
+              const SizedBox(height: 20),
+              _SectionLabel(l10n.remindersSection),
+              const SizedBox(height: 8),
+              ReminderPresetChips(
+                selected: _reminders,
+                onChanged: (s) => setState(() => _reminders = s),
               ),
               const SizedBox(height: 20),
               _SectionLabel(l10n.repeatSection),

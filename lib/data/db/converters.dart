@@ -2,8 +2,40 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/window_rule.dart';
+
+/// Stores a Task's/Template's reminder list as a JSON text column.
+class NotificationListConverter
+    extends TypeConverter<List<TaskNotification>, String> {
+  const NotificationListConverter();
+
+  @override
+  List<TaskNotification> fromSql(String fromDb) {
+    final list = jsonDecode(fromDb) as List;
+    return [
+      for (final e in list.cast<Map<String, dynamic>>())
+        TaskNotification(
+          anchor: NotificationAnchor.values[e['anchor'] as int],
+          offset: Duration(microseconds: (e['offset'] as int?) ?? 0),
+          at: e['at'] == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(e['at'] as int),
+        ),
+    ];
+  }
+
+  @override
+  String toSql(List<TaskNotification> value) => jsonEncode([
+    for (final n in value)
+      {
+        'anchor': n.anchor.index,
+        'offset': n.offset.inMicroseconds,
+        'at': n.at?.millisecondsSinceEpoch,
+      },
+  ]);
+}
 
 /// Stores a [Recurrence] as a JSON text column.
 class RecurrenceConverter extends TypeConverter<Recurrence, String> {

@@ -33,6 +33,9 @@ void main() {
               ),
             ),
           ),
+          // No notification runtime in tests — and the sync debounce Timer
+          // would trip the pending-timers invariant at teardown.
+          notificationSyncProvider.overrideWith((ref) {}),
         ],
         child: const CheckfuchsApp(),
       ),

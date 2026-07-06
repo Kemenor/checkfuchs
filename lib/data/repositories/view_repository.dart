@@ -360,5 +360,6 @@ class ViewRepository {
     end: r.windowEnd,
     createdAt: r.createdAt,
     resolvedAt: r.resolvedAt,
+    notifications: r.notifications,
   );
 }

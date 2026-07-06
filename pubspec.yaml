@@ -28,6 +28,11 @@ dependencies:
       url: https://github.com/Kemenor/fuchsbau.git
       ref: v0.2.0
 
+  # Reminders (Phase 5): discrete local notifications, tz-correct scheduling.
+  flutter_local_notifications: ^22.0.1
+  timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

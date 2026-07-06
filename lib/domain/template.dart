@@ -1,3 +1,4 @@
+import 'notification.dart';
 import 'recurrence.dart';
 import 'task.dart';
 import 'window_rule.dart';
@@ -15,6 +16,7 @@ class Template {
     this.paused = false,
     this.resumeOn,
     required this.createdAt,
+    this.notifications = const [],
   });
 
   final int? id;
@@ -34,6 +36,10 @@ class Template {
   final DateTime? resumeOn;
 
   final DateTime createdAt;
+
+  /// Default reminders (§2.4) — stamped onto every generated instance, where
+  /// they resolve against that instance's own window.
+  final List<TaskNotification> notifications;
 
   /// Whether the template should generate at [now] — paused unless a resume date
   /// has arrived. (Global Vacation is checked separately, at the engine level.)
@@ -59,6 +65,7 @@ class Template {
       end: w.end,
       occurrence: DateTime(occurrence.year, occurrence.month, occurrence.day),
       createdAt: now,
+      notifications: notifications,
     );
   }
 }

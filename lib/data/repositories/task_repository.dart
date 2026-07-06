@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/generation.dart';
+import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
 import '../../domain/template.dart' as domain;
@@ -62,6 +63,7 @@ class TaskRepository {
             resumeOn: Value(t.resumeOn),
             createdAt: t.createdAt,
             defaultLensId: Value(lensId),
+            notifications: Value(t.notifications),
           ),
         );
   }
@@ -132,6 +134,28 @@ class TaskRepository {
     db.tasks,
   )..where((t) => t.id.equals(id))).write(TasksCompanion(name: Value(name)));
 
+  /// Edit this instance's reminders (§2.4).
+  Future<void> setTaskNotifications(int id, List<TaskNotification> n) =>
+      (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+        TasksCompanion(notifications: Value(n)),
+      );
+
+  /// Edit a series' default reminders; the current open/pending instances pick
+  /// them up too (a reminder change should not wait a day to take effect).
+  Future<void> setTemplateNotifications(
+    int templateId,
+    List<TaskNotification> n,
+  ) => db.transaction(() async {
+    await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+        .write(TemplatesCompanion(notifications: Value(n)));
+    await (db.update(db.tasks)..where(
+          (t) =>
+              t.templateId.equals(templateId) &
+              t.status.equals(domain.TaskStatus.open.index),
+        ))
+        .write(TasksCompanion(notifications: Value(n)));
+  });
+
   /// Delete a single Task (this occurrence).
   Future<void> deleteTask(int id) =>
       (db.delete(db.tasks)..where((t) => t.id.equals(id))).go();
@@ -170,6 +194,8 @@ class TaskRepository {
         recurrence: recurrence,
         windowRule: windowRule,
         createdAt: now,
+        // The one-off's reminders become the series defaults.
+        notifications: task.notifications,
       ),
       defaultLensId: lensId,
     );
@@ -327,6 +353,7 @@ class TaskRepository {
     paused: r.paused,
     resumeOn: r.resumeOn,
     createdAt: r.createdAt,
+    notifications: r.notifications,
   );
 
   domain.Task _toTask(TaskRow r) => domain.Task(
@@ -340,6 +367,7 @@ class TaskRepository {
     end: r.windowEnd,
     createdAt: r.createdAt,
     resolvedAt: r.resolvedAt,
+    notifications: r.notifications,
   );
 
   TasksCompanion _toCompanion(domain.Task t) => TasksCompanion(
@@ -353,5 +381,6 @@ class TaskRepository {
     windowEnd: Value(t.end),
     createdAt: Value(t.createdAt),
     resolvedAt: Value(t.resolvedAt),
+    notifications: Value(t.notifications),
   );
 }

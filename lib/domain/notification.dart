@@ -35,6 +35,16 @@ class TaskNotification {
   final Duration offset;
   final DateTime? at;
 
+  @override
+  bool operator ==(Object other) =>
+      other is TaskNotification &&
+      other.anchor == anchor &&
+      other.offset == offset &&
+      other.at == at;
+
+  @override
+  int get hashCode => Object.hash(anchor, offset, at);
+
   /// The concrete fire instant for a task with this [start]/[end] window, or
   /// null when the anchor's date is missing (§2.4 validation: a `start`-anchored
   /// ping needs a `start`).

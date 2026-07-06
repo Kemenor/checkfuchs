@@ -81,5 +81,8 @@
   "summaryMonthlyDay": "{count, plural, one{Am {day}. jedes Monats} other{Alle {count} Monate am {day}.}}",
   "summaryMonthlyLastDay": "{count, plural, one{Am letzten Tag jedes Monats} other{Alle {count} Monate am letzten Tag}}",
   "summaryYearly": "{count, plural, one{Jedes Jahr am {day}. {month}} other{Alle {count} Jahre am {day}. {month}}}",
-  "summaryYearlyLastDay": "{count, plural, one{Jedes Jahr am letzten Tag im {month}} other{Alle {count} Jahre am letzten Tag im {month}}}"
+  "summaryYearlyLastDay": "{count, plural, one{Jedes Jahr am letzten Tag im {month}} other{Alle {count} Jahre am letzten Tag im {month}}}",
+  "remindWhenOpens": "Zu Beginn",
+  "remindBeforeDue": "2 Stunden vor Ablauf",
+  "remindAtDue": "Bei Fälligkeit"
 }

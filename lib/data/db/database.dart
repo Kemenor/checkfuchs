@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../domain/lens.dart';
+import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart';
 import '../../domain/window_rule.dart';
@@ -21,6 +22,11 @@ class Templates extends Table {
   BoolColumn get paused => boolean().withDefault(const Constant(false))();
   DateTimeColumn get resumeOn => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+
+  /// Default reminders stamped onto generated instances (§2.4), JSON list.
+  TextColumn get notifications => text()
+      .map(const NotificationListConverter())
+      .withDefault(const Constant('[]'))();
 
   /// The Lens generated instances join by default (§4.2 stamping). Set to null
   /// if its lens is deleted.
@@ -45,6 +51,11 @@ class Tasks extends Table {
   DateTimeColumn get windowEnd => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get resolvedAt => dateTime().nullable()();
+
+  /// Per-instance reminders (§2.4), JSON list.
+  TextColumn get notifications => text()
+      .map(const NotificationListConverter())
+      .withDefault(const Constant('[]'))();
 }
 
 /// A Lens — pure presentation (§4). `period` rides the recurrence converter
@@ -142,19 +153,43 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
+
+  /// Whether [table].[column] already exists — migration steps are guarded on
+  /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
+  /// early branch creates the table in its **current** shape (so a later
+  /// branch's `addColumn` for the same column would collide), and SQLite does
+  /// not run `onUpgrade` in a transaction, so a crash mid-migration persists
+  /// the DDL without bumping `user_version` — the guards make every re-run
+  /// heal such a half-migrated database instead of wedging on it.
+  Future<bool> _columnExists(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return rows.any((r) => r.data['name'] == column);
+  }
+
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    if (!await _columnExists(table.actualTableName, column.name)) {
+      await m.addColumn(table, column);
+    }
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
       if (from < 2) {
+        // createTable is CREATE TABLE IF NOT EXISTS, and creates the
+        // *current* shape — later branches must not touch these tables.
         await m.createTable(lenses);
         await m.createTable(views);
         await m.createTable(taskLens);
         await m.createTable(viewLens);
         await m.createTable(vacations);
-        await m.addColumn(templates, templates.defaultLensId);
+        await _addColumnIfMissing(m, templates, templates.defaultLensId);
       }
       if (from < 3) {
         await m.createTable(appSettings);
@@ -162,10 +197,18 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         // passedThisPeriod (bool) → passedAt (timestamp): "passed" is now a
         // raw fact scoped to its period by derivation, not a stored flag.
-        await m.addColumn(taskLens, taskLens.passedAt);
-        await m.database.customStatement(
-          'ALTER TABLE task_lens DROP COLUMN passed_this_period',
-        );
+        // Only applies when task_lens still has its pre-v4 shape.
+        await _addColumnIfMissing(m, taskLens, taskLens.passedAt);
+        if (await _columnExists('task_lens', 'passed_this_period')) {
+          await customStatement(
+            'ALTER TABLE task_lens DROP COLUMN passed_this_period',
+          );
+        }
+      }
+      if (from < 5) {
+        // Reminders (Phase 5): the notifications JSON columns.
+        await _addColumnIfMissing(m, templates, templates.notifications);
+        await _addColumnIfMissing(m, tasks, tasks.notifications);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

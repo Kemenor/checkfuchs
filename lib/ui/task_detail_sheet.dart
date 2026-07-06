@@ -6,6 +6,7 @@ import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
+import 'reminder_presets.dart';
 
 /// Tap a task → this sheet: rename, delete this occurrence, or delete the whole
 /// series (recurring only). Delete is the one sanctioned use of `error` red
@@ -38,8 +39,25 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   /// The live task — re-read after nested sheets mutate it (turn-into-series /
   /// stop-repeating change `templateId`, which drives most of this sheet).
   late Task _task = widget.task;
+  late Set<ReminderPreset> _reminders = ReminderPreset.fromNotifications(
+    _task.notifications,
+  );
   bool _paused = false;
   HabitStats? _stats;
+
+  Future<void> _setReminders(Set<ReminderPreset> presets) async {
+    setState(() => _reminders = presets);
+    final n = ReminderPreset.toNotifications(presets);
+    final repo = ref.read(taskRepositoryProvider);
+    // A series edit updates the defaults AND the open instances; a one-off
+    // edit touches just this task.
+    if (_task.templateId != null) {
+      await repo.setTemplateNotifications(_task.templateId!, n);
+    } else if (_task.id != null) {
+      await repo.setTaskNotifications(_task.id!, n);
+    }
+    _task = _task.copyWith(notifications: n);
+  }
 
   @override
   void initState() {
@@ -76,7 +94,10 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
       Navigator.of(context).pop();
       return;
     }
-    setState(() => _task = fresh);
+    setState(() {
+      _task = fresh;
+      _reminders = ReminderPreset.fromNotifications(fresh.notifications);
+    });
     _loadSeriesInfo();
   }
 
@@ -156,6 +177,22 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 ],
               ),
             ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.notifications_none, size: 20, color: scheme.outline),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.remindersSection,
+                  style: TextStyle(
+                    color: scheme.outline,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ReminderPresetChips(selected: _reminders, onChanged: _setReminders),
             const SizedBox(height: 4),
             ListTile(
               contentPadding: EdgeInsets.zero,

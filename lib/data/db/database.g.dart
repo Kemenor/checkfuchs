@@ -606,6 +606,19 @@ class $TemplatesTable extends Templates
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<TaskNotification>, String>
+  notifications =
+      GeneratedColumn<String>(
+        'notifications',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<TaskNotification>>(
+        $TemplatesTable.$converternotifications,
+      );
   static const VerificationMeta _defaultLensIdMeta = const VerificationMeta(
     'defaultLensId',
   );
@@ -630,6 +643,7 @@ class $TemplatesTable extends Templates
     paused,
     resumeOn,
     createdAt,
+    notifications,
     defaultLensId,
   ];
   @override
@@ -735,6 +749,12 @@ class $TemplatesTable extends Templates
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      notifications: $TemplatesTable.$converternotifications.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}notifications'],
+        )!,
+      ),
       defaultLensId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_lens_id'],
@@ -751,6 +771,8 @@ class $TemplatesTable extends Templates
       const RecurrenceConverter();
   static TypeConverter<WindowRule, String> $converterwindowRule =
       const WindowRuleConverter();
+  static TypeConverter<List<TaskNotification>, String> $converternotifications =
+      const NotificationListConverter();
 }
 
 class TemplateRow extends DataClass implements Insertable<TemplateRow> {
@@ -762,6 +784,9 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
   final bool paused;
   final DateTime? resumeOn;
   final DateTime createdAt;
+
+  /// Default reminders stamped onto generated instances (§2.4), JSON list.
+  final List<TaskNotification> notifications;
 
   /// The Lens generated instances join by default (§4.2 stamping). Set to null
   /// if its lens is deleted.
@@ -775,6 +800,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     required this.paused,
     this.resumeOn,
     required this.createdAt,
+    required this.notifications,
     this.defaultLensId,
   });
   @override
@@ -800,6 +826,11 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       map['resume_on'] = Variable<DateTime>(resumeOn);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    {
+      map['notifications'] = Variable<String>(
+        $TemplatesTable.$converternotifications.toSql(notifications),
+      );
+    }
     if (!nullToAbsent || defaultLensId != null) {
       map['default_lens_id'] = Variable<int>(defaultLensId);
     }
@@ -818,6 +849,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           ? const Value.absent()
           : Value(resumeOn),
       createdAt: Value(createdAt),
+      notifications: Value(notifications),
       defaultLensId: defaultLensId == null && nullToAbsent
           ? const Value.absent()
           : Value(defaultLensId),
@@ -838,6 +870,9 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       paused: serializer.fromJson<bool>(json['paused']),
       resumeOn: serializer.fromJson<DateTime?>(json['resumeOn']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      notifications: serializer.fromJson<List<TaskNotification>>(
+        json['notifications'],
+      ),
       defaultLensId: serializer.fromJson<int?>(json['defaultLensId']),
     );
   }
@@ -853,6 +888,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       'paused': serializer.toJson<bool>(paused),
       'resumeOn': serializer.toJson<DateTime?>(resumeOn),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'notifications': serializer.toJson<List<TaskNotification>>(notifications),
       'defaultLensId': serializer.toJson<int?>(defaultLensId),
     };
   }
@@ -866,6 +902,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     bool? paused,
     Value<DateTime?> resumeOn = const Value.absent(),
     DateTime? createdAt,
+    List<TaskNotification>? notifications,
     Value<int?> defaultLensId = const Value.absent(),
   }) => TemplateRow(
     id: id ?? this.id,
@@ -876,6 +913,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     paused: paused ?? this.paused,
     resumeOn: resumeOn.present ? resumeOn.value : this.resumeOn,
     createdAt: createdAt ?? this.createdAt,
+    notifications: notifications ?? this.notifications,
     defaultLensId: defaultLensId.present
         ? defaultLensId.value
         : this.defaultLensId,
@@ -894,6 +932,9 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       paused: data.paused.present ? data.paused.value : this.paused,
       resumeOn: data.resumeOn.present ? data.resumeOn.value : this.resumeOn,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      notifications: data.notifications.present
+          ? data.notifications.value
+          : this.notifications,
       defaultLensId: data.defaultLensId.present
           ? data.defaultLensId.value
           : this.defaultLensId,
@@ -911,6 +952,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           ..write('paused: $paused, ')
           ..write('resumeOn: $resumeOn, ')
           ..write('createdAt: $createdAt, ')
+          ..write('notifications: $notifications, ')
           ..write('defaultLensId: $defaultLensId')
           ..write(')'))
         .toString();
@@ -926,6 +968,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     paused,
     resumeOn,
     createdAt,
+    notifications,
     defaultLensId,
   );
   @override
@@ -940,6 +983,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           other.paused == this.paused &&
           other.resumeOn == this.resumeOn &&
           other.createdAt == this.createdAt &&
+          other.notifications == this.notifications &&
           other.defaultLensId == this.defaultLensId);
 }
 
@@ -952,6 +996,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
   final Value<bool> paused;
   final Value<DateTime?> resumeOn;
   final Value<DateTime> createdAt;
+  final Value<List<TaskNotification>> notifications;
   final Value<int?> defaultLensId;
   const TemplatesCompanion({
     this.id = const Value.absent(),
@@ -962,6 +1007,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     this.paused = const Value.absent(),
     this.resumeOn = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.notifications = const Value.absent(),
     this.defaultLensId = const Value.absent(),
   });
   TemplatesCompanion.insert({
@@ -973,6 +1019,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     this.paused = const Value.absent(),
     this.resumeOn = const Value.absent(),
     required DateTime createdAt,
+    this.notifications = const Value.absent(),
     this.defaultLensId = const Value.absent(),
   }) : name = Value(name),
        recurrence = Value(recurrence),
@@ -987,6 +1034,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     Expression<bool>? paused,
     Expression<DateTime>? resumeOn,
     Expression<DateTime>? createdAt,
+    Expression<String>? notifications,
     Expression<int>? defaultLensId,
   }) {
     return RawValuesInsertable({
@@ -998,6 +1046,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
       if (paused != null) 'paused': paused,
       if (resumeOn != null) 'resume_on': resumeOn,
       if (createdAt != null) 'created_at': createdAt,
+      if (notifications != null) 'notifications': notifications,
       if (defaultLensId != null) 'default_lens_id': defaultLensId,
     });
   }
@@ -1011,6 +1060,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     Value<bool>? paused,
     Value<DateTime?>? resumeOn,
     Value<DateTime>? createdAt,
+    Value<List<TaskNotification>>? notifications,
     Value<int?>? defaultLensId,
   }) {
     return TemplatesCompanion(
@@ -1022,6 +1072,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
       paused: paused ?? this.paused,
       resumeOn: resumeOn ?? this.resumeOn,
       createdAt: createdAt ?? this.createdAt,
+      notifications: notifications ?? this.notifications,
       defaultLensId: defaultLensId ?? this.defaultLensId,
     );
   }
@@ -1057,6 +1108,11 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (notifications.present) {
+      map['notifications'] = Variable<String>(
+        $TemplatesTable.$converternotifications.toSql(notifications.value),
+      );
+    }
     if (defaultLensId.present) {
       map['default_lens_id'] = Variable<int>(defaultLensId.value);
     }
@@ -1074,6 +1130,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
           ..write('paused: $paused, ')
           ..write('resumeOn: $resumeOn, ')
           ..write('createdAt: $createdAt, ')
+          ..write('notifications: $notifications, ')
           ..write('defaultLensId: $defaultLensId')
           ..write(')'))
         .toString();
@@ -1195,6 +1252,16 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     requiredDuringInsert: false,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<List<TaskNotification>, String>
+  notifications = GeneratedColumn<String>(
+    'notifications',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  ).withConverter<List<TaskNotification>>($TasksTable.$converternotifications);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     templateId,
@@ -1206,6 +1273,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     windowEnd,
     createdAt,
     resolvedAt,
+    notifications,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1328,6 +1396,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}resolved_at'],
       ),
+      notifications: $TasksTable.$converternotifications.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}notifications'],
+        )!,
+      ),
     );
   }
 
@@ -1338,6 +1412,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
 
   static JsonTypeConverter2<TaskStatus, int, int> $converterstatus =
       const EnumIndexConverter<TaskStatus>(TaskStatus.values);
+  static TypeConverter<List<TaskNotification>, String> $converternotifications =
+      const NotificationListConverter();
 }
 
 class TaskRow extends DataClass implements Insertable<TaskRow> {
@@ -1351,6 +1427,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
   final DateTime? windowEnd;
   final DateTime createdAt;
   final DateTime? resolvedAt;
+
+  /// Per-instance reminders (§2.4), JSON list.
+  final List<TaskNotification> notifications;
   const TaskRow({
     required this.id,
     this.templateId,
@@ -1362,6 +1441,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     this.windowEnd,
     required this.createdAt,
     this.resolvedAt,
+    required this.notifications,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1390,6 +1470,11 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     if (!nullToAbsent || resolvedAt != null) {
       map['resolved_at'] = Variable<DateTime>(resolvedAt);
     }
+    {
+      map['notifications'] = Variable<String>(
+        $TasksTable.$converternotifications.toSql(notifications),
+      );
+    }
     return map;
   }
 
@@ -1415,6 +1500,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       resolvedAt: resolvedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(resolvedAt),
+      notifications: Value(notifications),
     );
   }
 
@@ -1436,6 +1522,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       windowEnd: serializer.fromJson<DateTime?>(json['windowEnd']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       resolvedAt: serializer.fromJson<DateTime?>(json['resolvedAt']),
+      notifications: serializer.fromJson<List<TaskNotification>>(
+        json['notifications'],
+      ),
     );
   }
   @override
@@ -1454,6 +1543,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       'windowEnd': serializer.toJson<DateTime?>(windowEnd),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'resolvedAt': serializer.toJson<DateTime?>(resolvedAt),
+      'notifications': serializer.toJson<List<TaskNotification>>(notifications),
     };
   }
 
@@ -1468,6 +1558,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     Value<DateTime?> windowEnd = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> resolvedAt = const Value.absent(),
+    List<TaskNotification>? notifications,
   }) => TaskRow(
     id: id ?? this.id,
     templateId: templateId.present ? templateId.value : this.templateId,
@@ -1479,6 +1570,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     windowEnd: windowEnd.present ? windowEnd.value : this.windowEnd,
     createdAt: createdAt ?? this.createdAt,
     resolvedAt: resolvedAt.present ? resolvedAt.value : this.resolvedAt,
+    notifications: notifications ?? this.notifications,
   );
   TaskRow copyWithCompanion(TasksCompanion data) {
     return TaskRow(
@@ -1500,6 +1592,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       resolvedAt: data.resolvedAt.present
           ? data.resolvedAt.value
           : this.resolvedAt,
+      notifications: data.notifications.present
+          ? data.notifications.value
+          : this.notifications,
     );
   }
 
@@ -1515,7 +1610,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ..write('windowStart: $windowStart, ')
           ..write('windowEnd: $windowEnd, ')
           ..write('createdAt: $createdAt, ')
-          ..write('resolvedAt: $resolvedAt')
+          ..write('resolvedAt: $resolvedAt, ')
+          ..write('notifications: $notifications')
           ..write(')'))
         .toString();
   }
@@ -1532,6 +1628,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     windowEnd,
     createdAt,
     resolvedAt,
+    notifications,
   );
   @override
   bool operator ==(Object other) =>
@@ -1546,7 +1643,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           other.windowStart == this.windowStart &&
           other.windowEnd == this.windowEnd &&
           other.createdAt == this.createdAt &&
-          other.resolvedAt == this.resolvedAt);
+          other.resolvedAt == this.resolvedAt &&
+          other.notifications == this.notifications);
 }
 
 class TasksCompanion extends UpdateCompanion<TaskRow> {
@@ -1560,6 +1658,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
   final Value<DateTime?> windowEnd;
   final Value<DateTime> createdAt;
   final Value<DateTime?> resolvedAt;
+  final Value<List<TaskNotification>> notifications;
   const TasksCompanion({
     this.id = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -1571,6 +1670,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     this.windowEnd = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.resolvedAt = const Value.absent(),
+    this.notifications = const Value.absent(),
   });
   TasksCompanion.insert({
     this.id = const Value.absent(),
@@ -1583,6 +1683,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     this.windowEnd = const Value.absent(),
     required DateTime createdAt,
     this.resolvedAt = const Value.absent(),
+    this.notifications = const Value.absent(),
   }) : name = Value(name),
        status = Value(status),
        createdAt = Value(createdAt);
@@ -1597,6 +1698,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Expression<DateTime>? windowEnd,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? resolvedAt,
+    Expression<String>? notifications,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1609,6 +1711,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       if (windowEnd != null) 'window_end': windowEnd,
       if (createdAt != null) 'created_at': createdAt,
       if (resolvedAt != null) 'resolved_at': resolvedAt,
+      if (notifications != null) 'notifications': notifications,
     });
   }
 
@@ -1623,6 +1726,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Value<DateTime?>? windowEnd,
     Value<DateTime>? createdAt,
     Value<DateTime?>? resolvedAt,
+    Value<List<TaskNotification>>? notifications,
   }) {
     return TasksCompanion(
       id: id ?? this.id,
@@ -1635,6 +1739,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       windowEnd: windowEnd ?? this.windowEnd,
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
+      notifications: notifications ?? this.notifications,
     );
   }
 
@@ -1673,6 +1778,11 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     if (resolvedAt.present) {
       map['resolved_at'] = Variable<DateTime>(resolvedAt.value);
     }
+    if (notifications.present) {
+      map['notifications'] = Variable<String>(
+        $TasksTable.$converternotifications.toSql(notifications.value),
+      );
+    }
     return map;
   }
 
@@ -1688,7 +1798,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
           ..write('windowStart: $windowStart, ')
           ..write('windowEnd: $windowEnd, ')
           ..write('createdAt: $createdAt, ')
-          ..write('resolvedAt: $resolvedAt')
+          ..write('resolvedAt: $resolvedAt, ')
+          ..write('notifications: $notifications')
           ..write(')'))
         .toString();
   }
@@ -3754,6 +3865,7 @@ typedef $$TemplatesTableCreateCompanionBuilder =
       Value<bool> paused,
       Value<DateTime?> resumeOn,
       required DateTime createdAt,
+      Value<List<TaskNotification>> notifications,
       Value<int?> defaultLensId,
     });
 typedef $$TemplatesTableUpdateCompanionBuilder =
@@ -3766,6 +3878,7 @@ typedef $$TemplatesTableUpdateCompanionBuilder =
       Value<bool> paused,
       Value<DateTime?> resumeOn,
       Value<DateTime> createdAt,
+      Value<List<TaskNotification>> notifications,
       Value<int?> defaultLensId,
     });
 
@@ -3859,6 +3972,16 @@ class $$TemplatesTableFilterComposer
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    List<TaskNotification>,
+    List<TaskNotification>,
+    String
+  >
+  get notifications => $composableBuilder(
+    column: $table.notifications,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$LensesTableFilterComposer get defaultLensId {
@@ -3959,6 +4082,11 @@ class $$TemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get notifications => $composableBuilder(
+    column: $table.notifications,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LensesTableOrderingComposer get defaultLensId {
     final $$LensesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4021,6 +4149,12 @@ class $$TemplatesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<TaskNotification>, String>
+  get notifications => $composableBuilder(
+    column: $table.notifications,
+    builder: (column) => column,
+  );
 
   $$LensesTableAnnotationComposer get defaultLensId {
     final $$LensesTableAnnotationComposer composer = $composerBuilder(
@@ -4107,6 +4241,8 @@ class $$TemplatesTableTableManager
                 Value<bool> paused = const Value.absent(),
                 Value<DateTime?> resumeOn = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<List<TaskNotification>> notifications =
+                    const Value.absent(),
                 Value<int?> defaultLensId = const Value.absent(),
               }) => TemplatesCompanion(
                 id: id,
@@ -4117,6 +4253,7 @@ class $$TemplatesTableTableManager
                 paused: paused,
                 resumeOn: resumeOn,
                 createdAt: createdAt,
+                notifications: notifications,
                 defaultLensId: defaultLensId,
               ),
           createCompanionCallback:
@@ -4129,6 +4266,8 @@ class $$TemplatesTableTableManager
                 Value<bool> paused = const Value.absent(),
                 Value<DateTime?> resumeOn = const Value.absent(),
                 required DateTime createdAt,
+                Value<List<TaskNotification>> notifications =
+                    const Value.absent(),
                 Value<int?> defaultLensId = const Value.absent(),
               }) => TemplatesCompanion.insert(
                 id: id,
@@ -4139,6 +4278,7 @@ class $$TemplatesTableTableManager
                 paused: paused,
                 resumeOn: resumeOn,
                 createdAt: createdAt,
+                notifications: notifications,
                 defaultLensId: defaultLensId,
               ),
           withReferenceMapper: (p0) => p0
@@ -4236,6 +4376,7 @@ typedef $$TasksTableCreateCompanionBuilder =
       Value<DateTime?> windowEnd,
       required DateTime createdAt,
       Value<DateTime?> resolvedAt,
+      Value<List<TaskNotification>> notifications,
     });
 typedef $$TasksTableUpdateCompanionBuilder =
     TasksCompanion Function({
@@ -4249,6 +4390,7 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<DateTime?> windowEnd,
       Value<DateTime> createdAt,
       Value<DateTime?> resolvedAt,
+      Value<List<TaskNotification>> notifications,
     });
 
 final class $$TasksTableReferences
@@ -4343,6 +4485,16 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
   ColumnFilters<DateTime> get resolvedAt => $composableBuilder(
     column: $table.resolvedAt,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    List<TaskNotification>,
+    List<TaskNotification>,
+    String
+  >
+  get notifications => $composableBuilder(
+    column: $table.notifications,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$TemplatesTableFilterComposer get templateId {
@@ -4448,6 +4600,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get notifications => $composableBuilder(
+    column: $table.notifications,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TemplatesTableOrderingComposer get templateId {
     final $$TemplatesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4511,6 +4668,12 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get resolvedAt => $composableBuilder(
     column: $table.resolvedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<TaskNotification>, String>
+  get notifications => $composableBuilder(
+    column: $table.notifications,
     builder: (column) => column,
   );
 
@@ -4601,6 +4764,8 @@ class $$TasksTableTableManager
                 Value<DateTime?> windowEnd = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> resolvedAt = const Value.absent(),
+                Value<List<TaskNotification>> notifications =
+                    const Value.absent(),
               }) => TasksCompanion(
                 id: id,
                 templateId: templateId,
@@ -4612,6 +4777,7 @@ class $$TasksTableTableManager
                 windowEnd: windowEnd,
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
+                notifications: notifications,
               ),
           createCompanionCallback:
               ({
@@ -4625,6 +4791,8 @@ class $$TasksTableTableManager
                 Value<DateTime?> windowEnd = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> resolvedAt = const Value.absent(),
+                Value<List<TaskNotification>> notifications =
+                    const Value.absent(),
               }) => TasksCompanion.insert(
                 id: id,
                 templateId: templateId,
@@ -4636,6 +4804,7 @@ class $$TasksTableTableManager
                 windowEnd: windowEnd,
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
+                notifications: notifications,
               ),
           withReferenceMapper: (p0) => p0
               .map(

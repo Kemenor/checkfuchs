@@ -3,6 +3,8 @@
 /// so the whole lifecycle is unit-testable against a [FixedClock].
 library;
 
+import 'notification.dart';
+
 /// The four live-or-terminal states (§2.2). Only `open` is non-terminal.
 enum TaskStatus { open, done, skipped, missed }
 
@@ -30,6 +32,7 @@ class Task {
     this.occurrence,
     required this.createdAt,
     this.resolvedAt,
+    this.notifications = const [],
   });
 
   final int? id;
@@ -54,6 +57,12 @@ class Task {
   /// When it went terminal; null while open. Required for analytics (§2.1).
   final DateTime? resolvedAt;
 
+  /// Reminders on this instance (§2.4). Stamped from the Template's defaults
+  /// at materialisation; editable per instance. All **discrete** — the
+  /// reactive layer schedules only open tasks, so resolving one cancels its
+  /// pings by construction.
+  final List<TaskNotification> notifications;
+
   bool get isOpen => status == TaskStatus.open;
   bool get isTerminal => !isOpen;
 
@@ -73,6 +82,7 @@ class Task {
     Object? occurrence = _unset,
     DateTime? createdAt,
     Object? resolvedAt = _unset,
+    List<TaskNotification>? notifications,
   }) {
     return Task(
       id: id ?? this.id,
@@ -91,7 +101,20 @@ class Task {
       resolvedAt: identical(resolvedAt, _unset)
           ? this.resolvedAt
           : resolvedAt as DateTime?,
+      notifications: notifications ?? this.notifications,
     );
+  }
+
+  static bool _sameNotifications(
+    List<TaskNotification> a,
+    List<TaskNotification> b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override
@@ -106,7 +129,8 @@ class Task {
       other.end == end &&
       other.occurrence == occurrence &&
       other.createdAt == createdAt &&
-      other.resolvedAt == resolvedAt;
+      other.resolvedAt == resolvedAt &&
+      _sameNotifications(other.notifications, notifications);
 
   @override
   int get hashCode => Object.hash(
@@ -120,6 +144,7 @@ class Task {
     occurrence,
     createdAt,
     resolvedAt,
+    Object.hashAll(notifications),
   );
 
   @override
