@@ -438,5 +438,9 @@
   "moreLabel": "More",
   "@moreLabel": {
     "description": "Overflow destination in the bottom navigation bar"
+  },
+  "structureTooltip": "Views & lenses",
+  "@structureTooltip": {
+    "description": "Tooltip/sheet title of the small secondary FAB with the structure actions"
   }
 }

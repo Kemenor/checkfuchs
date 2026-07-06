@@ -85,5 +85,6 @@
   "remindWhenOpens": "Zu Beginn",
   "remindBeforeDue": "2 Stunden vor Ablauf",
   "remindAtDue": "Bei Fälligkeit",
-  "moreLabel": "Mehr"
+  "moreLabel": "Mehr",
+  "structureTooltip": "Ansichten & Linsen"
 }

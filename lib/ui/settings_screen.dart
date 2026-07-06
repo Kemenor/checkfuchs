@@ -4,6 +4,7 @@ import 'package:fuchsbau/fuchsbau.dart';
 
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'vacation_screen.dart';
 
 /// Settings (Phase 8): theme override, the Fuchsbau accessibility typeface
 /// picker, and the honest reminder-lapse disclosure (§5 / no-dark-patterns).
@@ -53,6 +54,17 @@ class SettingsScreen extends ConsumerWidget {
                   : null,
               onTap: () => controller.setFont(font),
             ),
+          const SizedBox(height: 24),
+          _Section(l10n.vacation),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.beach_access_outlined),
+            title: Text(l10n.vacation),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const VacationScreen())),
+          ),
           const SizedBox(height: 24),
           _Section(l10n.remindersSection),
           Padding(

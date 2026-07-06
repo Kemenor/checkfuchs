@@ -9,7 +9,6 @@ import '../providers.dart';
 import 'create_task_sheet.dart';
 import 'settings_screen.dart';
 import 'task_tile.dart';
-import 'vacation_screen.dart';
 import 'view_icons.dart';
 
 /// The home surface (Phase 4): a bottom navigation bar destination per View
@@ -26,6 +25,7 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   int _selectedView = 0;
+  bool _onSettings = false;
 
   @override
   void initState() {
@@ -70,21 +70,30 @@ class _HomeShellState extends ConsumerState<HomeShell>
     }
   }
 
-  /// Up to 5 Views ride the bar (the M3 budget); beyond that the last slot
-  /// becomes "More", a sheet with the rest. Hidden entirely for a single View.
+  /// The bar: the user's Views (up to 4; beyond that the fourth slot becomes
+  /// "More", a sheet with the rest) plus the fixed **Settings** destination —
+  /// the knabberfuchs family layout (DESIGN_SYSTEM §3.3).
   Widget? _navBar(List<ViewRow> vs, AppLocalizations l10n) {
-    if (vs.length < 2) return null;
-    const maxSlots = 5;
-    final overflow = vs.length > maxSlots;
-    final shown = overflow ? vs.sublist(0, maxSlots - 1) : vs;
+    if (vs.isEmpty) return null; // still seeding
+    const maxViewSlots = 4;
+    final overflow = vs.length > maxViewSlots;
+    final shown = overflow ? vs.sublist(0, maxViewSlots - 1) : vs;
+    final settingsIndex = shown.length + (overflow ? 1 : 0);
     final idx = _selectedView.clamp(0, vs.length - 1);
     return NavigationBar(
-      selectedIndex: idx >= shown.length ? shown.length : idx,
+      selectedIndex: _onSettings
+          ? settingsIndex
+          : (idx >= shown.length ? shown.length : idx),
       onDestinationSelected: (i) {
-        if (overflow && i == shown.length) {
+        if (i == settingsIndex) {
+          setState(() => _onSettings = true);
+        } else if (overflow && i == shown.length) {
           _showMoreViews(vs.sublist(shown.length), shown.length);
         } else {
-          setState(() => _selectedView = i);
+          setState(() {
+            _onSettings = false;
+            _selectedView = i;
+          });
         }
       },
       destinations: [
@@ -95,7 +104,44 @@ class _HomeShellState extends ConsumerState<HomeShell>
             icon: const Icon(Icons.more_horiz_rounded),
             label: l10n.moreLabel,
           ),
+        NavigationDestination(
+          icon: const Icon(Icons.settings_rounded),
+          label: l10n.settings,
+        ),
       ],
+    );
+  }
+
+  /// The small secondary FAB's sheet (knabberfuchs pattern): the structure
+  /// actions — and later this view's dial-editing — behind one affordance.
+  void _showStructureSheet(int currentViewId) {
+    final l10n = AppLocalizations.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.dashboard_customize_rounded),
+              title: Text(l10n.newView),
+              onTap: () {
+                Navigator.pop(ctx);
+                _newView();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.filter_alt_rounded),
+              title: Text(l10n.newLensHere),
+              onTap: () {
+                Navigator.pop(ctx);
+                _newLens(currentViewId);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -122,6 +168,33 @@ class _HomeShellState extends ConsumerState<HomeShell>
     );
   }
 
+  /// A View's page: its own app bar and the knabberfuchs FAB pair — the big
+  /// `+ Add` (THE action, one tap) and the small structure-sheet FAB.
+  Widget _tasksPage(int viewId, AppLocalizations l10n) {
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.appTitle)),
+      body: _ViewBody(viewId: viewId, l10n: l10n),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'homeStructure',
+            tooltip: l10n.structureTooltip,
+            onPressed: () => _showStructureSheet(viewId),
+            child: const Icon(Icons.dashboard_customize_rounded),
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton.extended(
+            heroTag: 'homeAdd',
+            onPressed: () => showCreateTaskSheet(context, ref),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.addTask),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -131,59 +204,23 @@ class _HomeShellState extends ConsumerState<HomeShell>
     ref.watch(notificationSyncProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.appTitle),
-        actions: [
-          views.maybeWhen(
-            data: (vs) => PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (v) {
-                if (v == 'view') _newView();
-                if (v == 'lens' && vs.isNotEmpty) {
-                  _newLens(vs[_selectedView.clamp(0, vs.length - 1)].id);
+      body: _onSettings
+          ? const SettingsScreen()
+          : views.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
+              data: (vs) {
+                if (vs.isEmpty) {
+                  // Seeding the first view.
+                  return const Center(child: CircularProgressIndicator());
                 }
-                if (v == 'vacation') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const VacationScreen()),
-                  );
-                }
-                if (v == 'settings') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  );
-                }
+                final idx = _selectedView.clamp(0, vs.length - 1);
+                return _tasksPage(vs[idx].id, l10n);
               },
-              itemBuilder: (_) => [
-                PopupMenuItem(value: 'view', child: Text(l10n.newView)),
-                PopupMenuItem(value: 'lens', child: Text(l10n.newLensHere)),
-                PopupMenuItem(value: 'vacation', child: Text(l10n.vacation)),
-                PopupMenuItem(value: 'settings', child: Text(l10n.settings)),
-              ],
             ),
-            orElse: () => const SizedBox.shrink(),
-          ),
-        ],
-      ),
-      body: views.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
-        data: (vs) {
-          if (vs.isEmpty) {
-            return const Center(child: CircularProgressIndicator()); // seeding
-          }
-          final idx = _selectedView.clamp(0, vs.length - 1);
-          return _ViewBody(viewId: vs[idx].id, l10n: l10n);
-        },
-      ),
       bottomNavigationBar: views.maybeWhen(
         data: (vs) => _navBar(vs, l10n),
         orElse: () => null,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'homeAdd',
-        onPressed: () => showCreateTaskSheet(context, ref),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.addTask),
       ),
     );
   }

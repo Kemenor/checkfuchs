@@ -76,8 +76,12 @@ screens use them.
   case gets an escape hatch instead of dictating the whole design.)*
 - Each View carries an **icon** from a curated ~12-slug set (`ui/view_icons.dart`),
   picked at creation; slugs are persisted, so the set only ever grows.
-- Up to **5** destinations; beyond that the last slot becomes **More** (a sheet with the
-  rest). The bar hides entirely while only one View exists.
+- **Settings is the fixed last destination** (gear), exactly like knabberfuchs; Vacation
+  (and later backup/restore) lives *inside* the Settings screen. The bar is always visible.
+- Up to **4** View destinations before Settings; beyond that the fourth slot becomes
+  **More** (a sheet with the rest).
+- **No app-bar overflow menu.** The altitude map: *act on tasks* = list + big FAB ·
+  *shape structure* = small FAB's sheet (§3.6) · *configure the app* = Settings tab.
 - Each `View↔Lens` carries `statusFilter`; the same lens reads differently per View.
 
 ### 3.4 Detail sheet → `examples/ui/05-task-detail.html`
@@ -98,5 +102,7 @@ screens use them.
 ### 3.6 Pills & FAB
 - Status pill = uppercase `labelSmall`, `full` radius, tinted fill (§1). NOW/ACTIVE
   tangerine · FOCUS indigo · due amber.
-- **FAB** = the Fuchsbau extended full-pill `+ Add`, bottom-right, tangerine, unique
-  `heroTag` per screen.
+- **FAB pair** (the knabberfuchs pattern): the Fuchsbau extended full-pill `+ Add`
+  (create task/habit — THE action, one tap), with a **small secondary FAB** beside it
+  opening a bottom sheet of structure actions (new view · new lens here; later the
+  current View's dial-editing). Bottom-right, tangerine, unique `heroTag` per screen.

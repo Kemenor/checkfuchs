@@ -85,5 +85,6 @@
   "remindWhenOpens": "À l'ouverture",
   "remindBeforeDue": "2 heures avant l'échéance",
   "remindAtDue": "À l'échéance",
-  "moreLabel": "Plus"
+  "moreLabel": "Plus",
+  "structureTooltip": "Vues & lentilles"
 }
