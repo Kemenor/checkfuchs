@@ -84,5 +84,6 @@
   "summaryYearlyLastDay": "{count, plural, one{Ogni anno l'ultimo giorno di {month}} other{Ogni {count} anni l'ultimo giorno di {month}}}",
   "remindWhenOpens": "All'inizio",
   "remindBeforeDue": "2 ore prima della scadenza",
-  "remindAtDue": "Alla scadenza"
+  "remindAtDue": "Alla scadenza",
+  "moreLabel": "Altro"
 }

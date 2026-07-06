@@ -68,9 +68,16 @@ screens use them.
   summarises the *full* lens even in a filtered View** (calm list, honest header).
 - Periodic lens: focus row uses the Focus marker + `FOCUS` pill; quota-met → "done this week".
 
-### 3.3 View navigation → `examples/ui/04-lens-view.html`
-- Top **scrollable tab row** (Views are user-defined & unbounded → tabs, not bottom-nav);
-  active tab = tangerine underline.
+### 3.3 View navigation
+- **Bottom `NavigationBar`**, one destination per View — the Fuchsbau family pattern
+  (knabberfuchs navigates the same way) and thumb-reachable for the app's most frequent
+  gesture. *(Supersedes the original top-tab-row decision: "Views are unbounded" was
+  theoretically right but practically thin — real usage is 2–4 Views, and the unbounded
+  case gets an escape hatch instead of dictating the whole design.)*
+- Each View carries an **icon** from a curated ~12-slug set (`ui/view_icons.dart`),
+  picked at creation; slugs are persisted, so the set only ever grows.
+- Up to **5** destinations; beyond that the last slot becomes **More** (a sheet with the
+  rest). The bar hides entirely while only one View exists.
 - Each `View↔Lens` carries `statusFilter`; the same lens reads differently per View.
 
 ### 3.4 Detail sheet → `examples/ui/05-task-detail.html`

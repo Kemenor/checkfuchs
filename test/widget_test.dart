@@ -16,7 +16,7 @@ void main() {
     // Timer) lands in the widget tree.
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    const home = ViewRow(id: 1, name: 'Home', sortIndex: 0);
+    const home = ViewRow(id: 1, name: 'Home', sortIndex: 0, icon: 'home');
 
     await tester.pumpWidget(
       ProviderScope(

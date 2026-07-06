@@ -434,5 +434,9 @@
   },
   "@remindAtDue": {
     "description": "Reminder preset: ping at the window end"
+  },
+  "moreLabel": "More",
+  "@moreLabel": {
+    "description": "Overflow destination in the bottom navigation bar"
   }
 }

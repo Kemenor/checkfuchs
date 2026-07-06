@@ -1844,8 +1844,18 @@ class $ViewsTable extends Views with TableInfo<$ViewsTable, ViewRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
   @override
-  List<GeneratedColumn> get $columns => [id, name, sortIndex];
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('home'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, sortIndex, icon];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1875,6 +1885,12 @@ class $ViewsTable extends Views with TableInfo<$ViewsTable, ViewRow> {
         sortIndex.isAcceptableOrUnknown(data['sort_index']!, _sortIndexMeta),
       );
     }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
     return context;
   }
 
@@ -1896,6 +1912,10 @@ class $ViewsTable extends Views with TableInfo<$ViewsTable, ViewRow> {
         DriftSqlType.int,
         data['${effectivePrefix}sort_index'],
       )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      )!,
     );
   }
 
@@ -1909,10 +1929,12 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
   final int id;
   final String name;
   final int sortIndex;
+  final String icon;
   const ViewRow({
     required this.id,
     required this.name,
     required this.sortIndex,
+    required this.icon,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1920,6 +1942,7 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['sort_index'] = Variable<int>(sortIndex);
+    map['icon'] = Variable<String>(icon);
     return map;
   }
 
@@ -1928,6 +1951,7 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
       id: Value(id),
       name: Value(name),
       sortIndex: Value(sortIndex),
+      icon: Value(icon),
     );
   }
 
@@ -1940,6 +1964,7 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       sortIndex: serializer.fromJson<int>(json['sortIndex']),
+      icon: serializer.fromJson<String>(json['icon']),
     );
   }
   @override
@@ -1949,19 +1974,23 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'sortIndex': serializer.toJson<int>(sortIndex),
+      'icon': serializer.toJson<String>(icon),
     };
   }
 
-  ViewRow copyWith({int? id, String? name, int? sortIndex}) => ViewRow(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    sortIndex: sortIndex ?? this.sortIndex,
-  );
+  ViewRow copyWith({int? id, String? name, int? sortIndex, String? icon}) =>
+      ViewRow(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        sortIndex: sortIndex ?? this.sortIndex,
+        icon: icon ?? this.icon,
+      );
   ViewRow copyWithCompanion(ViewsCompanion data) {
     return ViewRow(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       sortIndex: data.sortIndex.present ? data.sortIndex.value : this.sortIndex,
+      icon: data.icon.present ? data.icon.value : this.icon,
     );
   }
 
@@ -1970,45 +1999,52 @@ class ViewRow extends DataClass implements Insertable<ViewRow> {
     return (StringBuffer('ViewRow(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('sortIndex: $sortIndex')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('icon: $icon')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, sortIndex);
+  int get hashCode => Object.hash(id, name, sortIndex, icon);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ViewRow &&
           other.id == this.id &&
           other.name == this.name &&
-          other.sortIndex == this.sortIndex);
+          other.sortIndex == this.sortIndex &&
+          other.icon == this.icon);
 }
 
 class ViewsCompanion extends UpdateCompanion<ViewRow> {
   final Value<int> id;
   final Value<String> name;
   final Value<int> sortIndex;
+  final Value<String> icon;
   const ViewsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.sortIndex = const Value.absent(),
+    this.icon = const Value.absent(),
   });
   ViewsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     this.sortIndex = const Value.absent(),
+    this.icon = const Value.absent(),
   }) : name = Value(name);
   static Insertable<ViewRow> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<int>? sortIndex,
+    Expression<String>? icon,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (sortIndex != null) 'sort_index': sortIndex,
+      if (icon != null) 'icon': icon,
     });
   }
 
@@ -2016,11 +2052,13 @@ class ViewsCompanion extends UpdateCompanion<ViewRow> {
     Value<int>? id,
     Value<String>? name,
     Value<int>? sortIndex,
+    Value<String>? icon,
   }) {
     return ViewsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       sortIndex: sortIndex ?? this.sortIndex,
+      icon: icon ?? this.icon,
     );
   }
 
@@ -2036,6 +2074,9 @@ class ViewsCompanion extends UpdateCompanion<ViewRow> {
     if (sortIndex.present) {
       map['sort_index'] = Variable<int>(sortIndex.value);
     }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
     return map;
   }
 
@@ -2044,7 +2085,8 @@ class ViewsCompanion extends UpdateCompanion<ViewRow> {
     return (StringBuffer('ViewsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('sortIndex: $sortIndex')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('icon: $icon')
           ..write(')'))
         .toString();
   }
@@ -4892,12 +4934,14 @@ typedef $$ViewsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       Value<int> sortIndex,
+      Value<String> icon,
     });
 typedef $$ViewsTableUpdateCompanionBuilder =
     ViewsCompanion Function({
       Value<int> id,
       Value<String> name,
       Value<int> sortIndex,
+      Value<String> icon,
     });
 
 final class $$ViewsTableReferences
@@ -4943,6 +4987,11 @@ class $$ViewsTableFilterComposer extends Composer<_$AppDatabase, $ViewsTable> {
 
   ColumnFilters<int> get sortIndex => $composableBuilder(
     column: $table.sortIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4995,6 +5044,11 @@ class $$ViewsTableOrderingComposer
     column: $table.sortIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ViewsTableAnnotationComposer
@@ -5014,6 +5068,9 @@ class $$ViewsTableAnnotationComposer
 
   GeneratedColumn<int> get sortIndex =>
       $composableBuilder(column: $table.sortIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
 
   Expression<T> viewLensRefs<T extends Object>(
     Expression<T> Function($$ViewLensTableAnnotationComposer a) f,
@@ -5072,16 +5129,24 @@ class $$ViewsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> sortIndex = const Value.absent(),
-              }) => ViewsCompanion(id: id, name: name, sortIndex: sortIndex),
+                Value<String> icon = const Value.absent(),
+              }) => ViewsCompanion(
+                id: id,
+                name: name,
+                sortIndex: sortIndex,
+                icon: icon,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
                 Value<int> sortIndex = const Value.absent(),
+                Value<String> icon = const Value.absent(),
               }) => ViewsCompanion.insert(
                 id: id,
                 name: name,
                 sortIndex: sortIndex,
+                icon: icon,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -15,7 +15,7 @@ void main() {
 
   test('a fresh database opens at the current schemaVersion', () async {
     await db.select(db.tasks).get(); // force the lazy open
-    expect(db.schemaVersion, 5);
+    expect(db.schemaVersion, 6);
   });
 
   test('PRAGMA foreign_keys is ON after open (beforeOpen ran)', () async {

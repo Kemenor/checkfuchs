@@ -110,12 +110,19 @@ class ViewRepository {
     return lensId;
   });
 
-  Future<int> createView(String name) => db.transaction(() async {
-    final next = await _nextSortIndex(db.views.sortIndex, db.views);
-    return db
-        .into(db.views)
-        .insert(ViewsCompanion.insert(name: name, sortIndex: Value(next)));
-  });
+  Future<int> createView(String name, {String icon = 'home'}) =>
+      db.transaction(() async {
+        final next = await _nextSortIndex(db.views.sortIndex, db.views);
+        return db
+            .into(db.views)
+            .insert(
+              ViewsCompanion.insert(
+                name: name,
+                sortIndex: Value(next),
+                icon: Value(icon),
+              ),
+            );
+      });
 
   Future<int> createLensInView(int viewId, String name) =>
       db.transaction(() async {

@@ -72,12 +72,14 @@ class Lenses extends Table {
   IntColumn get sortIndex => integer().withDefault(const Constant(0))();
 }
 
-/// A View — the screen layer (§4.6).
+/// A View — the screen layer (§4.6). `icon` is a stable slug into the curated
+/// set in `ui/view_icons.dart` (the bottom navigation bar needs one per View).
 @DataClassName('ViewRow')
 class Views extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   IntColumn get sortIndex => integer().withDefault(const Constant(0))();
+  TextColumn get icon => text().withDefault(const Constant('home'))();
 }
 
 /// Task↔Lens membership (§4.2): per-pair order + the two raw timestamps the
@@ -153,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -209,6 +211,10 @@ class AppDatabase extends _$AppDatabase {
         // Reminders (Phase 5): the notifications JSON columns.
         await _addColumnIfMissing(m, templates, templates.notifications);
         await _addColumnIfMissing(m, tasks, tasks.notifications);
+      }
+      if (from < 6) {
+        // Bottom navigation bar: per-View icon slug.
+        await _addColumnIfMissing(m, views, views.icon);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

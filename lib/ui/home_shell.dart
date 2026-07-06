@@ -10,9 +10,12 @@ import 'create_task_sheet.dart';
 import 'settings_screen.dart';
 import 'task_tile.dart';
 import 'vacation_screen.dart';
+import 'view_icons.dart';
 
-/// The home surface (Phase 4): a tab per View, each View rendered through the
-/// View → Lens → `derive` pipeline. Reconciles + seeds defaults on launch/resume.
+/// The home surface (Phase 4): a bottom navigation bar destination per View
+/// (DESIGN_SYSTEM §3.3 — the Fuchsbau family pattern, thumb-reachable), each
+/// View rendered through the View → Lens → `derive` pipeline. Reconciles +
+/// seeds defaults on launch/resume.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -50,21 +53,73 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   Future<void> _newView() async {
-    final name = await _promptName(
+    final r = await _promptName(
       context,
       AppLocalizations.of(context).newView,
+      withIcon: true,
     );
-    if (name != null) await ref.read(viewRepositoryProvider).createView(name);
+    if (r != null) {
+      await ref.read(viewRepositoryProvider).createView(r.$1, icon: r.$2);
+    }
   }
 
   Future<void> _newLens(int viewId) async {
-    final name = await _promptName(
-      context,
-      AppLocalizations.of(context).newLens,
-    );
-    if (name != null) {
-      await ref.read(viewRepositoryProvider).createLensInView(viewId, name);
+    final r = await _promptName(context, AppLocalizations.of(context).newLens);
+    if (r != null) {
+      await ref.read(viewRepositoryProvider).createLensInView(viewId, r.$1);
     }
+  }
+
+  /// Up to 5 Views ride the bar (the M3 budget); beyond that the last slot
+  /// becomes "More", a sheet with the rest. Hidden entirely for a single View.
+  Widget? _navBar(List<ViewRow> vs, AppLocalizations l10n) {
+    if (vs.length < 2) return null;
+    const maxSlots = 5;
+    final overflow = vs.length > maxSlots;
+    final shown = overflow ? vs.sublist(0, maxSlots - 1) : vs;
+    final idx = _selectedView.clamp(0, vs.length - 1);
+    return NavigationBar(
+      selectedIndex: idx >= shown.length ? shown.length : idx,
+      onDestinationSelected: (i) {
+        if (overflow && i == shown.length) {
+          _showMoreViews(vs.sublist(shown.length), shown.length);
+        } else {
+          setState(() => _selectedView = i);
+        }
+      },
+      destinations: [
+        for (final v in shown)
+          NavigationDestination(icon: Icon(viewIcon(v.icon)), label: v.name),
+        if (overflow)
+          NavigationDestination(
+            icon: const Icon(Icons.more_horiz_rounded),
+            label: l10n.moreLabel,
+          ),
+      ],
+    );
+  }
+
+  void _showMoreViews(List<ViewRow> rest, int offset) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (var i = 0; i < rest.length; i++)
+              ListTile(
+                leading: Icon(viewIcon(rest[i].icon)),
+                title: Text(rest[i].name),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  setState(() => _selectedView = offset + i);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -117,83 +172,18 @@ class _HomeShellState extends ConsumerState<HomeShell>
             return const Center(child: CircularProgressIndicator()); // seeding
           }
           final idx = _selectedView.clamp(0, vs.length - 1);
-          return Column(
-            children: [
-              if (vs.length > 1)
-                _ViewTabs(
-                  views: vs,
-                  selected: idx,
-                  onSelect: (i) => setState(() => _selectedView = i),
-                ),
-              Expanded(
-                child: _ViewBody(viewId: vs[idx].id, l10n: l10n),
-              ),
-            ],
-          );
+          return _ViewBody(viewId: vs[idx].id, l10n: l10n);
         },
+      ),
+      bottomNavigationBar: views.maybeWhen(
+        data: (vs) => _navBar(vs, l10n),
+        orElse: () => null,
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'homeAdd',
         onPressed: () => showCreateTaskSheet(context, ref),
         icon: const Icon(Icons.add),
         label: Text(l10n.addTask),
-      ),
-    );
-  }
-}
-
-class _ViewTabs extends StatelessWidget {
-  const _ViewTabs({
-    required this.views,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final List<ViewRow> views;
-  final int selected;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: views.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 4),
-        itemBuilder: (_, i) {
-          final on = i == selected;
-          return InkWell(
-            onTap: () => onSelect(i),
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    views[i].name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: on ? scheme.onSurface : scheme.outline,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 3,
-                    width: 22,
-                    decoration: BoxDecoration(
-                      color: on ? scheme.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }
@@ -361,21 +351,28 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Future<String?> _promptName(BuildContext context, String title) async {
-  final name = await showDialog<String>(
+/// Prompt for a name (and, for Views, an icon from the curated set). Returns
+/// `(name, iconSlug)` or null on cancel/empty.
+Future<(String, String)?> _promptName(
+  BuildContext context,
+  String title, {
+  bool withIcon = false,
+}) async {
+  final result = await showDialog<(String, String)>(
     context: context,
-    builder: (_) => _NamePromptDialog(title: title),
+    builder: (_) => _NamePromptDialog(title: title, withIcon: withIcon),
   );
-  return (name != null && name.isNotEmpty) ? name : null;
+  return (result != null && result.$1.isNotEmpty) ? result : null;
 }
 
 /// Owns its [TextEditingController] so it is disposed with the dialog's own
 /// lifecycle — disposing right after `showDialog` resolves races the pop
 /// transition, which may still be painting the field.
 class _NamePromptDialog extends StatefulWidget {
-  const _NamePromptDialog({required this.title});
+  const _NamePromptDialog({required this.title, this.withIcon = false});
 
   final String title;
+  final bool withIcon;
 
   @override
   State<_NamePromptDialog> createState() => _NamePromptDialogState();
@@ -383,6 +380,7 @@ class _NamePromptDialog extends StatefulWidget {
 
 class _NamePromptDialogState extends State<_NamePromptDialog> {
   final _controller = TextEditingController();
+  String _icon = 'home';
 
   @override
   void dispose() {
@@ -390,27 +388,55 @@ class _NamePromptDialogState extends State<_NamePromptDialog> {
     super.dispose();
   }
 
+  void _submit() => Navigator.of(context).pop((_controller.text.trim(), _icon));
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
       title: Text(widget.title),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(hintText: l10n.nameLabel),
-        onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(hintText: l10n.nameLabel),
+            onSubmitted: (_) => _submit(),
+          ),
+          if (widget.withIcon) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final e in viewIcons.entries)
+                  IconButton(
+                    tooltip: e.key,
+                    isSelected: _icon == e.key,
+                    onPressed: () => setState(() => _icon = e.key),
+                    icon: Icon(e.value),
+                    selectedIcon: Icon(e.value, color: scheme.primary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _icon == e.key
+                          ? scheme.primaryContainer
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.cancel),
         ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: Text(l10n.create),
-        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.create)),
       ],
     );
   }
