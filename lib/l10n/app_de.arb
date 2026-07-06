@@ -176,5 +176,6 @@
   "lensNoView": "In keiner Ansicht",
   "habitsSection": "Gewohnheiten",
   "todosSection": "To-dos",
-  "showAllResolved": "Alle {count} anzeigen"
+  "showAllResolved": "Alle {count} anzeigen",
+  "emptyLensCard": "Nichts zu tun. Gut gemacht 🦊"
 }

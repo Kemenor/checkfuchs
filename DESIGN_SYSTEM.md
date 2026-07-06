@@ -75,6 +75,8 @@ screens use them.
   current-outcome rows below the list, collapsing removes them. Transient — the
   persisted filter never changes.
 - Periodic lens: focus row uses the Focus marker + `FOCUS` pill; quota-met → "done this week".
+- An **empty lens still renders its card** — header plus "Nothing to do. Well done 🦊"
+  in muted outline. A cleared list is an earned state, not a disappearance.
 
 ### 3.3 View navigation
 - **Bottom `NavigationBar`**, one destination per View — the Fuchsbau family pattern

@@ -97,11 +97,20 @@ class _HomeShellState extends ConsumerState<HomeShell>
     }
   }
 
+  /// Name, then straight into the dials — creating a lens should end with a
+  /// shaped lens, not a name and a scavenger hunt through Edit this view.
   Future<void> _newLens(int viewId) async {
     final r = await promptName(context, AppLocalizations.of(context).newLens);
-    if (r != null) {
-      await ref.read(viewRepositoryProvider).createLensInView(viewId, r.$1);
-    }
+    if (r == null) return;
+    final lensId = await ref
+        .read(viewRepositoryProvider)
+        .createLensInView(viewId, r.$1);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LensEditScreen(viewId: viewId, lensId: lensId),
+      ),
+    );
   }
 
   /// The bar: the user's Views (up to 4; beyond that the fourth slot becomes
@@ -291,10 +300,10 @@ class _ViewBody extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
       data: (vs) {
-        if (vs == null ||
-            vs.sections.every(
-              (s) => s.shown.isEmpty && s.hiddenTerminals.isEmpty,
-            )) {
+        // Every lens renders its card, even empty ones (a lens with nothing
+        // to do earns its "well done", it doesn't vanish) — the guidance
+        // empty-state only shows when the view has no lenses at all.
+        if (vs == null || vs.sections.isEmpty) {
           return _EmptyState(l10n: l10n);
         }
         return ListView(
@@ -325,9 +334,6 @@ class _LensCardState extends State<_LensCard> {
   Widget build(BuildContext context) {
     final section = widget.section;
     final hidden = section.hiddenTerminals;
-    if (section.shown.isEmpty && hidden.isEmpty) {
-      return const SizedBox.shrink();
-    }
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final rows = [...section.shown, if (_expanded) ...hidden];
@@ -395,6 +401,14 @@ class _LensCardState extends State<_LensCard> {
                 ],
               ),
             ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Text(
+                  l10n.emptyLensCard,
+                  style: TextStyle(color: scheme.outline),
+                ),
+              ),
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
               TaskTile(

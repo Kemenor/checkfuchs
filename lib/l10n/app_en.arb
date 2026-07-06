@@ -832,5 +832,9 @@
         "type": "int"
       }
     }
+  },
+  "emptyLensCard": "Nothing to do. Well done 🦊",
+  "@emptyLensCard": {
+    "description": "Body of a lens card with no rows to show"
   }
 }

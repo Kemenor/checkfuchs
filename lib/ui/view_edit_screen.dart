@@ -105,6 +105,43 @@ class ViewEditScreen extends ConsumerWidget {
   }
 }
 
+/// One lens's dials standalone — pushed right after "New lens here" so
+/// creating a lens flows straight into shaping it (name → dials, no detour
+/// through the View editor). Pops itself if the lens is deleted.
+class LensEditScreen extends ConsumerWidget {
+  const LensEditScreen({super.key, required this.viewId, required this.lensId});
+
+  final int viewId;
+  final int lensId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(_viewLensesProvider(viewId), (_, next) {
+      final entries = next.asData?.value;
+      if (entries != null && entries.every((e) => e.lens.id != lensId)) {
+        Navigator.of(context).maybePop();
+      }
+    });
+    final entries = ref.watch(_viewLensesProvider(viewId)).asData?.value;
+    final entry = entries?.where((e) => e.lens.id == lensId).firstOrNull;
+    return Scaffold(
+      appBar: AppBar(title: Text(entry?.lens.name ?? '')),
+      body: entry == null
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.only(top: 12, bottom: 24),
+              children: [
+                _LensDialsCard(
+                  key: ValueKey(entry.lens.id),
+                  viewId: viewId,
+                  entry: entry,
+                ),
+              ],
+            ),
+    );
+  }
+}
+
 /// One lens's full dial set as a settings card: name header (tap = rename),
 /// the pickers, the period editor, the statusFilter chips, and delete.
 class _LensDialsCard extends ConsumerWidget {
