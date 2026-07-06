@@ -70,6 +70,10 @@ screens use them.
   shows ✓ until tomorrow's slot arrives, a weekly all week; resolved one-offs for the
   rest of the day). Never a history list — history lives in analytics. (The Habitify
   shape: today's check stays in place at the bottom of the card, yesterday's is gone.)
+- The header counts everything, so when the `statusFilter` hides outcome rows the
+  breakdown becomes a **tap-to-peek** (chevron affordance): expanding appends the hidden
+  current-outcome rows below the list, collapsing removes them. Transient — the
+  persisted filter never changes.
 - Periodic lens: focus row uses the Focus marker + `FOCUS` pill; quota-met → "done this week".
 
 ### 3.3 View navigation

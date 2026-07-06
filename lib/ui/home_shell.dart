@@ -291,7 +291,10 @@ class _ViewBody extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
       data: (vs) {
-        if (vs == null || vs.sections.every((s) => s.shown.isEmpty)) {
+        if (vs == null ||
+            vs.sections.every(
+              (s) => s.shown.isEmpty && s.hiddenTerminals.isEmpty,
+            )) {
           return _EmptyState(l10n: l10n);
         }
         return ListView(
@@ -303,15 +306,31 @@ class _ViewBody extends ConsumerWidget {
   }
 }
 
-class _LensCard extends StatelessWidget {
+/// A lens card. The breakdown header counts every current outcome; when the
+/// statusFilter keeps some of those rows out of the list, tapping the header
+/// peeks at them (a transient expand — the persisted filter is untouched).
+class _LensCard extends StatefulWidget {
   const _LensCard({required this.section});
 
   final LensSection section;
 
   @override
+  State<_LensCard> createState() => _LensCardState();
+}
+
+class _LensCardState extends State<_LensCard> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (section.shown.isEmpty) return const SizedBox.shrink();
+    final section = widget.section;
+    final hidden = section.hiddenTerminals;
+    if (section.shown.isEmpty && hidden.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final rows = [...section.shown, if (_expanded) ...hidden];
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -333,20 +352,55 @@ class _LensCard extends StatelessWidget {
                       color: scheme.outline,
                     ),
                   ),
-                  _Breakdown(
-                    done: section.doneCount,
-                    missed: section.missedCount,
-                    left: section.openCount,
-                  ),
+                  if (hidden.isEmpty)
+                    _Breakdown(
+                      done: section.doneCount,
+                      missed: section.missedCount,
+                      left: section.openCount,
+                    )
+                  else
+                    Tooltip(
+                      message: _expanded
+                          ? l10n.hideOutcomes
+                          : l10n.showOutcomes,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(99),
+                        onTap: () => setState(() => _expanded = !_expanded),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _Breakdown(
+                                done: section.doneCount,
+                                missed: section.missedCount,
+                                left: section.openCount,
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                _expanded
+                                    ? Symbols.expand_less_rounded
+                                    : Symbols.expand_more_rounded,
+                                size: 16,
+                                color: scheme.outline,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            for (var i = 0; i < section.shown.length; i++) ...[
+            for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
               TaskTile(
-                task: section.shown[i],
+                task: rows[i],
                 lens: section.domainLens,
-                avoided: section.isAvoided(section.shown[i]),
+                avoided: section.isAvoided(rows[i]),
               ),
             ],
           ],

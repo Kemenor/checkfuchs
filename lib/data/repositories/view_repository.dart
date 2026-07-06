@@ -16,6 +16,7 @@ class LensSection {
     required this.lens,
     required this.domainLens,
     required this.shown,
+    required this.hiddenTerminals,
     required this.doneCount,
     required this.missedCount,
     required this.openCount,
@@ -25,6 +26,12 @@ class LensSection {
   final LensRow lens;
   final Lens domainLens;
   final List<domain.Task> shown;
+
+  /// Current outcomes the statusFilter keeps out of [shown] — the breakdown
+  /// header counts them, and tapping it peeks at them without changing the
+  /// persisted filter.
+  final List<domain.Task> hiddenTerminals;
+
   final int doneCount;
   final int missedCount;
   final int openCount;
@@ -338,13 +345,16 @@ class ViewRepository {
 
       final projected = projectLens(lens, ms, now);
       final projectedIds = {for (final x in projected) x.id};
-      final terminals = <domain.Task>[
-        for (final m in ms)
-          if (isCurrentTerminal(m.task) &&
-              _terminalMatches(m.task, filter) &&
-              !projectedIds.contains(m.task.id))
-            m.task,
-      ];
+      final terminals = <domain.Task>[];
+      final hiddenTerminals = <domain.Task>[];
+      for (final m in ms) {
+        if (!isCurrentTerminal(m.task) || projectedIds.contains(m.task.id)) {
+          continue;
+        }
+        (_terminalMatches(m.task, filter) ? terminals : hiddenTerminals).add(
+          m.task,
+        );
+      }
 
       // Avoidance (§8): a template's instances all live in its lens, so the
       // members ARE the series history — group and run the pure analytics.
@@ -365,6 +375,7 @@ class ViewRepository {
           lens: entry.value,
           domainLens: lens,
           shown: [...projected, ...terminals],
+          hiddenTerminals: hiddenTerminals,
           doneCount: ms
               .where(
                 (m) =>

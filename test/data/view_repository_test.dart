@@ -153,6 +153,50 @@ void main() {
       );
     });
 
+    test(
+      'hiddenTerminals carries what the filter hides (header peek)',
+      () async {
+        final lensId = await viewRepo.seedDefaults();
+        await taskRepo.createTemplate(
+          Template(
+            name: 'Brush teeth',
+            recurrence: Recurrence.daily(d(2026, 6, 27)),
+            windowRule: Slice.morning,
+            createdAt: d(2026, 6, 27),
+          ),
+        );
+        await taskRepo.reconcileAll(d(2026, 6, 27, 8));
+        final today = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
+        await taskRepo.completeTask(today, d(2026, 6, 27, 8));
+
+        final home = (await viewRepo.watchViews().first).single;
+        final clock = FixedClock(d(2026, 6, 27, 9));
+
+        // Filter 0 hides the ✓ from the list, but the peek can reach it.
+        var section = (await viewRepo.watchViewState(home.id, clock).first)!
+            .sections
+            .single;
+        expect(
+          section.shown.map((t) => t.status),
+          isNot(contains(domain.TaskStatus.done)),
+        );
+        expect(section.hiddenTerminals.map((t) => t.status), [
+          domain.TaskStatus.done,
+        ]);
+
+        // Filter 1 shows it — nothing left to peek at.
+        await viewRepo.setStatusFilter(home.id, lensId, 1);
+        section = (await viewRepo.watchViewState(home.id, clock).first)!
+            .sections
+            .single;
+        expect(
+          section.shown.map((t) => t.status),
+          contains(domain.TaskStatus.done),
+        );
+        expect(section.hiddenTerminals, isEmpty);
+      },
+    );
+
     test('statusFilter shows current outcomes only, never history', () async {
       final lensId = await viewRepo.seedDefaults();
       await taskRepo.createTemplate(

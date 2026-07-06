@@ -162,5 +162,7 @@
   "demoBirthday": "Organiser le dîner d'anniversaire",
   "demoPostcard": "Écrire une carte postale à mamie",
   "pillToday": "Auj.",
-  "pillTomorrow": "Demain"
+  "pillTomorrow": "Demain",
+  "showOutcomes": "Afficher les résultats",
+  "hideOutcomes": "Masquer les résultats"
 }

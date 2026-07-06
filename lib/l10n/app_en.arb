@@ -761,5 +761,13 @@
   },
   "@pillTomorrow": {
     "description": "Tile pill: due/opens tomorrow (rendered uppercase)"
+  },
+  "showOutcomes": "Show outcomes",
+  "hideOutcomes": "Hide outcomes",
+  "@showOutcomes": {
+    "description": "Tooltip on the lens breakdown header when tapping expands the hidden current outcomes"
+  },
+  "@hideOutcomes": {
+    "description": "Tooltip on the lens breakdown header when tapping collapses the peeked outcomes"
   }
 }
