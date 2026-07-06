@@ -97,5 +97,7 @@
   "languageEnglish": "English",
   "languageGerman": "Deutsch",
   "languageFrench": "Français",
-  "languageItalian": "Italiano"
+  "languageItalian": "Italiano",
+  "exactAlarmsTitle": "Genaue Erinnerungen erlauben",
+  "exactAlarmsSubtitle": "Ohne diese Berechtigung können Erinnerungen bis zu einer Stunde später eintreffen."
 }

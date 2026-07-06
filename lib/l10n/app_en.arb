@@ -486,5 +486,13 @@
   },
   "@languageItalian": {
     "description": "Language endonym"
+  },
+  "exactAlarmsTitle": "Allow exact reminders",
+  "exactAlarmsSubtitle": "Without this, pings can arrive up to an hour late.",
+  "@exactAlarmsTitle": {
+    "description": "Settings tile: grant the Android Alarms & reminders special access"
+  },
+  "@exactAlarmsSubtitle": {
+    "description": "Why exact alarms matter"
   }
 }

@@ -83,6 +83,30 @@ class NotificationScheduler {
     }
   }
 
+  /// Whether the OS lets us schedule exact alarms (Android 14+ requires the
+  /// "Alarms & reminders" special access; without it pings drift ≤ 1 h).
+  Future<bool> canScheduleExact() async {
+    if (!await _ensureReady()) return true; // nothing to grant elsewhere
+    return _exact;
+  }
+
+  /// Open the system "Alarms & reminders" grant, then re-read the state so
+  /// the next sync schedules exactly. Returns the new state.
+  Future<bool> requestExactAlarms() async {
+    if (!await _ensureReady()) return true;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestExactAlarmsPermission();
+      _exact = await android?.canScheduleExactNotifications() ?? _exact;
+    } catch (e) {
+      debugPrint('requestExactAlarms failed: $e');
+    }
+    return _exact;
+  }
+
   /// Re-fill the OS schedule from [tasks]: open instances' reminders resolved
   /// to instants, future-only, soonest-first, capped at 64 (the iOS limit,
   /// PLAN "≤ 64 pending" — Android follows the same budget).
@@ -105,6 +129,15 @@ class NotificationScheduler {
     final selected = selectScheduled(all, now);
 
     try {
+      // Re-read the exact-alarm grant each sync: it can change mid-session
+      // (the Settings tile, or the user toggling special access directly)
+      // and a stale cache would silently keep pings inexact.
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      _exact = await android?.canScheduleExactNotifications() ?? _exact;
+
       await _plugin.cancelAll();
       for (final s in selected) {
         await _plugin.zonedSchedule(

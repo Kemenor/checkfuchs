@@ -83,6 +83,28 @@ class SettingsScreen extends ConsumerWidget {
           FuchsbauSectionHeader(l10n.remindersSection),
           FuchsbauSettingsCard(
             children: [
+              // Exact-alarm grant (Android 14+): only shown while missing.
+              if (ref.watch(exactAlarmsProvider).asData?.value == false)
+                ListTile(
+                  contentPadding: fuchsbauCardRowPadding,
+                  leading: const Icon(Icons.alarm_on_rounded),
+                  title: Text(l10n.exactAlarmsTitle),
+                  subtitle: Text(l10n.exactAlarmsSubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await ref
+                        .read(notificationSchedulerProvider)
+                        .requestExactAlarms();
+                    ref.invalidate(exactAlarmsProvider);
+                    // Re-fill the schedule so pending pings become exact.
+                    final tasks = await ref
+                        .read(taskRepositoryProvider)
+                        .allTasks();
+                    await ref
+                        .read(notificationSchedulerProvider)
+                        .sync(tasks, ref.read(clockProvider).now());
+                  },
+                ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: Text(

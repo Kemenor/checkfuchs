@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart' show Locale, ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart' show FuchsbauFont;
@@ -110,10 +111,21 @@ final notificationSyncProvider = Provider<void>((ref) {
   }, fireImmediately: true);
 });
 
+/// Whether exact-alarm scheduling is granted (Settings surfaces a grant tile
+/// while it isn't). Invalidate after requesting.
+final exactAlarmsProvider = FutureProvider<bool>(
+  (ref) => ref.watch(notificationSchedulerProvider).canScheduleExact(),
+);
+
 /// App version string for the About dialog, e.g. "0.0.1 (1)".
 final appVersionProvider = FutureProvider<String>((ref) async {
-  final info = await PackageInfo.fromPlatform();
-  return '${info.version} (${info.buildNumber})';
+  try {
+    final info = await PackageInfo.fromPlatform();
+    return '${info.version} (${info.buildNumber})';
+  } catch (e) {
+    debugPrint('appVersionProvider failed: $e');
+    rethrow;
+  }
 });
 
 // --- settings (Phase 8) ------------------------------------------------------

@@ -97,5 +97,7 @@
   "languageEnglish": "English",
   "languageGerman": "Deutsch",
   "languageFrench": "Français",
-  "languageItalian": "Italiano"
+  "languageItalian": "Italiano",
+  "exactAlarmsTitle": "Autoriser les rappels exacts",
+  "exactAlarmsSubtitle": "Sans cela, les rappels peuvent arriver jusqu'à une heure en retard."
 }

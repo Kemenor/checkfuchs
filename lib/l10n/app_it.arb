@@ -97,5 +97,7 @@
   "languageEnglish": "English",
   "languageGerman": "Deutsch",
   "languageFrench": "Français",
-  "languageItalian": "Italiano"
+  "languageItalian": "Italiano",
+  "exactAlarmsTitle": "Consenti promemoria esatti",
+  "exactAlarmsSubtitle": "Senza questo permesso i promemoria possono arrivare fino a un'ora in ritardo."
 }
