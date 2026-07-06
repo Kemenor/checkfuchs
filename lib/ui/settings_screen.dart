@@ -43,18 +43,21 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           _Section(l10n.typefaceSection),
-          for (final font in FuchsbauFont.values)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                font.label,
-                style: TextStyle(fontFamily: font.family),
-              ),
-              trailing: settings.font == font
-                  ? Icon(Icons.check, color: scheme.primary)
-                  : null,
-              onTap: () => controller.setFont(font),
-            ),
+          // The shared collapsible picker (knabberfuchs parity): current choice
+          // as the collapsed subtitle, radio list with accessibility-intent
+          // subtitles when expanded.
+          FuchsbauChoicePicker<FuchsbauFont>(
+            icon: Icons.text_fields_rounded,
+            title: l10n.typefaceSection,
+            value: settings.font,
+            options: {for (final f in FuchsbauFont.values) f: f.label},
+            subtitles: {
+              FuchsbauFont.figtree: l10n.typefaceDefault,
+              FuchsbauFont.atkinsonHyperlegible: l10n.typefaceLowVision,
+              FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
+            },
+            onChanged: controller.setFont,
+          ),
           const SizedBox(height: 24),
           _Section(l10n.vacation),
           ListTile(

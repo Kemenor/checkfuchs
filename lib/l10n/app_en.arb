@@ -450,5 +450,17 @@
   },
   "@aboutBody": {
     "description": "Body text of the About dialog"
+  },
+  "typefaceDefault": "Default",
+  "typefaceLowVision": "Low-vision legibility",
+  "typefaceDyslexia": "Dyslexia",
+  "@typefaceDefault": {
+    "description": "Typeface option subtitle: the default font"
+  },
+  "@typefaceLowVision": {
+    "description": "Typeface option subtitle: Atkinson Hyperlegible"
+  },
+  "@typefaceDyslexia": {
+    "description": "Typeface option subtitle: OpenDyslexic"
   }
 }

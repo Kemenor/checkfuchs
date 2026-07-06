@@ -88,5 +88,8 @@
   "moreLabel": "Mehr",
   "structureTooltip": "Ansichten & Linsen",
   "aboutSection": "Über",
-  "aboutBody": "Gewohnheiten und To-dos in einer App: Eine tägliche Gewohnheit bringt dich jeden Tag zurück, alles andere läuft mit. Local-first — keine Konten, keine Werbung, deine Daten bleiben auf deinem Gerät."
+  "aboutBody": "Gewohnheiten und To-dos in einer App: Eine tägliche Gewohnheit bringt dich jeden Tag zurück, alles andere läuft mit. Local-first — keine Konten, keine Werbung, deine Daten bleiben auf deinem Gerät.",
+  "typefaceDefault": "Standard",
+  "typefaceLowVision": "Bessere Lesbarkeit (Sehschwäche)",
+  "typefaceDyslexia": "Legasthenie"
 }

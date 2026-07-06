@@ -88,5 +88,8 @@
   "moreLabel": "Altro",
   "structureTooltip": "Viste & lenti",
   "aboutSection": "Informazioni",
-  "aboutBody": "Abitudini e cose da fare in un'unica app: un'abitudine quotidiana ti fa tornare ogni giorno e tutto il resto ti segue. Local-first — niente account, niente pubblicità, i tuoi dati restano sul tuo telefono."
+  "aboutBody": "Abitudini e cose da fare in un'unica app: un'abitudine quotidiana ti fa tornare ogni giorno e tutto il resto ti segue. Local-first — niente account, niente pubblicità, i tuoi dati restano sul tuo telefono.",
+  "typefaceDefault": "Predefinito",
+  "typefaceLowVision": "Leggibilità (ipovisione)",
+  "typefaceDyslexia": "Dislessia"
 }

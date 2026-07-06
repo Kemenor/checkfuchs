@@ -88,5 +88,8 @@
   "moreLabel": "Plus",
   "structureTooltip": "Vues & lentilles",
   "aboutSection": "À propos",
-  "aboutBody": "Habitudes et tâches dans une seule app : une habitude quotidienne vous fait revenir chaque jour, et tout le reste suit. Local d'abord — pas de compte, pas de pub, vos données restent sur votre téléphone."
+  "aboutBody": "Habitudes et tâches dans une seule app : une habitude quotidienne vous fait revenir chaque jour, et tout le reste suit. Local d'abord — pas de compte, pas de pub, vos données restent sur votre téléphone.",
+  "typefaceDefault": "Par défaut",
+  "typefaceLowVision": "Lisibilité (basse vision)",
+  "typefaceDyslexia": "Dyslexie"
 }
