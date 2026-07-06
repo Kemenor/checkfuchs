@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
@@ -44,14 +45,14 @@ class VacationScreen extends ConsumerWidget {
                       children: [
                         for (final v in list)
                           ListTile(
-                            leading: const Icon(Icons.beach_access_outlined),
+                            leading: const Icon(Symbols.beach_access_rounded),
                             title: Text(
                               '${fmt.format(v.start)} – ${fmt.format(v.end)}',
                             ),
                             trailing: IconButton(
                               tooltip: l10n.delete,
                               icon: Icon(
-                                Icons.delete_outline,
+                                Symbols.delete_outline_rounded,
                                 color: Theme.of(context).colorScheme.error,
                               ),
                               onPressed: () async {
@@ -75,7 +76,7 @@ class VacationScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'addVacation',
         onPressed: () => _add(context, ref),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Symbols.add_rounded),
         label: Text(l10n.addTask),
       ),
     );

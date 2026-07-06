@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
 import '../data/repositories/view_repository.dart';
@@ -131,14 +132,19 @@ class _HomeShellState extends ConsumerState<HomeShell>
       },
       destinations: [
         for (final v in shown)
-          NavigationDestination(icon: Icon(viewIcon(v.icon)), label: v.name),
+          NavigationDestination(
+            icon: Icon(viewIcon(v.icon)),
+            selectedIcon: Icon(viewIcon(v.icon), fill: 1),
+            label: v.name,
+          ),
         if (overflow)
           NavigationDestination(
-            icon: const Icon(Icons.more_horiz_rounded),
+            icon: const Icon(Symbols.more_horiz_rounded),
             label: l10n.moreLabel,
           ),
         NavigationDestination(
-          icon: const Icon(Icons.settings_rounded),
+          icon: const Icon(Symbols.settings_rounded),
+          selectedIcon: const Icon(Symbols.settings_rounded, fill: 1),
           label: l10n.settings,
         ),
       ],
@@ -158,7 +164,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.dashboard_customize_rounded),
+              leading: const Icon(Symbols.dashboard_customize_rounded),
               title: Text(l10n.newView),
               onTap: () {
                 Navigator.pop(ctx);
@@ -166,7 +172,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.filter_alt_rounded),
+              leading: const Icon(Symbols.filter_alt_rounded),
               title: Text(l10n.newLensHere),
               onTap: () {
                 Navigator.pop(ctx);
@@ -174,7 +180,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.tune_rounded),
+              leading: const Icon(Symbols.tune_rounded),
               title: Text(l10n.editThisView),
               onTap: () {
                 Navigator.pop(ctx);
@@ -227,13 +233,13 @@ class _HomeShellState extends ConsumerState<HomeShell>
             heroTag: 'homeStructure',
             tooltip: l10n.structureTooltip,
             onPressed: () => _showStructureSheet(viewId),
-            child: const Icon(Icons.dashboard_customize_rounded),
+            child: const Icon(Symbols.dashboard_customize_rounded),
           ),
           const SizedBox(width: 12),
           FloatingActionButton.extended(
             heroTag: 'homeAdd',
             onPressed: () => showCreateTaskSheet(context, ref),
-            icon: const Icon(Icons.add),
+            icon: const Icon(Symbols.add_rounded),
             label: Text(l10n.addTask),
           ),
         ],
@@ -413,7 +419,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.task_alt_rounded,
+              Symbols.task_alt_rounded,
               size: 56,
               color: theme.colorScheme.primary,
             ),

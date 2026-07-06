@@ -2,6 +2,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/backup/backup_service.dart';
 import '../l10n/app_localizations.dart';
@@ -31,7 +32,7 @@ class SettingsScreen extends ConsumerWidget {
           FuchsbauSettingsCard(
             children: [
               FuchsbauChoicePicker<ThemeMode>(
-                icon: Icons.brightness_6_rounded,
+                icon: Symbols.brightness_6_rounded,
                 title: l10n.appearanceSection,
                 value: settings.themeMode,
                 options: {
@@ -42,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
                 onChanged: controller.setThemeMode,
               ),
               FuchsbauChoicePicker<String>(
-                icon: Icons.translate_rounded,
+                icon: Symbols.translate_rounded,
                 title: l10n.languageSection,
                 value: settings.localeCode,
                 options: {
@@ -55,7 +56,7 @@ class SettingsScreen extends ConsumerWidget {
                 onChanged: controller.setLocaleCode,
               ),
               FuchsbauChoicePicker<FuchsbauFont>(
-                icon: Icons.text_fields_rounded,
+                icon: Symbols.text_fields_rounded,
                 title: l10n.typefaceSection,
                 value: settings.font,
                 options: {for (final f in FuchsbauFont.values) f: f.label},
@@ -73,9 +74,9 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               ListTile(
                 contentPadding: fuchsbauCardRowPadding,
-                leading: const Icon(Icons.beach_access_outlined),
+                leading: const Icon(Symbols.beach_access_rounded),
                 title: Text(l10n.vacation),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Symbols.chevron_right_rounded),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const VacationScreen()),
                 ),
@@ -87,18 +88,18 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               ListTile(
                 contentPadding: fuchsbauCardRowPadding,
-                leading: const Icon(Icons.upload_rounded),
+                leading: const Icon(Symbols.upload_rounded),
                 title: Text(l10n.backupExport),
                 subtitle: Text(l10n.backupExportSub),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Symbols.chevron_right_rounded),
                 onTap: () => _exportBackup(context, ref),
               ),
               ListTile(
                 contentPadding: fuchsbauCardRowPadding,
-                leading: const Icon(Icons.download_rounded),
+                leading: const Icon(Symbols.download_rounded),
                 title: Text(l10n.backupImport),
                 subtitle: Text(l10n.backupImportSub),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Symbols.chevron_right_rounded),
                 onTap: () => _importBackup(context, ref),
               ),
             ],
@@ -110,10 +111,10 @@ class SettingsScreen extends ConsumerWidget {
               if (ref.watch(exactAlarmsProvider).asData?.value == false)
                 ListTile(
                   contentPadding: fuchsbauCardRowPadding,
-                  leading: const Icon(Icons.alarm_on_rounded),
+                  leading: const Icon(Symbols.alarm_on_rounded),
                   title: Text(l10n.exactAlarmsTitle),
                   subtitle: Text(l10n.exactAlarmsSubtitle),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
                   onTap: () async {
                     await ref
                         .read(notificationSchedulerProvider)
@@ -226,10 +227,10 @@ class _AboutTile extends ConsumerWidget {
     final version = ref.watch(appVersionProvider).asData?.value;
     return ListTile(
       contentPadding: fuchsbauCardRowPadding,
-      leading: const Icon(Icons.info_outline_rounded),
+      leading: const Icon(Symbols.info_rounded),
       title: const Text('Checkfuchs'),
       subtitle: version == null ? null : Text(version),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(Symbols.chevron_right_rounded),
       onTap: () => showDialog<void>(
         context: context,
         builder: (ctx) {

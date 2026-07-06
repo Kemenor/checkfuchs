@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
 import '../data/repositories/view_repository.dart';
@@ -57,7 +58,7 @@ class ViewEditScreen extends ConsumerWidget {
                       contentPadding: fuchsbauCardRowPadding,
                       leading: Icon(viewIcon(view.icon)),
                       title: Text(view.name),
-                      trailing: const Icon(Icons.edit_rounded),
+                      trailing: const Icon(Symbols.edit_rounded),
                       onTap: () => _renameView(context, ref, view),
                     ),
                     _DeleteTile(
@@ -141,14 +142,14 @@ class _LensDialsCard extends ConsumerWidget {
         ListTile(
           key: ValueKey('lens-name-${lens.id}'),
           contentPadding: fuchsbauCardRowPadding,
-          leading: const Icon(Icons.filter_alt_rounded),
+          leading: const Icon(Symbols.filter_alt_rounded),
           title: Text(lens.name),
-          trailing: const Icon(Icons.edit_rounded),
+          trailing: const Icon(Symbols.edit_rounded),
           onTap: () => _renameLens(context, ref, lens),
         ),
         FuchsbauChoicePicker<int>(
           key: ValueKey('show-count-${lens.id}'),
-          icon: Icons.format_list_numbered_rounded,
+          icon: Symbols.format_list_numbered_rounded,
           title: l10n.showCountDial,
           value: lens.showCount,
           options: showCountOptions,
@@ -156,7 +157,7 @@ class _LensDialsCard extends ConsumerWidget {
         ),
         FuchsbauChoicePicker<LensOrdering>(
           key: ValueKey('ordering-${lens.id}'),
-          icon: Icons.swap_vert_rounded,
+          icon: Symbols.swap_vert_rounded,
           title: l10n.orderingDial,
           value: lens.ordering,
           options: {
@@ -170,7 +171,7 @@ class _LensDialsCard extends ConsumerWidget {
         if (lens.showCount != Lens.showAll)
           FuchsbauChoicePicker<LensSelection>(
             key: ValueKey('selection-${lens.id}'),
-            icon: Icons.casino_rounded,
+            icon: Symbols.casino_rounded,
             title: l10n.selectionDial,
             value: lens.selection,
             options: {
@@ -184,7 +185,7 @@ class _LensDialsCard extends ConsumerWidget {
         if (lens.period != null)
           FuchsbauChoicePicker<int>(
             key: ValueKey('dormant-${lens.id}'),
-            icon: Icons.bedtime_rounded,
+            icon: Symbols.bedtime_rounded,
             title: l10n.dormantDial,
             value: dormantValue,
             options: dormantOptions,
@@ -238,7 +239,7 @@ class _PeriodTile extends ConsumerWidget {
     final now = ref.read(clockProvider).now();
     final today = DateTime(now.year, now.month, now.day);
     return ExpansionTile(
-      leading: const Icon(Icons.event_repeat_rounded),
+      leading: const Icon(Symbols.event_repeat_rounded),
       title: Text(l10n.periodDial),
       subtitle: Text(
         lens.period == null
@@ -332,7 +333,7 @@ class _DeleteTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
       contentPadding: fuchsbauCardRowPadding,
-      leading: Icon(Icons.delete_outline_rounded, color: scheme.error),
+      leading: Icon(Symbols.delete_outline_rounded, color: scheme.error),
       title: Text(title, style: TextStyle(color: scheme.error)),
       onTap: () async {
         final confirmed = await showDialog<bool>(

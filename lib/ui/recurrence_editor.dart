@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/recurrence.dart';
 import '../l10n/app_localizations.dart';
@@ -100,7 +101,11 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
           ),
           child: Row(
             children: [
-              Icon(Icons.event_repeat, color: scheme.primary, size: 20),
+              Icon(
+                Symbols.event_repeat_rounded,
+                color: scheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -237,7 +242,7 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.today),
+            leading: const Icon(Symbols.today_rounded),
             title: Text(l10n.starts),
             trailing: Text(
               DateFormat.yMMMd(locale).format(_anchor),
@@ -305,7 +310,7 @@ class _EveryStepper extends StatelessWidget {
           onPressed: (onChanged != null && value > min)
               ? () => onChanged!(value - 1)
               : null,
-          icon: const Icon(Icons.remove),
+          icon: const Icon(Symbols.remove_rounded),
         ),
         SizedBox(
           width: 36,
@@ -323,7 +328,7 @@ class _EveryStepper extends StatelessWidget {
           onPressed: (onChanged != null && value < max)
               ? () => onChanged!(value + 1)
               : null,
-          icon: const Icon(Icons.add),
+          icon: const Icon(Symbols.add_rounded),
         ),
         if (unit.isNotEmpty) ...[
           const SizedBox(width: 10),

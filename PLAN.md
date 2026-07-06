@@ -193,19 +193,20 @@ visibility tiers are now Lens configurations, not code paths.
 > | 2 · Today surface (carrier MVP) | ✅ **done** — reconcile-on-launch/resume · tap-ring complete · swipe Skip · add flow |
 > | 3 · Templates & recurrence | ✅ **done** — recurrence editor · create (recurring/one-off) · rename/delete · edit-series · turn-into-series · stop-repeating |
 > | 4 · Lenses, Views & dials | ✅ **done** — 5 tables + membership + derive-driven Views + lens cards + text-breakdown header · dial-editing UI (Edit this view: showCount / ordering / selection / period / dormantAfter / per-view statusFilter, rename/delete for views & lenses) |
-> | 5 · Reminders | ✅ **done (device-verified)** — notifications schema column (v5) · presets UI (create + detail, 4 languages) · discrete scheduler (≤ 64, exact-alarm with inexact fallback) · resync on every state change · permission flow. Verified on emulator: ping fires on time; resolving a task cancels pending **and** dismisses posted. *Flagged: ~12 h workmanager refresh pass* · exact-alarm grant tile ✅ (Settings › Reminders, shown only while missing; scheduler re-checks per sync) |
+> | 5 · Reminders | ✅ **done (device-verified)** — notifications schema column (v5) · presets UI (create + detail, 4 languages) · discrete scheduler (≤ 64, exact-alarm with inexact fallback) · resync on every state change · permission flow. Verified on emulator: ping fires on time; resolving a task cancels pending **and** dismisses posted. ~12 h workmanager refresh pass ✅ (bg isolate: reconcile + re-fill schedule; debug-menu one-off hook, device-verified) · exact-alarm grant tile ✅ |
 > | 6 · Pause & Vacation | ✅ **done** — vacation gating in reconcile + pause toggle + vacation screen · gate-aware resume (no retroactive Misses) · vacation-start auto-Skip (open question 3 resolved) |
 > | 7 · Analytics & avoidance | ✅ **done** — streak / completion-rate on recurring tasks · avoidance surfacing (soft-amber marker past the consecutive-miss threshold) |
-> | 8 · Polish & i18n | 🟡 **partial** — text-breakdown header ✅ · Settings (theme + font picker + reminder disclosure) ✅ · full DE/FR/IT microcopy ✅. *Flagged: Material Symbols Rounded bundling, ZIP backup/restore, onboarding* |
+> | 8 · Polish & i18n | ✅ **done** — text-breakdown header · Settings (pickers, language override, reminder disclosure, About + debug menu) · full DE/FR/IT microcopy · ZIP backup/restore (device-verified round-trip) · onboarding (seeds the carrier habit) · Material Symbols Rounded |
 > | 9 · Release | ⬜ todo — fox icon, fastlane, signing |
 >
-> **State:** **149 tests green · CI green · dogfoodable.** The whole vertical works:
-> create (recurring/one-off, with reminder presets) → ping fires (exact once granted) →
-> complete/skip/pass (cancels the ping) → edit/convert series → Views & lenses with full
-> dial-editing (periodic hold, Pass, dormancy, random, status filters) → pause & vacation
-> (gate-aware resume, no retroactive Misses) → streaks & avoidance, in all four languages.
-> Remaining is **polish** (workmanager refresh pass, Material Symbols bundling, ZIP
-> backup, onboarding) and **release**.
+> **State:** **159 tests green · CI green · feature-complete against the concept.** The
+> whole vertical works: onboarding seeds the carrier → create (recurring/one-off, with
+> reminder presets) → ping fires (exact once granted; ~12 h background refresh keeps the
+> schedule full) → complete/skip/pass (cancels the ping) → edit/convert series → Views &
+> lenses with full dial-editing (periodic hold, Pass, dormancy, random, status filters) →
+> pause & vacation (gate-aware resume, no retroactive Misses) → streaks & avoidance →
+> ZIP backup/restore, in all four languages, Material Symbols Rounded throughout.
+> Remaining: **Phase 9 — release** (fox icon, fastlane, signing).
 
 - **Phase 0 — Scaffold.** Flutter project (`ch.checkfuchs.app`), Riverpod, M3 theme +
   fox-orange seed, l10n skeleton (en/de/fr/it), distrobox + CI (`flutter analyze` +

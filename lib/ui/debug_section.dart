@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/notification.dart';
 import '../domain/recurrence.dart';
 import '../domain/task.dart';
 import '../domain/template.dart';
 import '../domain/window_rule.dart';
+import '../notifications/background_refresh.dart';
 import '../providers.dart';
 import 'package:fuchsbau/fuchsbau.dart'
     show FuchsbauSettingsCard, fuchsbauCardRowPadding;
@@ -39,24 +41,39 @@ class DebugSection extends ConsumerWidget {
           children: [
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
-              leading: const Icon(Icons.science_outlined),
+              leading: const Icon(Symbols.science_rounded),
               title: const Text('Load test data'),
               subtitle: const Text('Seed demo habits + one-offs'),
               onTap: () => _seed(context, ref),
             ),
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
-              leading: const Icon(Icons.sync),
+              leading: const Icon(Symbols.sync_rounded),
               title: const Text('Reconcile now'),
               subtitle: const Text('Run the expiry sweep + generation'),
               onTap: () => _reconcile(context, ref),
             ),
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
-              leading: const Icon(Icons.notifications_active_outlined),
+              leading: const Icon(Symbols.notifications_active_rounded),
               title: const Text('Pending notifications'),
               subtitle: const Text('What the OS has scheduled'),
               onTap: () => _showPending(context, ref),
+            ),
+            ListTile(
+              contentPadding: fuchsbauCardRowPadding,
+              leading: const Icon(Symbols.settings_backup_restore_rounded),
+              title: const Text('Run background refresh'),
+              subtitle: const Text('One-off WorkManager pass (bg isolate)'),
+              onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                await runBackgroundRefreshOnce();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Background refresh enqueued — see logcat'),
+                  ),
+                );
+              },
             ),
           ],
         ),

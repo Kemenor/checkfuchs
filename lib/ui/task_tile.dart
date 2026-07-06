@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/lens.dart';
 import '../domain/task.dart';
@@ -41,24 +42,28 @@ class TaskTile extends ConsumerWidget {
 
     // §2 state markers. Emerald rides scheme.tertiary, indigo scheme.secondary.
     final (IconData icon, Color color, bool actionable) = switch (task.status) {
-      TaskStatus.done => (Icons.check_circle, scheme.tertiary, false),
+      TaskStatus.done => (Symbols.check_circle_rounded, scheme.tertiary, false),
       TaskStatus.skipped => (
-        Icons.remove_circle_outline,
+        Symbols.remove_circle_outline_rounded,
         status.neutral,
         false,
       ),
-      TaskStatus.missed => (Icons.radio_button_unchecked, status.taupe, false),
+      TaskStatus.missed => (
+        Symbols.radio_button_unchecked_rounded,
+        status.taupe,
+        false,
+      ),
       TaskStatus.open => switch (phase) {
         // Avoidance (§1 "soft amber — information, not a command"): the ring
         // changes colour, the action stays exactly the same.
         TaskPhase.active => (
-          Icons.radio_button_unchecked,
+          Symbols.radio_button_unchecked_rounded,
           avoided ? status.amber : scheme.primary,
           true,
         ),
-        TaskPhase.pending => (Icons.schedule, scheme.outline, false),
+        TaskPhase.pending => (Symbols.schedule_rounded, scheme.outline, false),
         TaskPhase.expired => (
-          Icons.radio_button_unchecked,
+          Symbols.radio_button_unchecked_rounded,
           status.taupe,
           false,
         ),
@@ -117,20 +122,20 @@ class TaskTile extends ConsumerWidget {
       },
       background: _SwipeBackground(
         alignment: Alignment.centerLeft,
-        icon: Icons.check_circle,
+        icon: Symbols.check_circle_rounded,
         label: l10n.swipeDone,
         color: scheme.tertiary,
       ),
       secondaryBackground: periodic
           ? _SwipeBackground(
               alignment: Alignment.centerRight,
-              icon: Icons.arrow_forward,
+              icon: Symbols.arrow_forward_rounded,
               label: l10n.swipePass,
               color: scheme.secondary,
             )
           : _SwipeBackground(
               alignment: Alignment.centerRight,
-              icon: Icons.remove_circle_outline,
+              icon: Symbols.remove_circle_outline_rounded,
               label: l10n.swipeSkip,
               color: status.neutral,
             ),

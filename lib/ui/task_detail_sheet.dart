@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/analytics.dart';
 import '../domain/task.dart';
@@ -160,7 +161,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
               Row(
                 children: [
                   Icon(
-                    Icons.local_fire_department_rounded,
+                    Symbols.local_fire_department_rounded,
                     size: 18,
                     color: scheme.primary,
                   ),
@@ -180,7 +181,11 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.notifications_none, size: 20, color: scheme.outline),
+                Icon(
+                  Symbols.notifications_none_rounded,
+                  size: 20,
+                  color: scheme.outline,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   l10n.remindersSection,
@@ -196,15 +201,15 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             const SizedBox(height: 4),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event_repeat),
+              leading: const Icon(Symbols.event_repeat_rounded),
               title: Text(recurring ? l10n.editRepeat : l10n.makeItAHabit),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Symbols.chevron_right_rounded),
               onTap: _editRepeat,
             ),
             if (recurring)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                secondary: const Icon(Icons.pause_circle_outline),
+                secondary: const Icon(Symbols.pause_circle_outline_rounded),
                 title: Text(l10n.paused),
                 subtitle: Text(l10n.pausedSubtitle),
                 value: _paused,
@@ -223,14 +228,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             TextButton.icon(
               onPressed: () => _delete(series: false),
               style: TextButton.styleFrom(foregroundColor: scheme.error),
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Symbols.delete_outline_rounded),
               label: Text(recurring ? l10n.deleteThisTask : l10n.deleteTask),
             ),
             if (recurring)
               TextButton.icon(
                 onPressed: () => _delete(series: true),
                 style: TextButton.styleFrom(foregroundColor: scheme.error),
-                icon: const Icon(Icons.delete_forever_outlined),
+                icon: const Icon(Symbols.delete_forever_rounded),
                 label: Text(l10n.deleteWholeSeries),
               ),
           ],
