@@ -7,8 +7,10 @@ import '../data/repositories/view_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
+import 'name_prompt_dialog.dart';
 import 'settings_screen.dart';
 import 'task_tile.dart';
+import 'view_edit_screen.dart';
 import 'view_icons.dart';
 
 /// The home surface (Phase 4): a bottom navigation bar destination per View
@@ -53,7 +55,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   Future<void> _newView() async {
-    final r = await _promptName(
+    final r = await promptName(
       context,
       AppLocalizations.of(context).newView,
       withIcon: true,
@@ -64,7 +66,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   Future<void> _newLens(int viewId) async {
-    final r = await _promptName(context, AppLocalizations.of(context).newLens);
+    final r = await promptName(context, AppLocalizations.of(context).newLens);
     if (r != null) {
       await ref.read(viewRepositoryProvider).createLensInView(viewId, r.$1);
     }
@@ -113,7 +115,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   /// The small secondary FAB's sheet (knabberfuchs pattern): the structure
-  /// actions — and later this view's dial-editing — behind one affordance.
+  /// actions — new view/lens and this view's dial-editing — behind one
+  /// affordance.
   void _showStructureSheet(int currentViewId) {
     final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
@@ -137,6 +140,18 @@ class _HomeShellState extends ConsumerState<HomeShell>
               onTap: () {
                 Navigator.pop(ctx);
                 _newLens(currentViewId);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.tune_rounded),
+              title: Text(l10n.editThisView),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ViewEditScreen(viewId: currentViewId),
+                  ),
+                );
               },
             ),
           ],
@@ -384,97 +399,6 @@ class _EmptyState extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Prompt for a name (and, for Views, an icon from the curated set). Returns
-/// `(name, iconSlug)` or null on cancel/empty.
-Future<(String, String)?> _promptName(
-  BuildContext context,
-  String title, {
-  bool withIcon = false,
-}) async {
-  final result = await showDialog<(String, String)>(
-    context: context,
-    builder: (_) => _NamePromptDialog(title: title, withIcon: withIcon),
-  );
-  return (result != null && result.$1.isNotEmpty) ? result : null;
-}
-
-/// Owns its [TextEditingController] so it is disposed with the dialog's own
-/// lifecycle — disposing right after `showDialog` resolves races the pop
-/// transition, which may still be painting the field.
-class _NamePromptDialog extends StatefulWidget {
-  const _NamePromptDialog({required this.title, this.withIcon = false});
-
-  final String title;
-  final bool withIcon;
-
-  @override
-  State<_NamePromptDialog> createState() => _NamePromptDialogState();
-}
-
-class _NamePromptDialogState extends State<_NamePromptDialog> {
-  final _controller = TextEditingController();
-  String _icon = 'home';
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() => Navigator.of(context).pop((_controller.text.trim(), _icon));
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(hintText: l10n.nameLabel),
-            onSubmitted: (_) => _submit(),
-          ),
-          if (widget.withIcon) ...[
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: [
-                for (final e in viewIcons.entries)
-                  IconButton(
-                    tooltip: e.key,
-                    isSelected: _icon == e.key,
-                    onPressed: () => setState(() => _icon = e.key),
-                    icon: Icon(e.value),
-                    selectedIcon: Icon(e.value, color: scheme.primary),
-                    style: IconButton.styleFrom(
-                      backgroundColor: _icon == e.key
-                          ? scheme.primaryContainer
-                          : null,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(onPressed: _submit, child: Text(l10n.create)),
-      ],
     );
   }
 }

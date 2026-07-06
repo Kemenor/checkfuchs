@@ -494,5 +494,118 @@
   },
   "@exactAlarmsSubtitle": {
     "description": "Why exact alarms matter"
+  },
+  "editThisView": "Edit this view",
+  "@editThisView": {
+    "description": "Structure-sheet entry + screen title: edit the current View and its lenses."
+  },
+  "viewSection": "View",
+  "@viewSection": {
+    "description": "View-edit screen section header: the View itself (rename/delete)."
+  },
+  "lensesSection": "Lenses",
+  "@lensesSection": {
+    "description": "View-edit screen section header: the View's lenses."
+  },
+  "renameView": "Rename view",
+  "@renameView": {
+    "description": "Dialog title: rename a View (with icon picker)."
+  },
+  "renameLens": "Rename lens",
+  "@renameLens": {
+    "description": "Dialog title: rename a Lens."
+  },
+  "showCountDial": "Tasks shown",
+  "@showCountDial": {
+    "description": "Lens dial picker title: how many tasks are surfaced."
+  },
+  "showCountAll": "All",
+  "@showCountAll": {
+    "description": "showCount option: surface every member (-1 sentinel)."
+  },
+  "orderingDial": "Order",
+  "@orderingDial": {
+    "description": "Lens dial picker title: how members are ranked."
+  },
+  "orderingAutomatic": "Automatic (first added first)",
+  "@orderingAutomatic": {
+    "description": "Ordering option: first added first (FIFO)."
+  },
+  "orderingDueDate": "By due date",
+  "@orderingDueDate": {
+    "description": "Ordering option: by due date."
+  },
+  "orderingManual": "Manual",
+  "@orderingManual": {
+    "description": "Ordering option: manual priority order."
+  },
+  "selectionDial": "Pick",
+  "@selectionDial": {
+    "description": "Lens dial picker title: how the shown set is drawn."
+  },
+  "selectionTop": "Top of the list",
+  "@selectionTop": {
+    "description": "Selection option: the first showCount by order."
+  },
+  "selectionRandom": "Random",
+  "@selectionRandom": {
+    "description": "Selection option: showCount at random."
+  },
+  "periodDial": "Period",
+  "@periodDial": {
+    "description": "Lens dial tile title: the refill cadence (continuous vs periodic)."
+  },
+  "periodContinuous": "Continuous — refills right away",
+  "@periodContinuous": {
+    "description": "Period subtitle when the lens has no period: refills immediately."
+  },
+  "dormantDial": "Rest after",
+  "@dormantDial": {
+    "description": "Lens dial picker title: periods unworked before a member goes dormant."
+  },
+  "dormantOff": "Never",
+  "@dormantOff": {
+    "description": "dormantAfter option: never go dormant."
+  },
+  "dormantPeriods": "{count, plural, one{1 period untouched} other{{count} periods untouched}}",
+  "@dormantPeriods": {
+    "description": "dormantAfter option: go dormant after {count} periods.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusFilterLabel": "Also show",
+  "@statusFilterLabel": {
+    "description": "Label above the terminal-status filter chips (which resolved tasks to also show)."
+  },
+  "filterShowDone": "Done",
+  "@filterShowDone": {
+    "description": "Status-filter chip: also show Done tasks."
+  },
+  "filterShowSkipped": "Skipped",
+  "@filterShowSkipped": {
+    "description": "Status-filter chip: also show Skipped tasks."
+  },
+  "filterShowMissed": "Missed",
+  "@filterShowMissed": {
+    "description": "Status-filter chip: also show Missed tasks."
+  },
+  "deleteView": "Delete view",
+  "@deleteView": {
+    "description": "Tile + confirm-dialog title: delete this View."
+  },
+  "deleteLens": "Delete lens",
+  "@deleteLens": {
+    "description": "Tile + confirm-dialog title: delete this Lens."
+  },
+  "confirmDeleteViewBody": "This removes the view from the bar. Its lenses and your tasks stay.",
+  "@confirmDeleteViewBody": {
+    "description": "Confirm-dialog body: what deleting a View does (lenses and tasks survive)."
+  },
+  "confirmDeleteLensBody": "This removes the lens and its memberships. Your tasks stay.",
+  "@confirmDeleteLensBody": {
+    "description": "Confirm-dialog body: what deleting a Lens does (tasks survive)."
   }
 }

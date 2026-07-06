@@ -55,6 +55,15 @@ class ViewState {
 
 const _showDone = 1, _showSkipped = 2, _showMissed = 4;
 
+/// One Lens as configured inside a View: the lens row plus the per-pair
+/// `statusFilter` (which lives on the View↔Lens join, concept §4.6).
+class ViewLensEntry {
+  ViewLensEntry({required this.lens, required this.statusFilter});
+
+  final LensRow lens;
+  final int statusFilter;
+}
+
 /// Lens/View persistence + the derive-driven view state (Phase 4). The
 /// projection itself is the pure, tested `domain/derive.dart`.
 class ViewRepository {
@@ -142,6 +151,82 @@ class ViewRepository {
             .insert(ViewLensCompanion.insert(viewId: viewId, lensId: lensId));
         return lensId;
       });
+
+  // --- dial editing (Phase 4 UI) ---------------------------------------------
+
+  /// Update a Lens's dials. Enum/count dials pass plain values (null = leave
+  /// untouched); [period] and [dormantAfter] use drift [Value] semantics so
+  /// `Value(null)` *clears* (periodic → continuous) while `Value.absent()`
+  /// leaves the dial alone.
+  Future<void> updateLensDials(
+    int lensId, {
+    int? showCount,
+    LensOrdering? ordering,
+    LensSelection? selection,
+    Value<Recurrence?> period = const Value.absent(),
+    Value<int?> dormantAfter = const Value.absent(),
+  }) => (db.update(db.lenses)..where((l) => l.id.equals(lensId))).write(
+    LensesCompanion(
+      showCount: showCount == null ? const Value.absent() : Value(showCount),
+      ordering: ordering == null ? const Value.absent() : Value(ordering),
+      selection: selection == null ? const Value.absent() : Value(selection),
+      period: period,
+      dormantAfter: dormantAfter,
+    ),
+  );
+
+  Future<void> renameLens(int id, String name) => (db.update(
+    db.lenses,
+  )..where((l) => l.id.equals(id))).write(LensesCompanion(name: Value(name)));
+
+  /// Delete a Lens. The FK cascades clean its `task_lens` / `view_lens` rows,
+  /// and `templates.defaultLensId` is set null — tasks themselves stay.
+  Future<void> deleteLens(int id) =>
+      (db.delete(db.lenses)..where((l) => l.id.equals(id))).go();
+
+  Future<void> renameView(int id, String name) => (db.update(
+    db.views,
+  )..where((v) => v.id.equals(id))).write(ViewsCompanion(name: Value(name)));
+
+  Future<void> setViewIcon(int id, String slug) => (db.update(
+    db.views,
+  )..where((v) => v.id.equals(id))).write(ViewsCompanion(icon: Value(slug)));
+
+  /// Delete a View. The FK cascade cleans its `view_lens` rows; the lenses
+  /// (and their tasks) survive — a View is just an arrangement (§4.6).
+  Future<void> deleteView(int id) =>
+      (db.delete(db.views)..where((v) => v.id.equals(id))).go();
+
+  /// Set which terminal states this View surfaces for [lensId] (bitmask:
+  /// done=1, skipped=2, missed=4; 0 = open-only).
+  Future<void> setStatusFilter(int viewId, int lensId, int filter) =>
+      (db.update(db.viewLens)
+            ..where((r) => r.viewId.equals(viewId) & r.lensId.equals(lensId)))
+          .write(ViewLensCompanion(statusFilter: Value(filter)));
+
+  /// Watch a single View row (null once deleted).
+  Stream<ViewRow?> watchView(int viewId) => (db.select(
+    db.views,
+  )..where((v) => v.id.equals(viewId))).watchSingleOrNull();
+
+  /// Watch the lenses of a View with their per-pair statusFilter — the
+  /// view-edit screen's live source.
+  Stream<List<ViewLensEntry>> watchViewLenses(int viewId) {
+    final vl = db.viewLens;
+    final l = db.lenses;
+    final query = db.select(vl).join([innerJoin(l, l.id.equalsExp(vl.lensId))])
+      ..where(vl.viewId.equals(viewId))
+      ..orderBy([OrderingTerm.asc(l.sortIndex)]);
+    return query.watch().map(
+      (rows) => [
+        for (final row in rows)
+          ViewLensEntry(
+            lens: row.readTable(l),
+            statusFilter: row.readTable(vl).statusFilter,
+          ),
+      ],
+    );
+  }
 
   /// `max(sortIndex) + 1` — count-based indexing produces duplicates once
   /// deletion exists.
