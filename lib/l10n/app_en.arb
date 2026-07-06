@@ -815,5 +815,13 @@
   },
   "@lensNoView": {
     "description": "Library lens subtitle when the lens is in no view (orphaned)"
+  },
+  "habitsSection": "Habits",
+  "todosSection": "To-dos",
+  "@habitsSection": {
+    "description": "Library All-tasks header: open cyclical (template) instances"
+  },
+  "@todosSection": {
+    "description": "Library All-tasks header: open one-off tasks"
   }
 }

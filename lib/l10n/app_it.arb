@@ -173,5 +173,7 @@
   "resolvedSection": "Concluse",
   "taskCount": "{count, plural, =1{1 attività} other{{count} attività}}",
   "lensInViews": "In {views}",
-  "lensNoView": "In nessuna vista"
+  "lensNoView": "In nessuna vista",
+  "habitsSection": "Abitudini",
+  "todosSection": "Da fare"
 }

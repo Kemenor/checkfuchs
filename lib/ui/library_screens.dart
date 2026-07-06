@@ -50,7 +50,7 @@ class AllTasksScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l10n.allTasksTitle)),
       body: tasks == null
           ? const Center(child: CircularProgressIndicator())
-          : _TaskSections(tasks: tasks),
+          : _TaskSections(tasks: tasks, splitKinds: true),
     );
   }
 }
@@ -75,10 +75,13 @@ class LensTasksScreen extends ConsumerWidget {
 
 /// Open instances first (soonest window edge on top), then the resolved ones
 /// (newest outcome on top) — the full record, not just the current slice.
+/// With [splitKinds] the open block differentiates the cyclical instances
+/// (template-born habits) from the one-off to-dos.
 class _TaskSections extends StatelessWidget {
-  const _TaskSections({required this.tasks});
+  const _TaskSections({required this.tasks, this.splitKinds = false});
 
   final List<domain.Task> tasks;
+  final bool splitKinds;
 
   @override
   Widget build(BuildContext context) {
@@ -87,31 +90,39 @@ class _TaskSections extends StatelessWidget {
       return Center(child: Text(l10n.emptyTitle));
     }
     final far = DateTime(9999);
-    final open = tasks.where((t) => t.isOpen).toList()
-      ..sort(
-        (a, b) => (a.end ?? a.start ?? far).compareTo(b.end ?? b.start ?? far),
-      );
+    int byEdge(domain.Task a, domain.Task b) =>
+        (a.end ?? a.start ?? far).compareTo(b.end ?? b.start ?? far);
+    final open = tasks.where((t) => t.isOpen).toList()..sort(byEdge);
     final resolved = tasks.where((t) => t.isTerminal).toList()
       ..sort(
         (a, b) => (b.resolvedAt ?? DateTime(0)).compareTo(
           a.resolvedAt ?? DateTime(0),
         ),
       );
+
+    Widget section(String header, List<domain.Task> items) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FuchsbauSectionHeader(header),
+        FuchsbauSettingsCard(
+          children: [for (final t in items) TaskTile(task: t)],
+        ),
+      ],
+    );
+
+    final openBlocks = splitKinds
+        ? [
+            (l10n.habitsSection, open.where((t) => t.templateId != null)),
+            (l10n.todosSection, open.where((t) => t.templateId == null)),
+          ]
+        : [(l10n.openSection, open)];
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        if (open.isNotEmpty) ...[
-          FuchsbauSectionHeader(l10n.openSection),
-          FuchsbauSettingsCard(
-            children: [for (final t in open) TaskTile(task: t)],
-          ),
-        ],
-        if (resolved.isNotEmpty) ...[
-          FuchsbauSectionHeader(l10n.resolvedSection),
-          FuchsbauSettingsCard(
-            children: [for (final t in resolved) TaskTile(task: t)],
-          ),
-        ],
+        for (final (header, items) in openBlocks)
+          if (items.isNotEmpty) section(header, items.toList()),
+        if (resolved.isNotEmpty) section(l10n.resolvedSection, resolved),
       ],
     );
   }

@@ -173,5 +173,7 @@
   "resolvedSection": "Abgeschlossen",
   "taskCount": "{count, plural, =1{1 Aufgabe} other{{count} Aufgaben}}",
   "lensInViews": "In {views}",
-  "lensNoView": "In keiner Ansicht"
+  "lensNoView": "In keiner Ansicht",
+  "habitsSection": "Gewohnheiten",
+  "todosSection": "To-dos"
 }
