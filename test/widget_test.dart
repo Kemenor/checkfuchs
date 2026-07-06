@@ -3,6 +3,7 @@ import 'package:checkfuchs/data/repositories/view_repository.dart';
 import 'package:checkfuchs/domain/clock.dart';
 import 'package:checkfuchs/main.dart';
 import 'package:checkfuchs/providers.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,14 @@ void main() {
     // Timer) lands in the widget tree.
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    // Pre-stamp the first-run onboarding as already offered — this test is
+    // about the plain empty home state, not the onboarding sheet (which would
+    // otherwise fire on an empty database).
+    await db
+        .into(db.appSettings)
+        .insertOnConflictUpdate(
+          const AppSettingsCompanion(id: Value(1), onboardingDone: Value(true)),
+        );
     const home = ViewRow(id: 1, name: 'Home', sortIndex: 0, icon: 'home');
 
     await tester.pumpWidget(

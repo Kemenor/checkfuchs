@@ -46,4 +46,31 @@ void main() {
       expect(container.read(tasksProvider).value, hasLength(1));
     },
   );
+
+  test('onboardingDone round-trips through the settings controller', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(container.dispose);
+
+    expect(container.read(settingsProvider).onboardingDone, isFalse);
+    await container.read(settingsProvider.notifier).markOnboardingDone();
+    expect(container.read(settingsProvider).onboardingDone, isTrue);
+
+    // Persisted: the row carries the flag …
+    final row = await db.select(db.appSettings).getSingle();
+    expect(row.onboardingDone, isTrue);
+
+    // … and a fresh controller over the same database loads it back.
+    final container2 = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(container2.dispose);
+    final sub = container2.listen(settingsProvider, (_, _) {});
+    addTearDown(sub.close);
+    await Future<void>.delayed(Duration.zero);
+    expect(container2.read(settingsProvider).onboardingDone, isTrue);
+  });
 }

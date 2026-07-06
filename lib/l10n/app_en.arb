@@ -607,5 +607,87 @@
   "confirmDeleteLensBody": "This removes the lens and its memberships. Your tasks stay.",
   "@confirmDeleteLensBody": {
     "description": "Confirm-dialog body: what deleting a Lens does (tasks survive)."
+  },
+  "onboardingTitle": "Welcome to Checkfuchs",
+  "@onboardingTitle": {
+    "description": "Title of the first-run onboarding sheet."
+  },
+  "onboardingBody": "One small daily habit brings you back every day — pick one you already do, and everything else rides along.",
+  "@onboardingBody": {
+    "description": "One calm sentence explaining the carrier idea (the first daily habit)."
+  },
+  "onboardingNameHint": "e.g. Brush your teeth",
+  "@onboardingNameHint": {
+    "description": "Example hint inside the onboarding habit-name field."
+  },
+  "onboardingStart": "Start",
+  "@onboardingStart": {
+    "description": "Filled button that creates the first daily habit."
+  },
+  "dataSection": "Data & backup",
+  "@dataSection": {
+    "description": "Settings section header: backup export/import."
+  },
+  "backupExport": "Export backup",
+  "@backupExport": {
+    "description": "Settings tile: share a backup ZIP."
+  },
+  "backupExportSub": "Share a .zip (database + JSON)",
+  "@backupExportSub": {
+    "description": "Subtitle of the export tile."
+  },
+  "backupImport": "Import backup",
+  "@backupImport": {
+    "description": "Settings tile: restore from a backup ZIP."
+  },
+  "backupImportSub": "Restore from a .zip (replaces all data)",
+  "@backupImportSub": {
+    "description": "Subtitle of the import tile."
+  },
+  "backupImportAction": "Import",
+  "@backupImportAction": {
+    "description": "Confirm button of the replace-all import dialog."
+  },
+  "backupShareSubject": "Checkfuchs backup",
+  "@backupShareSubject": {
+    "description": "Share-sheet subject line for the exported ZIP."
+  },
+  "backupFileType": "Backup",
+  "@backupFileType": {
+    "description": "File-picker type-group label for .zip backups."
+  },
+  "backupReplaceTitle": "Replace all data?",
+  "@backupReplaceTitle": {
+    "description": "Title of the import confirmation dialog."
+  },
+  "backupReplaceBody": "Importing will replace your current tasks, habits, views, lenses, vacations, and settings with the backup contents.",
+  "@backupReplaceBody": {
+    "description": "Body of the import confirmation dialog — honest about the replace-all consequence."
+  },
+  "backupRestored": "Backup restored.",
+  "@backupRestored": {
+    "description": "Snackbar after a successful import."
+  },
+  "backupImportNewerVersion": "This backup was created by a newer app version. Update the app, then try importing again.",
+  "@backupImportNewerVersion": {
+    "description": "Snackbar when the backup's schema version is newer than this build supports."
+  },
+  "backupImportFailed": "Import failed: {error}",
+  "@backupImportFailed": {
+    "description": "Snackbar when the import fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backupExportFailed": "Export failed: {error}",
+  "@backupExportFailed": {
+    "description": "Snackbar when the export fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   }
 }

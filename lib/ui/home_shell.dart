@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
 import 'name_prompt_dialog.dart';
+import 'onboarding_sheet.dart';
 import 'settings_screen.dart';
 import 'task_tile.dart';
 import 'view_edit_screen.dart';
@@ -28,6 +29,10 @@ class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   int _selectedView = 0;
   bool _onSettings = false;
+
+  /// First-run onboarding considered this session (also on resume-startups),
+  /// so the check runs at most once per app run.
+  bool _onboardingChecked = false;
 
   @override
   void initState() {
@@ -52,6 +57,32 @@ class _HomeShellState extends ConsumerState<HomeShell>
     await ref.read(viewRepositoryProvider).seedDefaults();
     await ref.read(taskRepositoryProvider).reconcileAll(now);
     await ref.read(viewRepositoryProvider).refreshSurfaced(now);
+    await _maybeShowOnboarding();
+  }
+
+  /// First run only (PLAN Phase 8): when the database has never held a
+  /// template or a task, offer to seed the carrier — the first daily habit.
+  /// The stored flag is stamped on *showing*, so a dismissal never re-nags;
+  /// [_onboardingChecked] keeps resume-startups from re-checking in-session.
+  /// Runs after the first frame ([_startup] is post-frame), so a Navigator is
+  /// up when the sheet shows.
+  Future<void> _maybeShowOnboarding() async {
+    if (_onboardingChecked) return;
+    _onboardingChecked = true;
+
+    // Read the row directly — the settings controller's async load may not
+    // have landed yet during startup.
+    final db = ref.read(databaseProvider);
+    final row = await db.select(db.appSettings).getSingleOrNull();
+    if (row?.onboardingDone ?? false) return;
+    final anyTemplate = await (db.select(db.templates)..limit(1)).get();
+    final anyTask = await (db.select(db.tasks)..limit(1)).get();
+    if (anyTemplate.isNotEmpty || anyTask.isNotEmpty) return;
+
+    if (!mounted) return;
+    await ref.read(settingsProvider.notifier).markOnboardingDone();
+    if (!mounted) return;
+    await showOnboardingSheet(context);
   }
 
   Future<void> _newView() async {

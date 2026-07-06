@@ -138,6 +138,11 @@ class AppSettings extends Table {
   /// App-language override ('system' = follow the OS locale).
   TextColumn get localeCode => text().withDefault(const Constant('system'))();
 
+  /// First-run onboarding sheet has been offered (stamped on *showing*, so a
+  /// dismissal never re-nags).
+  BoolColumn get onboardingDone =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
@@ -161,7 +166,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -229,6 +234,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         // App-language override.
         await _addColumnIfMissing(m, appSettings, appSettings.localeCode);
+      }
+      if (from < 9) {
+        // First-run onboarding offered flag.
+        await _addColumnIfMissing(m, appSettings, appSettings.onboardingDone);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

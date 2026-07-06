@@ -1,7 +1,9 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
 
+import '../data/backup/backup_service.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'debug_section.dart';
@@ -80,6 +82,27 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+          FuchsbauSectionHeader(l10n.dataSection),
+          FuchsbauSettingsCard(
+            children: [
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Icons.upload_rounded),
+                title: Text(l10n.backupExport),
+                subtitle: Text(l10n.backupExportSub),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _exportBackup(context, ref),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Icons.download_rounded),
+                title: Text(l10n.backupImport),
+                subtitle: Text(l10n.backupImportSub),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _importBackup(context, ref),
+              ),
+            ],
+          ),
           FuchsbauSectionHeader(l10n.remindersSection),
           FuchsbauSettingsCard(
             children: [
@@ -120,6 +143,72 @@ class SettingsScreen extends ConsumerWidget {
           if (settings.debugMenu) const DebugSection(),
         ],
       ),
+    );
+  }
+}
+
+/// Export: build the ZIP (sqlite snapshot + JSON) and hand it to the share
+/// sheet. The share sheet itself is the success feedback; failures get an
+/// honest snackbar with the actual error.
+Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
+  try {
+    await ref
+        .read(backupServiceProvider)
+        .shareBackup(subject: l10n.backupShareSubject);
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupExportFailed('$e'))),
+    );
+  }
+}
+
+/// Import: pick a .zip, confirm the replace-all consequence, restore. The
+/// restore applies live (validate → migrate the snapshot → one replace-all
+/// transaction), so no restart is needed; settings are re-read afterwards
+/// because theme/font/locale live in the restored database.
+Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
+  final file = await openFile(
+    acceptedTypeGroups: [
+      XTypeGroup(label: l10n.backupFileType, extensions: const ['zip']),
+    ],
+  );
+  if (file == null || !context.mounted) return;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.backupReplaceTitle),
+      content: Text(l10n.backupReplaceBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l10n.backupImportAction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+
+  try {
+    await ref.read(backupServiceProvider).restoreFromZip(file.path);
+    // Theme/font/locale/debug flag were just replaced under the controller.
+    ref.invalidate(settingsProvider);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.backupRestored)));
+  } on BackupVersionException {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImportNewerVersion)),
+    );
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImportFailed('$e'))),
     );
   }
 }

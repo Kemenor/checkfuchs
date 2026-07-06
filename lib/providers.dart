@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart' show FuchsbauFont;
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'data/backup/backup_service.dart';
 import 'data/db/database.dart';
 import 'data/repositories/task_repository.dart';
 import 'data/repositories/view_repository.dart';
@@ -23,6 +24,11 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   ref.onDispose(db.close);
   return db;
 });
+
+/// ZIP backup/restore (PLAN Phase 8): sqlite snapshot + JSON export.
+final backupServiceProvider = Provider<BackupService>(
+  (ref) => BackupService(ref.watch(databaseProvider)),
+);
 
 final taskRepositoryProvider = Provider<TaskRepository>(
   (ref) => TaskRepository(ref.watch(databaseProvider)),
@@ -137,6 +143,7 @@ class Settings {
     this.font = FuchsbauFont.figtree,
     this.debugMenu = false,
     this.localeCode = 'system',
+    this.onboardingDone = false,
   });
   final ThemeMode themeMode;
   final FuchsbauFont font;
@@ -147,6 +154,9 @@ class Settings {
   /// App-language override ('system' = follow the OS locale).
   final String localeCode;
 
+  /// First-run onboarding already offered (stamped on showing — never re-nag).
+  final bool onboardingDone;
+
   /// What MaterialApp.locale wants: null = system.
   Locale? get locale => localeCode == 'system' ? null : Locale(localeCode);
 
@@ -155,11 +165,13 @@ class Settings {
     FuchsbauFont? font,
     bool? debugMenu,
     String? localeCode,
+    bool? onboardingDone,
   }) => Settings(
     themeMode: themeMode ?? this.themeMode,
     font: font ?? this.font,
     debugMenu: debugMenu ?? this.debugMenu,
     localeCode: localeCode ?? this.localeCode,
+    onboardingDone: onboardingDone ?? this.onboardingDone,
   );
 }
 
@@ -187,6 +199,7 @@ class SettingsController extends Notifier<Settings> {
             .values[row.fontIndex.clamp(0, FuchsbauFont.values.length - 1)],
         debugMenu: row.debugMenu,
         localeCode: row.localeCode,
+        onboardingDone: row.onboardingDone,
       );
     }
   }
@@ -204,6 +217,14 @@ class SettingsController extends Notifier<Settings> {
     state = state.copyWith(debugMenu: !state.debugMenu);
     await _persist();
     return state.debugMenu;
+  }
+
+  /// Stamps the first-run onboarding as offered (called when the sheet is
+  /// *shown*, not on completion — a swipe-away is an answer, never re-nag).
+  Future<void> markOnboardingDone() async {
+    _touched = true;
+    state = state.copyWith(onboardingDone: true);
+    await _persist();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
@@ -229,6 +250,7 @@ class SettingsController extends Notifier<Settings> {
             fontIndex: Value(state.font.index),
             debugMenu: Value(state.debugMenu),
             localeCode: Value(state.localeCode),
+            onboardingDone: Value(state.onboardingDone),
           ),
         );
   }

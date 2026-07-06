@@ -2,36 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/recurrence.dart';
-import '../domain/task.dart';
 import '../domain/template.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
-import 'recurrence_editor.dart';
 import 'reminder_presets.dart';
 import 'window_choice.dart';
 
-/// Create a task or habit (Phase 3): name + recurrence (Off = one-off) + an
-/// active-window picker. A recurrence makes a Template; "Off" makes a one-off
-/// Task. Reconciles so the first instance appears immediately.
-Future<void> showCreateTaskSheet(BuildContext context, WidgetRef ref) {
+/// First-run onboarding (PLAN Phase 8): its only job is to seed the **carrier**
+/// — the one unavoidable daily habit that gets the app opened every day. No
+/// tour, no permissions pitch; the sheet is freely dismissible (swipe away and
+/// just use the app) and is offered exactly once — never re-nagged.
+Future<void> showOnboardingSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => const _CreateTaskSheet(),
+    builder: (_) => const _OnboardingSheet(),
   );
 }
 
-class _CreateTaskSheet extends ConsumerStatefulWidget {
-  const _CreateTaskSheet();
+class _OnboardingSheet extends ConsumerStatefulWidget {
+  const _OnboardingSheet();
 
   @override
-  ConsumerState<_CreateTaskSheet> createState() => _CreateTaskSheetState();
+  ConsumerState<_OnboardingSheet> createState() => _OnboardingSheetState();
 }
 
-class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
+class _OnboardingSheetState extends ConsumerState<_OnboardingSheet> {
   final _controller = TextEditingController();
-  Recurrence? _recurrence;
   WindowChoice _window = WindowChoice.anytime;
   Set<ReminderPreset> _reminders = const {};
 
@@ -41,35 +39,23 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     super.dispose();
   }
 
-  Future<void> _save() async {
+  /// Creates the daily Template (the carrier) and reconciles, so the first
+  /// instance is on the surface the moment the sheet closes.
+  Future<void> _start() async {
     final name = _controller.text.trim();
     if (name.isEmpty) return;
     final repo = ref.read(taskRepositoryProvider);
     final now = ref.read(clockProvider).now();
 
-    final notifications = ReminderPreset.toNotifications(_reminders);
-    if (_recurrence != null) {
-      await repo.createTemplate(
-        Template(
-          name: name,
-          recurrence: _recurrence!,
-          windowRule: _window.toRule(),
-          createdAt: now,
-          notifications: notifications,
-        ),
-      );
-    } else {
-      final (start, end) = _window.oneOffWindow(now);
-      await repo.createTask(
-        Task(
-          name: name,
-          start: start,
-          end: end,
-          createdAt: now,
-          notifications: notifications,
-        ),
-      );
-    }
+    await repo.createTemplate(
+      Template(
+        name: name,
+        recurrence: Recurrence.daily(DateTime(now.year, now.month, now.day)),
+        windowRule: _window.toRule(),
+        createdAt: now,
+        notifications: ReminderPreset.toNotifications(_reminders),
+      ),
+    );
     await repo.reconcileAll(now);
     if (mounted) Navigator.of(context).pop();
   }
@@ -77,9 +63,8 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final now = ref.read(clockProvider).now();
-    final anchor = DateTime(now.year, now.month, now.day);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 4, 16, viewInsets + 16),
@@ -90,15 +75,32 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.newTask, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
+              const Text(
+                '🦊',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 44),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.onboardingTitle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.onboardingBody,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: _controller,
-                autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   labelText: l10n.nameLabel,
-                  hintText: l10n.taskNameHint,
+                  hintText: l10n.onboardingNameHint,
                   border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => setState(() {}),
@@ -125,18 +127,11 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 onChanged: (s) => setState(() => _reminders = s),
               ),
               const SizedBox(height: 20),
-              _SectionLabel(l10n.repeatSection),
-              const SizedBox(height: 10),
-              RecurrenceEditor(
-                anchor: anchor,
-                onChanged: (r) => setState(() => _recurrence = r),
-              ),
-              const SizedBox(height: 20),
               FilledButton(
-                onPressed: _controller.text.trim().isEmpty ? null : _save,
+                onPressed: _controller.text.trim().isEmpty ? null : _start,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(l10n.save),
+                  child: Text(l10n.onboardingStart),
                 ),
               ),
             ],

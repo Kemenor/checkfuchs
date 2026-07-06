@@ -3097,6 +3097,21 @@ class $AppSettingsTable extends AppSettings
     requiredDuringInsert: false,
     defaultValue: const Constant('system'),
   );
+  static const VerificationMeta _onboardingDoneMeta = const VerificationMeta(
+    'onboardingDone',
+  );
+  @override
+  late final GeneratedColumn<bool> onboardingDone = GeneratedColumn<bool>(
+    'onboarding_done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("onboarding_done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3104,6 +3119,7 @@ class $AppSettingsTable extends AppSettings
     fontIndex,
     debugMenu,
     localeCode,
+    onboardingDone,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3147,6 +3163,15 @@ class $AppSettingsTable extends AppSettings
         localeCode.isAcceptableOrUnknown(data['locale_code']!, _localeCodeMeta),
       );
     }
+    if (data.containsKey('onboarding_done')) {
+      context.handle(
+        _onboardingDoneMeta,
+        onboardingDone.isAcceptableOrUnknown(
+          data['onboarding_done']!,
+          _onboardingDoneMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3176,6 +3201,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.string,
         data['${effectivePrefix}locale_code'],
       )!,
+      onboardingDone: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}onboarding_done'],
+      )!,
     );
   }
 
@@ -3195,12 +3224,17 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
 
   /// App-language override ('system' = follow the OS locale).
   final String localeCode;
+
+  /// First-run onboarding sheet has been offered (stamped on *showing*, so a
+  /// dismissal never re-nags).
+  final bool onboardingDone;
   const AppSettingsRow({
     required this.id,
     required this.themeModeIndex,
     required this.fontIndex,
     required this.debugMenu,
     required this.localeCode,
+    required this.onboardingDone,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3210,6 +3244,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['font_index'] = Variable<int>(fontIndex);
     map['debug_menu'] = Variable<bool>(debugMenu);
     map['locale_code'] = Variable<String>(localeCode);
+    map['onboarding_done'] = Variable<bool>(onboardingDone);
     return map;
   }
 
@@ -3220,6 +3255,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       fontIndex: Value(fontIndex),
       debugMenu: Value(debugMenu),
       localeCode: Value(localeCode),
+      onboardingDone: Value(onboardingDone),
     );
   }
 
@@ -3234,6 +3270,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       fontIndex: serializer.fromJson<int>(json['fontIndex']),
       debugMenu: serializer.fromJson<bool>(json['debugMenu']),
       localeCode: serializer.fromJson<String>(json['localeCode']),
+      onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
     );
   }
   @override
@@ -3245,6 +3282,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'fontIndex': serializer.toJson<int>(fontIndex),
       'debugMenu': serializer.toJson<bool>(debugMenu),
       'localeCode': serializer.toJson<String>(localeCode),
+      'onboardingDone': serializer.toJson<bool>(onboardingDone),
     };
   }
 
@@ -3254,12 +3292,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? fontIndex,
     bool? debugMenu,
     String? localeCode,
+    bool? onboardingDone,
   }) => AppSettingsRow(
     id: id ?? this.id,
     themeModeIndex: themeModeIndex ?? this.themeModeIndex,
     fontIndex: fontIndex ?? this.fontIndex,
     debugMenu: debugMenu ?? this.debugMenu,
     localeCode: localeCode ?? this.localeCode,
+    onboardingDone: onboardingDone ?? this.onboardingDone,
   );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
@@ -3272,6 +3312,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       localeCode: data.localeCode.present
           ? data.localeCode.value
           : this.localeCode,
+      onboardingDone: data.onboardingDone.present
+          ? data.onboardingDone.value
+          : this.onboardingDone,
     );
   }
 
@@ -3282,14 +3325,21 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
           ..write('debugMenu: $debugMenu, ')
-          ..write('localeCode: $localeCode')
+          ..write('localeCode: $localeCode, ')
+          ..write('onboardingDone: $onboardingDone')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, themeModeIndex, fontIndex, debugMenu, localeCode);
+  int get hashCode => Object.hash(
+    id,
+    themeModeIndex,
+    fontIndex,
+    debugMenu,
+    localeCode,
+    onboardingDone,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3298,7 +3348,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.themeModeIndex == this.themeModeIndex &&
           other.fontIndex == this.fontIndex &&
           other.debugMenu == this.debugMenu &&
-          other.localeCode == this.localeCode);
+          other.localeCode == this.localeCode &&
+          other.onboardingDone == this.onboardingDone);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
@@ -3307,12 +3358,14 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> fontIndex;
   final Value<bool> debugMenu;
   final Value<String> localeCode;
+  final Value<bool> onboardingDone;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
     this.localeCode = const Value.absent(),
+    this.onboardingDone = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -3320,6 +3373,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
     this.localeCode = const Value.absent(),
+    this.onboardingDone = const Value.absent(),
   });
   static Insertable<AppSettingsRow> custom({
     Expression<int>? id,
@@ -3327,6 +3381,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? fontIndex,
     Expression<bool>? debugMenu,
     Expression<String>? localeCode,
+    Expression<bool>? onboardingDone,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3334,6 +3389,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       if (fontIndex != null) 'font_index': fontIndex,
       if (debugMenu != null) 'debug_menu': debugMenu,
       if (localeCode != null) 'locale_code': localeCode,
+      if (onboardingDone != null) 'onboarding_done': onboardingDone,
     });
   }
 
@@ -3343,6 +3399,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? fontIndex,
     Value<bool>? debugMenu,
     Value<String>? localeCode,
+    Value<bool>? onboardingDone,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -3350,6 +3407,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       fontIndex: fontIndex ?? this.fontIndex,
       debugMenu: debugMenu ?? this.debugMenu,
       localeCode: localeCode ?? this.localeCode,
+      onboardingDone: onboardingDone ?? this.onboardingDone,
     );
   }
 
@@ -3371,6 +3429,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (localeCode.present) {
       map['locale_code'] = Variable<String>(localeCode.value);
     }
+    if (onboardingDone.present) {
+      map['onboarding_done'] = Variable<bool>(onboardingDone.value);
+    }
     return map;
   }
 
@@ -3381,7 +3442,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
           ..write('debugMenu: $debugMenu, ')
-          ..write('localeCode: $localeCode')
+          ..write('localeCode: $localeCode, ')
+          ..write('onboardingDone: $onboardingDone')
           ..write(')'))
         .toString();
   }
@@ -6251,6 +6313,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> fontIndex,
       Value<bool> debugMenu,
       Value<String> localeCode,
+      Value<bool> onboardingDone,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -6259,6 +6322,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<int> fontIndex,
       Value<bool> debugMenu,
       Value<String> localeCode,
+      Value<bool> onboardingDone,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -6292,6 +6356,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<String> get localeCode => $composableBuilder(
     column: $table.localeCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get onboardingDone => $composableBuilder(
+    column: $table.onboardingDone,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6329,6 +6398,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.localeCode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get onboardingDone => $composableBuilder(
+    column: $table.onboardingDone,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -6356,6 +6430,11 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get localeCode => $composableBuilder(
     column: $table.localeCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get onboardingDone => $composableBuilder(
+    column: $table.onboardingDone,
     builder: (column) => column,
   );
 }
@@ -6396,12 +6475,14 @@ class $$AppSettingsTableTableManager
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
                 Value<String> localeCode = const Value.absent(),
+                Value<bool> onboardingDone = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
                 localeCode: localeCode,
+                onboardingDone: onboardingDone,
               ),
           createCompanionCallback:
               ({
@@ -6410,12 +6491,14 @@ class $$AppSettingsTableTableManager
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
                 Value<String> localeCode = const Value.absent(),
+                Value<bool> onboardingDone = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
                 localeCode: localeCode,
+                onboardingDone: onboardingDone,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
