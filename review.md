@@ -12,8 +12,11 @@
 > replaces `passed_this_period`; `PRAGMA foreign_keys` now ON).
 >
 > Deliberately not "fixed":
-> - **L18** — fuchsbau still pins `ref: main`: the upstream repo has **no tags** to pin
->   to (lockfile pins a commit, so builds stay reproducible). Tag fuchsbau, then pin.
+> - ~~**L18** — fuchsbau still pins `ref: main`: the upstream repo has no tags to pin
+>   to.~~ **Closed (follow-up, same day):** fuchsbau tagged `v0.2.0` upstream and the
+>   dependency re-pinned to the tag. (The risk it guards against materialised first: the
+>   lockfile's resolved-ref had been orphaned by an upstream history rewrite and broke CI
+>   on the first uncached fetch.)
 > - **M13** — release signing is now the conditional `key.properties` pattern; an actual
 >   release keystore remains a Phase 9 task (debug fallback until then, clearly commented).
 > - **L20** — informational Phase-5 landing checklist (unchanged); the landing page still
