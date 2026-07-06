@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../data/db/database.dart';
 import '../domain/analytics.dart';
 import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
@@ -45,6 +46,8 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   );
   bool _paused = false;
   HabitStats? _stats;
+  List<LensRow> _lenses = const [];
+  int? _lensId;
 
   Future<void> _setReminders(Set<ReminderPreset> presets) async {
     setState(() => _reminders = presets);
@@ -64,6 +67,55 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   void initState() {
     super.initState();
     _loadSeriesInfo();
+    _loadLensInfo();
+  }
+
+  Future<void> _loadLensInfo() async {
+    final lenses = await ref
+        .read(viewRepositoryProvider)
+        .watchAllLenses()
+        .first;
+    final lensId = _task.id == null
+        ? null
+        : await ref.read(taskRepositoryProvider).taskLensId(_task.id!);
+    if (!mounted) return;
+    setState(() {
+      _lenses = lenses;
+      _lensId = lensId;
+    });
+  }
+
+  /// Move this task (or its whole series — membership is a series property,
+  /// not a per-occurrence one) into another lens.
+  Future<void> _pickLens() async {
+    final l10n = AppLocalizations.of(context);
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.lensSection),
+        children: [
+          RadioGroup<int>(
+            groupValue: _lensId,
+            onChanged: (v) => Navigator.pop(ctx, v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final lens in _lenses)
+                  RadioListTile<int>(value: lens.id, title: Text(lens.name)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked == null || picked == _lensId) return;
+    final repo = ref.read(taskRepositoryProvider);
+    if (_task.templateId != null) {
+      await repo.setTemplateLens(_task.templateId!, picked);
+    } else if (_task.id != null) {
+      await repo.setTaskLens(_task.id!, picked);
+    }
+    if (mounted) setState(() => _lensId = picked);
   }
 
   void _loadSeriesInfo() {
@@ -199,6 +251,18 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             const SizedBox(height: 8),
             ReminderPresetChips(selected: _reminders, onChanged: _setReminders),
             const SizedBox(height: 4),
+            if (_lenses.length > 1)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Symbols.filter_alt_rounded),
+                title: Text(l10n.lensSection),
+                subtitle: switch (_lenses.where((l) => l.id == _lensId)) {
+                  Iterable(isEmpty: true) => null,
+                  final match => Text(match.first.name),
+                },
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: _pickLens,
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Symbols.event_repeat_rounded),

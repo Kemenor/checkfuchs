@@ -177,5 +177,6 @@
   "habitsSection": "Habitudes",
   "todosSection": "À faire",
   "showAllResolved": "Tout afficher ({count})",
-  "emptyLensCard": "Rien à faire. Bien joué 🦊"
+  "emptyLensCard": "Rien à faire. Bien joué 🦊",
+  "lensSection": "Lentille"
 }

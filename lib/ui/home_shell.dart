@@ -247,7 +247,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
           const SizedBox(width: 12),
           FloatingActionButton.extended(
             heroTag: 'homeAdd',
-            onPressed: () => showCreateTaskSheet(context, ref),
+            onPressed: () => showCreateTaskSheet(context, ref, viewId: viewId),
             icon: const Icon(Symbols.add_rounded),
             label: Text(l10n.addTask),
           ),

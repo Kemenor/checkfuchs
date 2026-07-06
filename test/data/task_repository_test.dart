@@ -152,6 +152,47 @@ void main() {
     },
   );
 
+  test('setTaskLens / setTemplateLens move the bucket', () async {
+    Future<int> lens(String name) => db
+        .into(db.lenses)
+        .insert(
+          LensesCompanion.insert(
+            name: name,
+            ordering: LensOrdering.automatic,
+            selection: LensSelection.top,
+          ),
+        );
+    final habits = await lens('Habits');
+    final backlog = await lens('Backlog');
+
+    // One-off: membership is replaced.
+    final taskId = await repo.createTask(
+      Task(name: 'Call dentist', createdAt: d(2026, 6, 27)),
+      lensId: habits,
+    );
+    await repo.setTaskLens(taskId, backlog);
+    expect(await repo.taskLensId(taskId), backlog);
+    expect(await db.select(db.taskLens).get(), hasLength(1));
+
+    // Series: defaultLensId + every existing instance's membership move,
+    // and the NEXT generated instance lands in the new lens too.
+    final templateId = await seedDailyHabit(); // joins the first lens
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.setTemplateLens(templateId, backlog);
+    final template = await db.select(db.templates).getSingle();
+    expect(template.defaultLensId, backlog);
+    final instance = (await repo.allTasks()).firstWhere(
+      (t) => t.templateId == templateId,
+    );
+    expect(await repo.taskLensId(instance.id!), backlog);
+
+    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    final next = (await repo.allTasks()).firstWhere(
+      (t) => t.templateId == templateId && t.isOpen,
+    );
+    expect(await repo.taskLensId(next.id!), backlog);
+  });
+
   test('deleteTemplate removes the series and its tasks', () async {
     final templateId = await seedDailyHabit();
     await repo.reconcileAll(d(2026, 6, 27, 8));

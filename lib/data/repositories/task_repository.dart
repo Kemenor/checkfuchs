@@ -94,6 +94,39 @@ class TaskRepository {
         mode: InsertMode.insertOrIgnore,
       );
 
+  /// The lens a task currently lives in (the v1 UI treats membership as one
+  /// bucket per task, though the schema allows many).
+  Future<int?> taskLensId(int taskId) async =>
+      (await (db.select(db.taskLens)
+                ..where((m) => m.taskId.equals(taskId))
+                ..limit(1))
+              .getSingleOrNull())
+          ?.lensId;
+
+  /// Move a one-off into a lens: replace its memberships.
+  Future<void> setTaskLens(int taskId, int lensId) => db.transaction(() async {
+    await (db.delete(db.taskLens)..where((m) => m.taskId.equals(taskId))).go();
+    await addMembership(taskId, lensId);
+  });
+
+  /// Move a whole series into a lens: future instances follow via
+  /// `defaultLensId`, and every existing instance's membership moves too so
+  /// the lens pools (and their history drill-ins) stay coherent.
+  Future<void> setTemplateLens(int templateId, int lensId) =>
+      db.transaction(() async {
+        await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+            .write(TemplatesCompanion(defaultLensId: Value(lensId)));
+        final rows = await (db.select(
+          db.tasks,
+        )..where((t) => t.templateId.equals(templateId))).get();
+        for (final r in rows) {
+          await (db.delete(
+            db.taskLens,
+          )..where((m) => m.taskId.equals(r.id))).go();
+          await addMembership(r.id, lensId);
+        }
+      });
+
   /// Pass (§4.4) — "not this one now, show me another this period". Purely
   /// presentational: recorded on the membership, never touches task status.
   Future<void> passTask(int taskId, int lensId, DateTime now) =>

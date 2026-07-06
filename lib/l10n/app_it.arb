@@ -177,5 +177,6 @@
   "habitsSection": "Abitudini",
   "todosSection": "Da fare",
   "showAllResolved": "Mostra tutte ({count})",
-  "emptyLensCard": "Niente da fare. Ben fatto 🦊"
+  "emptyLensCard": "Niente da fare. Ben fatto 🦊",
+  "lensSection": "Lente"
 }

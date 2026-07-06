@@ -177,5 +177,6 @@
   "habitsSection": "Gewohnheiten",
   "todosSection": "To-dos",
   "showAllResolved": "Alle {count} anzeigen",
-  "emptyLensCard": "Nichts zu tun. Gut gemacht 🦊"
+  "emptyLensCard": "Nichts zu tun. Gut gemacht 🦊",
+  "lensSection": "Linse"
 }

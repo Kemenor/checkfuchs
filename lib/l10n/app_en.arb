@@ -836,5 +836,9 @@
   "emptyLensCard": "Nothing to do. Well done 🦊",
   "@emptyLensCard": {
     "description": "Body of a lens card with no rows to show"
+  },
+  "lensSection": "Lens",
+  "@lensSection": {
+    "description": "Label for the lens (bucket) a task lives in — create sheet section + detail sheet row"
   }
 }

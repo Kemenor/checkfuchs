@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/db/database.dart';
 import '../domain/recurrence.dart';
 import '../domain/task.dart';
 import '../domain/template.dart';
@@ -10,20 +11,31 @@ import 'recurrence_editor.dart';
 import 'reminder_presets.dart';
 import 'window_choice.dart';
 
-/// Create a task or habit (Phase 3): name + recurrence (Off = one-off) + an
-/// active-window picker. A recurrence makes a Template; "Off" makes a one-off
-/// Task. Reconciles so the first instance appears immediately.
-Future<void> showCreateTaskSheet(BuildContext context, WidgetRef ref) {
+final _lensesProvider = StreamProvider.autoDispose<List<LensRow>>(
+  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
+);
+
+/// Create a task or habit (Phase 3): name + lens (the bucket it lives in,
+/// defaulting to the current view's first lens) + recurrence (Off = one-off)
+/// + an active-window picker. A recurrence makes a Template; "Off" makes a
+/// one-off Task. Reconciles so the first instance appears immediately.
+Future<void> showCreateTaskSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  int? viewId,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => const _CreateTaskSheet(),
+    builder: (_) => _CreateTaskSheet(viewId: viewId),
   );
 }
 
 class _CreateTaskSheet extends ConsumerStatefulWidget {
-  const _CreateTaskSheet();
+  const _CreateTaskSheet({this.viewId});
+
+  final int? viewId;
 
   @override
   ConsumerState<_CreateTaskSheet> createState() => _CreateTaskSheetState();
@@ -34,6 +46,23 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   Recurrence? _recurrence;
   WindowChoice _window = WindowChoice.anytime;
   Set<ReminderPreset> _reminders = const {};
+  int? _lensId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Default bucket: the first lens of the view the sheet was opened from.
+    final viewId = widget.viewId;
+    if (viewId != null) {
+      ref.read(viewRepositoryProvider).watchViewLenses(viewId).first.then((
+        entries,
+      ) {
+        if (mounted && _lensId == null && entries.isNotEmpty) {
+          setState(() => _lensId = entries.first.lens.id);
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -57,6 +86,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           createdAt: now,
           notifications: notifications,
         ),
+        defaultLensId: _lensId,
       );
     } else {
       final (start, end) = _window.oneOffWindow(now);
@@ -68,6 +98,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           createdAt: now,
           notifications: notifications,
         ),
+        lensId: _lensId,
       );
     }
     await repo.reconcileAll(now);
@@ -103,6 +134,27 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
+              // The bucket: which lens this task lives in (concept §4.6 —
+              // membership is data; views merely arrange lenses).
+              ...switch (ref.watch(_lensesProvider).asData?.value) {
+                null || [] || [_] => const [],
+                final lenses => [
+                  const SizedBox(height: 20),
+                  _SectionLabel(l10n.lensSection),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final lens in lenses)
+                        ChoiceChip(
+                          label: Text(lens.name),
+                          selected: _lensId == lens.id,
+                          onSelected: (_) => setState(() => _lensId = lens.id),
+                        ),
+                    ],
+                  ),
+                ],
+              },
               const SizedBox(height: 20),
               _SectionLabel(l10n.activeWindowSection),
               const SizedBox(height: 8),
