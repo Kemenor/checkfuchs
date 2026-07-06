@@ -193,6 +193,20 @@ void main() {
     expect(await repo.taskLensId(next.id!), backlog);
   });
 
+  test('setTaskWindow edits the edges, null clears a side', () async {
+    final id = await repo.createTask(
+      Task(name: 'Call dentist', createdAt: d(2026, 6, 27)),
+    );
+    await repo.setTaskWindow(id, d(2026, 7, 1), d(2026, 7, 30));
+    var t = (await repo.taskById(id))!;
+    expect((t.start, t.end), (d(2026, 7, 1), d(2026, 7, 30)));
+
+    await repo.setTaskWindow(id, null, d(2026, 7, 30));
+    t = (await repo.taskById(id))!;
+    expect(t.start, isNull);
+    expect(t.end, d(2026, 7, 30));
+  });
+
   test('deleteTemplate removes the series and its tasks', () async {
     final templateId = await seedDailyHabit();
     await repo.reconcileAll(d(2026, 6, 27, 8));

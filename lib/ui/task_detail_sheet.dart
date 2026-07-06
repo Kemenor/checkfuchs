@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
@@ -25,6 +26,63 @@ Future<void> showTaskDetailSheet(
     showDragHandle: true,
     builder: (_) => _TaskDetailSheet(task: task),
   );
+}
+
+/// One window edge on the detail sheet: absolute day (+ clock time when one
+/// is set — a midnight end reads as its evening's day, never "00:00").
+class _WindowDateTile extends StatelessWidget {
+  const _WindowDateTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.placeholder,
+    required this.isEnd,
+    required this.onTap,
+    required this.onClear,
+  });
+
+  final IconData icon;
+  final String label;
+  final DateTime? value;
+  final String placeholder;
+  final bool isEnd;
+  final VoidCallback onTap;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final locale = Localizations.localeOf(context).toString();
+    final v = value;
+    String text;
+    if (v == null) {
+      text = placeholder;
+    } else {
+      final wholeDay = v.hour == 0 && v.minute == 0;
+      final day = isEnd && wholeDay
+          ? v.subtract(const Duration(minutes: 1))
+          : v;
+      text = DateFormat.yMMMEd(locale).format(day);
+      if (!wholeDay) text = '$text · ${DateFormat.Hm(locale).format(v)}';
+    }
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(label),
+      subtitle: Text(
+        text,
+        style: v == null ? TextStyle(color: scheme.outline) : null,
+      ),
+      trailing: v == null
+          ? const Icon(Symbols.chevron_right_rounded)
+          : IconButton(
+              tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+              icon: const Icon(Symbols.close_rounded),
+              onPressed: onClear,
+            ),
+      onTap: onTap,
+    );
+  }
 }
 
 class _TaskDetailSheet extends ConsumerStatefulWidget {
@@ -116,6 +174,44 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
       await repo.setTaskLens(_task.id!, picked);
     }
     if (mounted) setState(() => _lensId = picked);
+  }
+
+  /// Edit one window edge of an open one-off. The date picker chooses the
+  /// day; an existing wall-clock time survives the move (a 17:00 deadline
+  /// pushed to the 29th is still 17:00), a bare date keeps whole-day
+  /// semantics (due = midnight after, start = midnight of).
+  Future<void> _editWindowDate({required bool isEnd}) async {
+    final now = ref.read(clockProvider).now();
+    final today = DateTime(now.year, now.month, now.day);
+    final old = isEnd ? _task.end : _task.start;
+    final oldDay = old == null ? null : DateTime(old.year, old.month, old.day);
+    var first = isEnd ? (_task.start ?? today) : today;
+    first = DateTime(first.year, first.month, first.day);
+    if (oldDay != null && oldDay.isBefore(first)) first = oldDay;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: oldDay ?? today,
+      firstDate: first,
+      lastDate: DateTime(today.year + 5, 12, 31),
+    );
+    if (picked == null) return;
+    await _writeWindow(_apply(picked, old, isEnd: isEnd), isEnd: isEnd);
+  }
+
+  static DateTime _apply(DateTime day, DateTime? old, {required bool isEnd}) {
+    final wholeDay = old == null || (old.hour == 0 && old.minute == 0);
+    if (isEnd && wholeDay) return DateTime(day.year, day.month, day.day + 1);
+    if (wholeDay) return DateTime(day.year, day.month, day.day);
+    return DateTime(day.year, day.month, day.day, old.hour, old.minute);
+  }
+
+  Future<void> _writeWindow(DateTime? value, {required bool isEnd}) async {
+    final start = isEnd ? _task.start : value;
+    final end = isEnd ? value : _task.end;
+    await ref.read(taskRepositoryProvider).setTaskWindow(_task.id!, start, end);
+    if (mounted) {
+      setState(() => _task = _task.copyWith(start: start, end: end));
+    }
   }
 
   void _loadSeriesInfo() {
@@ -263,6 +359,28 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 trailing: const Icon(Symbols.chevron_right_rounded),
                 onTap: _pickLens,
               ),
+            // Window edges are editable on open one-offs only — a series'
+            // window comes from its recurrence + slice rule.
+            if (!recurring && _task.isOpen) ...[
+              _WindowDateTile(
+                icon: Symbols.today_rounded,
+                label: l10n.starts,
+                value: _task.start,
+                placeholder: l10n.startsNow,
+                isEnd: false,
+                onTap: () => _editWindowDate(isEnd: false),
+                onClear: () => _writeWindow(null, isEnd: false),
+              ),
+              _WindowDateTile(
+                icon: Symbols.flag_rounded,
+                label: l10n.dueLabel,
+                value: _task.end,
+                placeholder: l10n.noDueDate,
+                isEnd: true,
+                onTap: () => _editWindowDate(isEnd: true),
+                onClear: () => _writeWindow(null, isEnd: true),
+              ),
+            ],
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Symbols.event_repeat_rounded),
