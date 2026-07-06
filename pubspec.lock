@@ -361,11 +361,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.0"
-      resolved-ref: d42c0d9e0f2db1845e986d45ab9b73f382ede509
+      ref: "v0.3.0"
+      resolved-ref: b158195da1b8a1507b81bf3e71cbadd3eb9ed031
       url: "https://github.com/Kemenor/fuchsbau.git"
     source: git
-    version: "0.2.0"
+    version: "0.3.0"
   glob:
     dependency: transitive
     description:

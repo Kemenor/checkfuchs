@@ -8,7 +8,8 @@ import '../domain/task.dart';
 import '../domain/template.dart';
 import '../domain/window_rule.dart';
 import '../providers.dart';
-import 'settings_screen.dart' show SettingsCard, cardRowPadding;
+import 'package:fuchsbau/fuchsbau.dart'
+    show FuchsbauSettingsCard, fuchsbauCardRowPadding;
 
 /// Hidden developer/tester section, unlocked by long-pressing the app name in
 /// the About dialog (the knabberfuchs pattern). Deliberately English-only
@@ -34,24 +35,24 @@ class DebugSection extends ConsumerWidget {
             ),
           ),
         ),
-        SettingsCard(
+        FuchsbauSettingsCard(
           children: [
             ListTile(
-              contentPadding: cardRowPadding,
+              contentPadding: fuchsbauCardRowPadding,
               leading: const Icon(Icons.science_outlined),
               title: const Text('Load test data'),
               subtitle: const Text('Seed demo habits + one-offs'),
               onTap: () => _seed(context, ref),
             ),
             ListTile(
-              contentPadding: cardRowPadding,
+              contentPadding: fuchsbauCardRowPadding,
               leading: const Icon(Icons.sync),
               title: const Text('Reconcile now'),
               subtitle: const Text('Run the expiry sweep + generation'),
               onTap: () => _reconcile(context, ref),
             ),
             ListTile(
-              contentPadding: cardRowPadding,
+              contentPadding: fuchsbauCardRowPadding,
               leading: const Icon(Icons.notifications_active_outlined),
               title: const Text('Pending notifications'),
               subtitle: const Text('What the OS has scheduled'),

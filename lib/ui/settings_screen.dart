@@ -25,8 +25,8 @@ class SettingsScreen extends ConsumerWidget {
       // cards grouping the rows, hairline dividers between rows.
       body: ListView(
         children: [
-          SectionHeader(l10n.appearanceSection),
-          SettingsCard(
+          FuchsbauSectionHeader(l10n.appearanceSection),
+          FuchsbauSettingsCard(
             children: [
               FuchsbauChoicePicker<ThemeMode>(
                 icon: Icons.brightness_6_rounded,
@@ -66,11 +66,11 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SectionHeader(l10n.vacation),
-          SettingsCard(
+          FuchsbauSectionHeader(l10n.vacation),
+          FuchsbauSettingsCard(
             children: [
               ListTile(
-                contentPadding: cardRowPadding,
+                contentPadding: fuchsbauCardRowPadding,
                 leading: const Icon(Icons.beach_access_outlined),
                 title: Text(l10n.vacation),
                 trailing: const Icon(Icons.chevron_right),
@@ -80,8 +80,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SectionHeader(l10n.remindersSection),
-          SettingsCard(
+          FuchsbauSectionHeader(l10n.remindersSection),
+          FuchsbauSettingsCard(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -92,8 +92,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SectionHeader(l10n.aboutSection),
-          const SettingsCard(children: [_AboutTile()]),
+          FuchsbauSectionHeader(l10n.aboutSection),
+          const FuchsbauSettingsCard(children: [_AboutTile()]),
           // Hidden developer section — unlocked via the About easter egg.
           if (settings.debugMenu) const DebugSection(),
         ],
@@ -114,7 +114,7 @@ class _AboutTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final version = ref.watch(appVersionProvider).asData?.value;
     return ListTile(
-      contentPadding: cardRowPadding,
+      contentPadding: fuchsbauCardRowPadding,
       leading: const Icon(Icons.info_outline_rounded),
       title: const Text('Checkfuchs'),
       subtitle: version == null ? null : Text(version),
@@ -168,56 +168,6 @@ class _AboutTile extends ConsumerWidget {
     if (dialogCtx.mounted) Navigator.pop(dialogCtx);
     messenger.showSnackBar(
       SnackBar(content: Text(on ? 'Debug menu enabled' : 'Debug menu hidden')),
-    );
-  }
-}
-
-/// Row inset inside a [SettingsCard] (knabberfuchs `_cardRowPadding`).
-const cardRowPadding = EdgeInsets.symmetric(horizontal: 12);
-
-/// Groups a section's rows inside a single [Card], inserting a hairline
-/// divider between consecutive rows. Card fill/border/radius come from the
-/// theme — do not override them here. (Shared with [DebugSection].)
-class SettingsCard extends StatelessWidget {
-  const SettingsCard({super.key, required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      if (i > 0) {
-        rows.add(const Divider(height: 1, indent: 16, endIndent: 16));
-      }
-      rows.add(children[i]);
-    }
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Column(children: rows),
-    );
-  }
-}
-
-class SectionHeader extends StatelessWidget {
-  const SectionHeader(this.title, {super.key});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Semantics(
-        header: true,
-        child: Text(
-          title.toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.outline,
-            fontWeight: FontWeight.w700,
-            letterSpacing: .6,
-          ),
-        ),
-      ),
     );
   }
 }
