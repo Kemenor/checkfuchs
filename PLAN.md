@@ -247,10 +247,11 @@ visibility tiers are now Lens configurations, not code paths.
   - ~~Migrate app id to `ch.fuchsnest.checkfuchs`~~ **Done** — `applicationId` +
     `namespace`, Kotlin package path, and all iOS `PRODUCT_BUNDLE_IDENTIFIER`s (which
     also resolved review.md M12, the Android/iOS id mismatch).
-  - **TODO — move the landing page under fuchsnest.ch** once that domain is live
-    (registered, not yet set up): `docs/CNAME`, `docs/index.html` URLs, README link,
-    GitHub Pages custom domain + DNS — then let the checkfuchs.ch domain lapse. Until
-    then GitHub Pages stays on checkfuchs.ch.
+  - ~~Move the landing page under fuchsnest.ch~~ **Done 2026-07-12** — Pages now
+    serves `checkfuchs.fuchsnest.ch` (`docs/CNAME`, page URLs, README updated;
+    DNS CNAME on hostpoint). The checkfuchs.ch domain can lapse at renewal —
+    optionally set a hostpoint redirect checkfuchs.ch → checkfuchs.fuchsnest.ch
+    until then.
 
 ## Open questions (from concept §11, resolve as we hit them)
 

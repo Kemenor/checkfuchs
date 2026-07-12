@@ -8,7 +8,7 @@ stays on your phone.
 > Built because habit apps and to-do apps split one mental object in two — and pure
 > to-do apps die the moment you have a full day and nothing gets ticked off.
 
-🌐 [checkfuchs.ch](https://checkfuchs.ch)
+🌐 [checkfuchs.fuchsnest.ch](https://checkfuchs.fuchsnest.ch)
 
 ## The idea
 
