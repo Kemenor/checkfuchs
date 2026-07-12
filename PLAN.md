@@ -43,7 +43,7 @@ Three principles from the concept that shape *technical* decisions, not just UX:
 | Keys / SDK | `INTEGER` autoincrement PKs (local-only, no sync); min Android API **26** |
 | l10n | **en/de/fr/it** from day one, no hardcoded user-facing strings |
 | Backup | **ZIP** = SQLite snapshot + JSON export; fully local, no cloud lock-in |
-| App id | **`ch.fuchsnest.checkfuchs`** — migrating from `ch.checkfuchs.app` before release (fuchsbau's fuchsnest.ch collection-domain convention; unreleased, so still free to change — and checkfuchs.ch can lapse). See the Phase 9 todo |
+| App id | **`ch.fuchsnest.checkfuchs`** — fuchsbau's fuchsnest.ch collection-domain convention. Migrated from `ch.checkfuchs.app` pre-release (also fixed the Android/iOS mismatch, review M12). Landing page still on checkfuchs.ch until fuchsnest.ch is live — see the Phase 9 todo |
 | Repo | `Kemenor/checkfuchs`, public |
 
 ## Architecture
@@ -244,13 +244,13 @@ visibility tiers are now Lens configurations, not code paths.
   onboarding that seeds the first daily habit (the carrier), landing page on
   checkfuchs.ch.
 - **Phase 9 — Release.** Fox icon, fastlane metadata, store listing, signing; closed test.
-  - **TODO — migrate app id to `ch.fuchsnest.checkfuchs`** (must land before the first
-    store upload; also resolves review.md M12, the Android/iOS id mismatch):
-    `applicationId` + `namespace` in `android/app/build.gradle.kts`, the Kotlin package
-    (`MainActivity.kt` + its directory path), all `PRODUCT_BUNDLE_IDENTIFIER`s in
-    `ios/Runner.xcodeproj/project.pbxproj` (Runner + RunnerTests), and the landing page:
-    move off checkfuchs.ch to its home under fuchsnest.ch (`docs/CNAME`,
-    `docs/index.html` URLs, README link), then let the checkfuchs.ch domain lapse.
+  - ~~Migrate app id to `ch.fuchsnest.checkfuchs`~~ **Done** — `applicationId` +
+    `namespace`, Kotlin package path, and all iOS `PRODUCT_BUNDLE_IDENTIFIER`s (which
+    also resolved review.md M12, the Android/iOS id mismatch).
+  - **TODO — move the landing page under fuchsnest.ch** once that domain is live
+    (registered, not yet set up): `docs/CNAME`, `docs/index.html` URLs, README link,
+    GitHub Pages custom domain + DNS — then let the checkfuchs.ch domain lapse. Until
+    then GitHub Pages stays on checkfuchs.ch.
 
 ## Open questions (from concept §11, resolve as we hit them)
 

@@ -19,7 +19,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "ch.checkfuchs.checkfuchs"
+    namespace = "ch.fuchsnest.checkfuchs"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ch.checkfuchs.app"
+        applicationId = "ch.fuchsnest.checkfuchs"
         // Fuchsbau baseline: API 26 (adaptive icons).
         minSdk = 26
         targetSdk = flutter.targetSdkVersion

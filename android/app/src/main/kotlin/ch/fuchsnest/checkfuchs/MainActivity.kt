@@ -1,4 +1,4 @@
-package ch.checkfuchs.checkfuchs
+package ch.fuchsnest.checkfuchs
 
 import io.flutter.embedding.android.FlutterActivity
 
