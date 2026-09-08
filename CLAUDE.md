@@ -46,7 +46,7 @@ distrobox enter flutter -- bash -lc 'cd ~/Documents/fuchs/checkfuchs && flutter 
   tags `vX.Y.Z` and pushes. **The tag is the human gate**: it ships to
   production on both stores with no further approval. The tag triggers
   `.github/workflows/android.yml` (analyze+test gate → signed AAB → *completed*
-  release on the Play `alpha` closed track **and production**) and `ios.yml`
+  release on Play internal + the `alpha` closed track **and production**) and `ios.yml`
   (analyze+test gate → TestFlight → submit for App Store review,
   **auto-releases on approval**).
   **Off-tag production pushes** (a build already uploaded, e.g. promoting an
@@ -68,7 +68,7 @@ distrobox enter flutter -- bash -lc 'cd ~/Documents/fuchs/checkfuchs && flutter 
   `ANDROID_*` / `PLAY_STORE_KEY_JSON_BASE64` secrets set; the store listing
   (text, screenshots, icon, feature graphics, 4 locales) is uploaded as a
   draft via `tool/play_publish.py --commit`. No build has been uploaded yet
-  (first one: `gh workflow run android.yml -f track=alpha`). iOS: App Store
+  (manual: `gh workflow run android.yml` — defaults to internal + alpha). iOS: App Store
   Connect record, signing secrets and `ios/ExportOptions.plist` still to be
   created on the Mac. Store screenshots: `tool/screenshots.sh android` from
   the container against the host emulator.

@@ -34,10 +34,9 @@ on:
   workflow_dispatch:
     inputs:
       track:
-        description: "Play track to stage the release on (manual run only)"
-        default: "alpha"
-        type: choice
-        options: [alpha, internal, beta, production]
+        description: "Play track(s) to stage the release on, space-separated (manual run only). Every build goes to internal + closed testing by default."
+        default: "internal alpha"
+        type: string
       promote_version_code:
         description: "Promote this already-uploaded versionCode to the track instead of building (e.g. 12)"
         default: ""
@@ -169,12 +168,14 @@ jobs:
           python3 -m pip install --quiet google-api-python-client google-auth
           if [ -n "$PROMOTE_VC" ]; then
             # Manual promote: assign the existing build to the chosen track.
-            python3 tool/play_upload_aab.py --promote "$PROMOTE_VC" "$DISPATCH_TRACK"
+            # shellcheck disable=SC2086  # the input is a track list
+            python3 tool/play_upload_aab.py --promote "$PROMOTE_VC" $DISPATCH_TRACK
           elif [ -n "$DISPATCH_TRACK" ]; then
             # Manual run: stage on the chosen track only.
-            python3 tool/play_upload_aab.py "$DISPATCH_TRACK"
+            # shellcheck disable=SC2086  # the input is a track list
+            python3 tool/play_upload_aab.py $DISPATCH_TRACK
           else
             # Tag push (v*): one upload, released on the closed-testing track
             # AND production — the tag is the gate.
-            python3 tool/play_upload_aab.py "alpha" "production"
+            python3 tool/play_upload_aab.py "internal" "alpha" "production"
           fi
