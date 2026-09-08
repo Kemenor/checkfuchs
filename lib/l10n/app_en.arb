@@ -739,6 +739,30 @@
   "@backupImportSub": {
     "description": "Subtitle of the import tile."
   },
+  "deleteAllData": "Delete all data",
+  "@deleteAllData": {
+    "description": "Settings \u203a Data & backup row"
+  },
+  "deleteAllDataSub": "Tasks, habits, lenses, views and vacations. Settings stay.",
+  "@deleteAllDataSub": {
+    "description": "Row subtitle"
+  },
+  "deleteAllDataTitle": "Delete all data?",
+  "@deleteAllDataTitle": {
+    "description": "Confirm dialog title"
+  },
+  "deleteAllDataBody": "This removes every task, habit, lens, view and vacation. Your settings stay. This cannot be undone — export a backup first if in doubt.",
+  "@deleteAllDataBody": {
+    "description": "Confirm dialog body"
+  },
+  "deleteAllDataAction": "Delete",
+  "@deleteAllDataAction": {
+    "description": "Confirm dialog destructive button"
+  },
+  "deleteAllDataDone": "All data deleted",
+  "@deleteAllDataDone": {
+    "description": "Snackbar after wiping"
+  },
   "backupImportAction": "Import",
   "@backupImportAction": {
     "description": "Confirm button of the replace-all import dialog."

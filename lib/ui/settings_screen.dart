@@ -5,6 +5,7 @@ import 'package:fuchsbau/fuchsbau.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/backup/backup_service.dart';
+import '../data/debug/demo_data.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'debug_section.dart';
@@ -143,6 +144,19 @@ class SettingsScreen extends ConsumerWidget {
                 trailing: const Icon(Symbols.chevron_right_rounded),
                 onTap: () => _importBackup(context, ref),
               ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: Icon(
+                  Symbols.delete_forever_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  l10n.deleteAllData,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                subtitle: Text(l10n.deleteAllDataSub),
+                onTap: () => _deleteAllData(context, ref),
+              ),
             ],
           ),
           FuchsbauSectionHeader(l10n.remindersSection),
@@ -210,6 +224,40 @@ Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
 /// restore applies live (validate → migrate the snapshot → one replace-all
 /// transaction), so no restart is needed; settings are re-read afterwards
 /// because theme/font/locale live in the restored database.
+/// Wipe content (tasks, habits, lenses, views, vacations) and reseed the
+/// default View/Lens; settings stay. The user-facing counterpart to the
+/// developer "Reset to intro" — e.g. to clear the example dataset.
+Future<void> _deleteAllData(BuildContext context, WidgetRef ref) async {
+  final l10n = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.deleteAllDataTitle),
+      content: Text(l10n.deleteAllDataBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            foregroundColor: Theme.of(ctx).colorScheme.onError,
+          ),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l10n.deleteAllDataAction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  final db = ref.read(databaseProvider);
+  await db.transaction(() => wipeContent(db));
+  await ref.read(viewRepositoryProvider).seedDefaults();
+  messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataDone)));
+}
+
 Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context);
