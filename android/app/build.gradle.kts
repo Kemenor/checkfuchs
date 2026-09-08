@@ -53,6 +53,14 @@ android {
 
     buildTypes {
         release {
+            // No R8 code shrinking (same call as knabberfuchs): the savings
+            // are negligible for a Flutter app, and the first store build
+            // crashed at startup because R8 stripped the constructor of
+            // WorkManager's Room database (`WorkDatabase_Impl.<init>`) that
+            // the background refresh needs. Re-enable only with full keep
+            // rules for androidx.work + Room and a release-APK smoke test.
+            isMinifyEnabled = false
+            isShrinkResources = false
             // Use the real release key when android/key.properties exists.
             // Otherwise fall back to debug signing so `flutter run --release`
             // still works on machines without the keystore — such builds must
