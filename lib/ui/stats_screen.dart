@@ -7,15 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/stats.dart';
-import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'stats_tiles.dart';
 import 'stats_tiles_screen.dart';
-
-final _tasksProvider = StreamProvider.autoDispose<List<Task>>(
-  (ref) => ref.watch(taskRepositoryProvider).watchTasks(),
-);
 
 final _templateNamesProvider = StreamProvider.autoDispose<Map<int, String>>((
   ref,
@@ -36,7 +31,7 @@ class StatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final tasks = ref.watch(_tasksProvider).asData?.value;
+    final tasks = ref.watch(tasksProvider).asData?.value;
     final names = ref.watch(_templateNamesProvider).asData?.value;
     final tiles = enabledTiles(ref.watch(settingsProvider).effectiveStatsTiles);
 
@@ -283,7 +278,13 @@ class _DayMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DayMarkPainter old) =>
-      old.mark != mark || old.done != done || old.none != none;
+      old.mark != mark ||
+      old.done != done ||
+      old.onDone != onDone ||
+      old.skipped != skipped ||
+      old.missed != missed ||
+      old.open != open ||
+      old.none != none;
 }
 
 // ---------------------------------------------------------------------------

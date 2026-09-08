@@ -42,6 +42,9 @@ class VacationScreen extends ConsumerWidget {
                       ),
                     )
                   : ListView(
+                      padding: EdgeInsets.only(
+                        bottom: 96 + MediaQuery.paddingOf(context).bottom,
+                      ),
                       children: [
                         for (final v in list)
                           ListTile(
@@ -56,6 +59,28 @@ class VacationScreen extends ConsumerWidget {
                                 color: Theme.of(context).colorScheme.error,
                               ),
                               onPressed: () async {
+                                final ok = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(l10n.deleteVacationTitle),
+                                    content: Text(
+                                      '${fmt.format(v.start)} – ${fmt.format(v.end)}',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: Text(l10n.cancel),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: Text(l10n.delete),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (ok != true) return;
                                 await ref
                                     .read(taskRepositoryProvider)
                                     .deleteVacation(v.id);

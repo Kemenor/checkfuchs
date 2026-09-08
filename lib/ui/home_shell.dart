@@ -59,7 +59,19 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
   Future<void> _startup() async {
     final now = ref.read(clockProvider).now();
-    await ref.read(viewRepositoryProvider).seedDefaults();
+    final l10n = AppLocalizations.of(context);
+    await ref
+        .read(viewRepositoryProvider)
+        .seedDefaults(
+          lensName: l10n.seedLensDefault,
+          viewName: l10n.seedViewHome,
+        );
+    await ref
+        .read(notificationSchedulerProvider)
+        .localize(
+          name: l10n.notificationChannelName,
+          description: l10n.notificationChannelDescription,
+        );
     await ref.read(taskRepositoryProvider).reconcileAll(now);
     await ref.read(viewRepositoryProvider).refreshSurfaced(now);
     await _maybeShowOnboarding();
@@ -198,6 +210,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: Column(
@@ -240,6 +253,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   void _showMoreViews(List<ViewRow> rest, int offset) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: ListView(
@@ -251,7 +265,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 title: Text(rest[i].name),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  setState(() => _selectedView = offset + i);
+                  setState(() {
+                    _onSettings = false;
+                    _onStats = false;
+                    _selectedView = offset + i;
+                  });
                 },
               ),
           ],

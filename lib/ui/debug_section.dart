@@ -139,6 +139,8 @@ class DebugSection extends ConsumerWidget {
   /// sheet needs a lens to land in), clear the onboarding flag, and run the
   /// first-launch flow right away.
   Future<void> _resetToIntro(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -161,9 +163,20 @@ class DebugSection extends ConsumerWidget {
     );
     if (ok != true) return;
     final db = ref.read(databaseProvider);
-    await db.transaction(() => wipeContent(db));
-    await ref.read(viewRepositoryProvider).seedDefaults();
-    await ref.read(settingsProvider.notifier).resetOnboarding();
+    final views = ref.read(viewRepositoryProvider);
+    try {
+      await db.transaction(() async {
+        await wipeContent(db);
+        await views.seedDefaultsUnwrapped(
+          lensName: l10n.seedLensDefault,
+          viewName: l10n.seedViewHome,
+        );
+      });
+      await ref.read(settingsProvider.notifier).resetOnboarding();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Reset failed: $e')));
+      return;
+    }
     if (!context.mounted) return;
     await runFirstLaunch(context, ref);
   }

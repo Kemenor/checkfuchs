@@ -99,8 +99,10 @@ screens use them.
 - Prominent name field; **This-occurrence / The-series** segmented (only when recurring).
 - Property rows (icon + label + value, drill-in): **Active window** (day/morning/…/time
   chips), **Repeat**, **Reminders**, **Lens**, **Note**.
-- Full-width **Save** (`FilledButton`); **Delete** in `error` red — *the one sanctioned
-  alarm-red use*.
+- Full-width **Save** (`FilledButton`); **Delete** in `error` red. Error red is
+  reserved for **destructive actions** (delete task/series, delete view/lens,
+  delete a vacation, Delete all data, the developer reset) — each behind a
+  Cancel → Confirm dialog — and never for task state (a Miss is taupe).
 
 ### 3.5 Recurrence editor → `examples/ui/06-recurrence.html`
 - Segmented frequency **Off · Day · Week · Month · Year** (Off = one-off).

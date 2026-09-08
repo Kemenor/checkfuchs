@@ -6,6 +6,8 @@ import '../../domain/derive.dart';
 import '../../domain/lens.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
+import '../../domain/window_rule.dart';
+import '../db/converters.dart';
 import '../db/database.dart';
 
 /// One lens as rendered inside a View: the shown tasks (open, projected, plus
@@ -130,7 +132,22 @@ class ViewRepository {
   /// Returns the default lens id (new tasks join it). Idempotent, and
   /// transactional — a partial seed (lens without its view) would otherwise
   /// trip the guard forever and leave the app without a Home view.
-  Future<int> seedDefaults() => db.transaction(() async {
+  /// [lensName] / [viewName] are the localized first-run names (the UI
+  /// passes `l10n.seedLensDefault` / `l10n.seedViewHome`); the English
+  /// defaults exist for tests and tooling.
+  Future<int> seedDefaults({
+    String lensName = 'Default',
+    String viewName = 'Home',
+  }) => db.transaction(
+    () => seedDefaultsUnwrapped(lensName: lensName, viewName: viewName),
+  );
+
+  /// [seedDefaults] without its own transaction — for callers that already
+  /// hold one (wipe + reseed must be atomic).
+  Future<int> seedDefaultsUnwrapped({
+    String lensName = 'Default',
+    String viewName = 'Home',
+  }) async {
     final existing = await db.select(db.lenses).get();
     if (existing.isNotEmpty) return existing.first.id;
 
@@ -138,14 +155,16 @@ class ViewRepository {
         .into(db.lenses)
         .insert(
           LensesCompanion.insert(
-            name: 'Default',
+            name: lensName,
             ordering: LensOrdering.automatic,
             selection: LensSelection.top,
           ),
         );
     final viewId = await db
         .into(db.views)
-        .insert(ViewsCompanion.insert(name: 'Home', sortIndex: const Value(0)));
+        .insert(
+          ViewsCompanion.insert(name: viewName, sortIndex: const Value(0)),
+        );
     await db
         .into(db.viewLens)
         .insert(
@@ -188,7 +207,7 @@ class ViewRepository {
           );
     }
     return lensId;
-  });
+  }
 
   Future<int> createView(String name, {String icon = 'home'}) =>
       db.transaction(() async {
@@ -484,6 +503,23 @@ class ViewRepository {
         if (!m.task.isOpen) continue;
         consider(m.task.start);
         consider(m.task.end);
+        // Band edges (a "morning or evening" task flips Active↔Pending
+        // inside its envelope): today's and tomorrow's, civil arithmetic.
+        for (final b in m.task.bands ?? const <Band>[]) {
+          for (final dayOffset in const [0, 1]) {
+            for (final o in [b.from, b.to]) {
+              consider(
+                DateTime(
+                  now.year,
+                  now.month,
+                  now.day + dayOffset + o.inDays,
+                  (o - Duration(days: o.inDays)).inHours,
+                  o.inMinutes % 60,
+                ),
+              );
+            }
+          }
+        }
       }
     }
     for (final lens in lenses) {
@@ -569,5 +605,6 @@ class ViewRepository {
     createdAt: r.createdAt,
     resolvedAt: r.resolvedAt,
     notifications: r.notifications,
+    bands: bandsFromSql(r.windowBands),
   );
 }

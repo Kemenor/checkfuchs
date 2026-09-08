@@ -208,7 +208,6 @@ class TaskRepository {
     await reconcileAll(now);
   }
 
-  /// Swipe Skip — declines this instance, then reconciles.
   /// Missed → Done on a habit instance (logging correction, §11 q7).
   Future<void> correctMissedTask(domain.Task task) async {
     if (!domain.canCorrectMiss(task)) return;
@@ -344,11 +343,11 @@ class TaskRepository {
 
   /// Stop a series repeating: delete the Template but keep its existing Tasks as
   /// standalone one-offs.
-  Future<void> stopRepeating(int templateId) async {
+  Future<void> stopRepeating(int templateId) => db.transaction(() async {
     await (db.update(db.tasks)..where((t) => t.templateId.equals(templateId)))
         .write(const TasksCompanion(templateId: Value(null)));
     await (db.delete(db.templates)..where((t) => t.id.equals(templateId))).go();
-  }
+  });
 
   // --- pause & vacation (§3.5, §6) ---------------------------------------------
 

@@ -50,7 +50,7 @@ Future<void> loadDemoData(
             sortIndex: Value(sort),
           ),
         );
-    final homeView = await view('Home', 'home', 0);
+    final homeView = await view(l10n.demoViewHome, 'home', 0);
     final habitsView = await view(l10n.demoViewHabits, 'repeat', 1);
     final longtermView = await view(l10n.demoViewLongterm, 'inbox', 2);
 

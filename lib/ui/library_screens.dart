@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../data/db/database.dart';
 import '../domain/task.dart' as domain;
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
@@ -16,14 +15,6 @@ import 'view_icons.dart';
 /// Lenses show what a View's dials choose to surface; these screens show
 /// everything that exists — every task instance, every lens's raw pool,
 /// every view.
-
-final _allTasksProvider = StreamProvider.autoDispose<List<domain.Task>>(
-  (ref) => ref.watch(taskRepositoryProvider).watchTasks(),
-);
-
-final _allLensesProvider = StreamProvider.autoDispose<List<LensRow>>(
-  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
-);
 
 final _lensTaskCountsProvider = StreamProvider.autoDispose<Map<int, int>>(
   (ref) => ref.watch(viewRepositoryProvider).watchLensTaskCounts(),
@@ -45,7 +36,7 @@ class AllTasksScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final tasks = ref.watch(_allTasksProvider).asData?.value;
+    final tasks = ref.watch(tasksProvider).asData?.value;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.allTasksTitle)),
       body: tasks == null
@@ -172,7 +163,7 @@ class AllLensesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final lenses = ref.watch(_allLensesProvider).asData?.value;
+    final lenses = ref.watch(allLensesProvider).asData?.value;
     final counts = ref.watch(_lensTaskCountsProvider).asData?.value ?? {};
     final viewNames = ref.watch(_lensViewNamesProvider).asData?.value ?? {};
     return Scaffold(

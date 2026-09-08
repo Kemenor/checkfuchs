@@ -63,6 +63,23 @@ void main() {
       ));
     });
 
+    test(
+      'a future start with no due date ends on that day, never before it',
+      () {
+        final morning = WindowSelection.anytime.toggle(WindowChoice.morning);
+        final (s1, e1) = morning.datedWindow(now, DateTime(2026, 7, 15), null);
+        expect(s1, DateTime(2026, 7, 15, 6));
+        expect(e1, DateTime(2026, 7, 15, 12));
+        final (s2, e2) = WindowSelection.anytime.datedWindow(
+          now,
+          DateTime(2026, 7, 15),
+          null,
+        );
+        expect(s2, DateTime(2026, 7, 15));
+        expect(e2, DateTime(2026, 7, 16));
+      },
+    );
+
     test('dated window uses the first from / last to on the pinned days', () {
       final s = WindowSelection.anytime
           .toggle(WindowChoice.night)

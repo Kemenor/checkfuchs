@@ -35,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               FuchsbauChoicePicker<ThemeMode>(
                 icon: Symbols.brightness_6_rounded,
-                title: l10n.appearanceSection,
+                title: l10n.themePickerTitle,
                 value: settings.themeMode,
                 options: {
                   ThemeMode.system: l10n.themeSystem,
@@ -277,9 +277,22 @@ Future<void> _deleteAllData(BuildContext context, WidgetRef ref) async {
   );
   if (confirmed != true) return;
   final db = ref.read(databaseProvider);
-  await db.transaction(() => wipeContent(db));
-  await ref.read(viewRepositoryProvider).seedDefaults();
-  messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataDone)));
+  final views = ref.read(viewRepositoryProvider);
+  try {
+    // Wipe + reseed atomically: a failure mid-way must not leave the app
+    // without its Home view.
+    await db.transaction(() async {
+      await wipeContent(db);
+      await views.seedDefaultsUnwrapped(
+        lensName: l10n.seedLensDefault,
+        viewName: l10n.seedViewHome,
+      );
+    });
+    messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataDone)));
+  } catch (e) {
+    debugPrint('deleteAllData failed: $e');
+    messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataFailed)));
+  }
 }
 
 Future<void> _importBackup(BuildContext context, WidgetRef ref) async {

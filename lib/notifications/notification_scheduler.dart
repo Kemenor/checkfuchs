@@ -29,16 +29,50 @@ class NotificationScheduler {
   /// `taskId * _slots + index`, unique as long as this holds.
   static const int _slots = 8;
 
-  static const _details = NotificationDetails(
+  // Channel strings are user-visible in Android's Settings › Notifications;
+  // [localize] swaps in the app locale's words (and re-creates the channel,
+  // since Android caches its metadata).
+  static const _channelId = 'reminders';
+  String _channelName = 'Reminders';
+  String _channelDescription = 'Task reminders';
+
+  NotificationDetails get _details => NotificationDetails(
     android: AndroidNotificationDetails(
-      'reminders',
-      'Reminders',
-      channelDescription: 'Task reminders',
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
       importance: Importance.high,
       priority: Priority.high,
     ),
-    iOS: DarwinNotificationDetails(),
+    iOS: const DarwinNotificationDetails(),
   );
+
+  /// Localize the channel's name/description (call on launch and on a
+  /// language change).
+  Future<void> localize({
+    required String name,
+    required String description,
+  }) async {
+    _channelName = name;
+    _channelDescription = description;
+    if (!await _ensureReady()) return;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.createNotificationChannel(
+        AndroidNotificationChannel(
+          _channelId,
+          name,
+          description: description,
+          importance: Importance.high,
+        ),
+      );
+    } catch (e) {
+      debugPrint('localize channel failed: $e');
+    }
+  }
 
   Future<bool> _ensureReady() async {
     if (_ready) return true;
@@ -107,7 +141,13 @@ class NotificationScheduler {
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      return await android?.areNotificationsEnabled();
+      if (android != null) return await android.areNotificationsEnabled();
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      if (ios != null) return (await ios.checkPermissions())?.isEnabled;
+      return null;
     } catch (e) {
       debugPrint('notificationsEnabled failed: $e');
       return null;
@@ -193,7 +233,11 @@ class NotificationScheduler {
           >();
       _exact = await android?.canScheduleExactNotifications() ?? _exact;
 
-      await _plugin.cancelAll();
+      // Cancel only what is still *pending*: cancelAll() would also wipe
+      // reminders already sitting in the tray that the user hasn't acted on.
+      for (final pending in await _plugin.pendingNotificationRequests()) {
+        await _plugin.cancel(id: pending.id);
+      }
       for (final s in selected) {
         await _plugin.zonedSchedule(
           id: s.taskId,

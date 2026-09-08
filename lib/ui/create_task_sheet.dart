@@ -15,10 +15,6 @@ import 'reminder_editor.dart';
 import 'window_choice.dart';
 import 'window_editor.dart';
 
-final _lensesProvider = StreamProvider.autoDispose<List<LensRow>>(
-  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
-);
-
 final _viewLensesProvider = StreamProvider.autoDispose
     .family<List<LensRow>, int>(
       (ref, viewId) => ref
@@ -111,7 +107,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   /// view (it has none of its own — the task would otherwise vanish into a
   /// lens the user can't see from here).
   (List<LensRow>?, bool) _lensChoices(WidgetRef ref) {
-    final all = ref.watch(_lensesProvider).asData?.value;
+    final all = ref.watch(allLensesProvider).asData?.value;
     final viewId = widget.viewId;
     if (viewId == null) return (all, false);
     final inView = ref.watch(_viewLensesProvider(viewId)).asData?.value;

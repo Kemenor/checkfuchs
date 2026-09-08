@@ -41,6 +41,12 @@ final tasksProvider = StreamProvider<List<Task>>(
   (ref) => ref.watch(taskRepositoryProvider).watchTasks(),
 );
 
+/// Every lens, in id order — shared by the library, the view/lens editors
+/// and the create/detail sheets (one drift subscription, not one per screen).
+final allLensesProvider = StreamProvider<List<LensRow>>(
+  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
+);
+
 final vacationsProvider = StreamProvider<List<VacationRow>>(
   (ref) => ref.watch(taskRepositoryProvider).watchVacations(),
 );
@@ -131,7 +137,8 @@ final notificationsEnabledProvider = FutureProvider<bool?>(
 Future<void> ensureNotificationPermission(WidgetRef ref) async {
   final scheduler = ref.read(notificationSchedulerProvider);
   final enabled = await scheduler.notificationsEnabled();
-  if (enabled != false) return;
+  // Unknown (null) counts as "ask": iOS reports nothing until asked.
+  if (enabled == true) return;
   await scheduler.requestPermission();
   ref.invalidate(notificationsEnabledProvider);
 }

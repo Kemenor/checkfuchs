@@ -188,9 +188,12 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     var first = isEnd ? (_task.start ?? today) : today;
     first = DateTime(first.year, first.month, first.day);
     if (oldDay != null && oldDay.isBefore(first)) first = oldDay;
+    final initial = oldDay ?? today;
     final picked = await showDatePicker(
       context: context,
-      initialDate: oldDay ?? today,
+      // A future start with no due yet: the picker asserts
+      // initialDate >= firstDate, so clamp.
+      initialDate: initial.isBefore(first) ? first : initial,
       firstDate: first,
       lastDate: DateTime(today.year + 5, 12, 31),
     );
@@ -322,209 +325,213 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
       padding: EdgeInsets.fromLTRB(16, 4, 16, viewInsets + 16),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _controller,
-              textCapitalization: TextCapitalization.sentences,
-              style: Theme.of(context).textTheme.titleLarge,
-              decoration: const InputDecoration(border: InputBorder.none),
-              onSubmitted: (_) => _saveName(),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _saveName,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(l10n.save),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _controller,
+                textCapitalization: TextCapitalization.sentences,
+                style: Theme.of(context).textTheme.titleLarge,
+                decoration: const InputDecoration(border: InputBorder.none),
+                onSubmitted: (_) => _saveName(),
               ),
-            ),
-            // Missed habit: the logging correction (§11 q7). Pops the sheet —
-            // the stream re-renders the row as done.
-            if (canCorrectMiss(_task)) ...[
               const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await ref
-                      .read(taskRepositoryProvider)
-                      .correctMissedTask(_task);
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-                icon: const Icon(Symbols.check_circle_rounded),
-                label: Text(l10n.markDoneAnyway),
+              FilledButton(
+                onPressed: _saveName,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(l10n.save),
+                ),
               ),
-            ],
-            // Done/Skipped: undo it (mis-tap, mis-swipe, changed your mind).
-            if (canReopen(_task)) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await ref.read(taskRepositoryProvider).reopenTask(_task);
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-                icon: const Icon(Symbols.undo_rounded),
-                label: Text(l10n.reopenTask),
-              ),
-            ],
-            if (_stats?.hasData ?? false) ...[
-              const SizedBox(height: 14),
+              // Missed habit: the logging correction (§11 q7). Pops the sheet —
+              // the stream re-renders the row as done.
+              if (canCorrectMiss(_task)) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref
+                        .read(taskRepositoryProvider)
+                        .correctMissedTask(_task);
+                    if (context.mounted) Navigator.of(context).pop();
+                  },
+                  icon: const Icon(Symbols.check_circle_rounded),
+                  label: Text(l10n.markDoneAnyway),
+                ),
+              ],
+              // Done/Skipped: undo it (mis-tap, mis-swipe, changed your mind).
+              if (canReopen(_task)) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref.read(taskRepositoryProvider).reopenTask(_task);
+                    if (context.mounted) Navigator.of(context).pop();
+                  },
+                  icon: const Icon(Symbols.undo_rounded),
+                  label: Text(l10n.reopenTask),
+                ),
+              ],
+              if (_stats?.hasData ?? false) ...[
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Icon(
+                      Symbols.local_fire_department_rounded,
+                      size: 18,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.dayStreak(_stats!.currentStreak),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 14),
+                    Text(
+                      l10n.percentDone((_stats!.completionRate * 100).round()),
+                      style: TextStyle(color: scheme.outline),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Icon(
-                    Symbols.local_fire_department_rounded,
-                    size: 18,
-                    color: scheme.primary,
+                    Symbols.notifications_none_rounded,
+                    size: 20,
+                    color: scheme.outline,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
-                    l10n.dayStreak(_stats!.currentStreak),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    l10n.percentDone((_stats!.completionRate * 100).round()),
-                    style: TextStyle(color: scheme.outline),
+                    l10n.remindersSection,
+                    style: TextStyle(
+                      color: scheme.outline,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Symbols.notifications_none_rounded,
-                  size: 20,
-                  color: scheme.outline,
+              const SizedBox(height: 8),
+              ReminderEditor(
+                value: _notifications,
+                hasDay:
+                    _task.occurrence != null ||
+                    _task.end != null ||
+                    _task.start != null,
+                onChanged: _setReminders,
+              ),
+              const SizedBox(height: 4),
+              if (_lenses.length > 1)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.filter_alt_rounded),
+                  title: Text(l10n.lensSection),
+                  subtitle: switch (_lenses.where(
+                    (l) => _lensIds.contains(l.id),
+                  )) {
+                    Iterable(isEmpty: true) => null,
+                    final match => Text(match.map((l) => l.name).join(', ')),
+                  },
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: _pickLenses,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.remindersSection,
-                  style: TextStyle(
-                    color: scheme.outline,
-                    fontWeight: FontWeight.w600,
-                  ),
+              // Window edges are editable on open one-offs only — a series'
+              // window comes from its recurrence + slice rule.
+              if (!recurring && _task.isOpen) ...[
+                _WindowDateTile(
+                  icon: Symbols.today_rounded,
+                  label: l10n.starts,
+                  value: _task.start,
+                  placeholder: l10n.startsNow,
+                  isEnd: false,
+                  onTap: () => _editWindowDate(isEnd: false),
+                  onClear: () => _writeWindow(null, isEnd: false),
+                ),
+                _WindowDateTile(
+                  icon: Symbols.flag_rounded,
+                  label: l10n.dueLabel,
+                  value: _task.end,
+                  placeholder: l10n.noDueDate,
+                  isEnd: true,
+                  onTap: () => _editWindowDate(isEnd: true),
+                  onClear: () => _writeWindow(null, isEnd: true),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            ReminderEditor(
-              value: _notifications,
-              hasDay:
-                  _task.occurrence != null ||
-                  _task.end != null ||
-                  _task.start != null,
-              onChanged: _setReminders,
-            ),
-            const SizedBox(height: 4),
-            if (_lenses.length > 1)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Symbols.filter_alt_rounded),
-                title: Text(l10n.lensSection),
-                subtitle: switch (_lenses.where(
-                  (l) => _lensIds.contains(l.id),
-                )) {
-                  Iterable(isEmpty: true) => null,
-                  final match => Text(match.map((l) => l.name).join(', ')),
-                },
-                trailing: const Icon(Symbols.chevron_right_rounded),
-                onTap: _pickLenses,
-              ),
-            // Window edges are editable on open one-offs only — a series'
-            // window comes from its recurrence + slice rule.
-            if (!recurring && _task.isOpen) ...[
-              _WindowDateTile(
-                icon: Symbols.today_rounded,
-                label: l10n.starts,
-                value: _task.start,
-                placeholder: l10n.startsNow,
-                isEnd: false,
-                onTap: () => _editWindowDate(isEnd: false),
-                onClear: () => _writeWindow(null, isEnd: false),
-              ),
-              _WindowDateTile(
-                icon: Symbols.flag_rounded,
-                label: l10n.dueLabel,
-                value: _task.end,
-                placeholder: l10n.noDueDate,
-                isEnd: true,
-                onTap: () => _editWindowDate(isEnd: true),
-                onClear: () => _writeWindow(null, isEnd: true),
-              ),
-            ],
-            if (recurring)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Symbols.history_rounded),
-                title: Text(l10n.historyTitle),
-                trailing: const Icon(Symbols.chevron_right_rounded),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => TaskHistoryScreen(
-                      templateId: _task.templateId!,
-                      name: _task.name,
+              if (recurring)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.history_rounded),
+                  title: Text(l10n.historyTitle),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => TaskHistoryScreen(
+                        templateId: _task.templateId!,
+                        name: _task.name,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            // A habit's active window sits next to its reminders — it's a
-            // property of the series, not of the repeat rule.
-            if (recurring && _templateRule != null)
-              switch (WindowSelection.fromRule(_templateRule!)) {
-                null => const SizedBox.shrink(),
-                final sel => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Symbols.schedule_rounded),
-                  title: Text(l10n.activeWindowSection),
-                  subtitle: Text(
-                    sel.isAnytime ? l10n.windowAnytime : sel.describe(context),
+              // A habit's active window sits next to its reminders — it's a
+              // property of the series, not of the repeat rule.
+              if (recurring && _templateRule != null)
+                switch (WindowSelection.fromRule(_templateRule!)) {
+                  null => const SizedBox.shrink(),
+                  final sel => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Symbols.schedule_rounded),
+                    title: Text(l10n.activeWindowSection),
+                    subtitle: Text(
+                      sel.isAnytime
+                          ? l10n.windowAnytime
+                          : sel.describe(context),
+                    ),
+                    trailing: const Icon(Symbols.chevron_right_rounded),
+                    onTap: _editSeriesWindow,
                   ),
-                  trailing: const Icon(Symbols.chevron_right_rounded),
-                  onTap: _editSeriesWindow,
-                ),
-              },
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Symbols.event_repeat_rounded),
-              title: Text(recurring ? l10n.editRepeat : l10n.makeItAHabit),
-              trailing: const Icon(Symbols.chevron_right_rounded),
-              onTap: _editRepeat,
-            ),
-            if (recurring)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                secondary: const Icon(Symbols.pause_circle_outline_rounded),
-                title: Text(l10n.paused),
-                subtitle: Text(l10n.pausedSubtitle),
-                value: _paused,
-                onChanged: (v) async {
-                  await ref
-                      .read(taskRepositoryProvider)
-                      .pauseTemplate(
-                        _task.templateId!,
-                        v,
-                        ref.read(clockProvider).now(),
-                      );
-                  if (mounted) setState(() => _paused = v);
                 },
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Symbols.event_repeat_rounded),
+                title: Text(recurring ? l10n.editRepeat : l10n.makeItAHabit),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: _editRepeat,
               ),
-            const SizedBox(height: 4),
-            TextButton.icon(
-              onPressed: () => _delete(series: false),
-              style: TextButton.styleFrom(foregroundColor: scheme.error),
-              icon: const Icon(Symbols.delete_outline_rounded),
-              label: Text(recurring ? l10n.deleteThisTask : l10n.deleteTask),
-            ),
-            if (recurring)
+              if (recurring)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const Icon(Symbols.pause_circle_outline_rounded),
+                  title: Text(l10n.paused),
+                  subtitle: Text(l10n.pausedSubtitle),
+                  value: _paused,
+                  onChanged: (v) async {
+                    await ref
+                        .read(taskRepositoryProvider)
+                        .pauseTemplate(
+                          _task.templateId!,
+                          v,
+                          ref.read(clockProvider).now(),
+                        );
+                    if (mounted) setState(() => _paused = v);
+                  },
+                ),
+              const SizedBox(height: 4),
               TextButton.icon(
-                onPressed: () => _delete(series: true),
+                onPressed: () => _delete(series: false),
                 style: TextButton.styleFrom(foregroundColor: scheme.error),
-                icon: const Icon(Symbols.delete_forever_rounded),
-                label: Text(l10n.deleteWholeSeries),
+                icon: const Icon(Symbols.delete_outline_rounded),
+                label: Text(recurring ? l10n.deleteThisTask : l10n.deleteTask),
               ),
-          ],
+              if (recurring)
+                TextButton.icon(
+                  onPressed: () => _delete(series: true),
+                  style: TextButton.styleFrom(foregroundColor: scheme.error),
+                  icon: const Icon(Symbols.delete_forever_rounded),
+                  label: Text(l10n.deleteWholeSeries),
+                ),
+            ],
+          ),
         ),
       ),
     );

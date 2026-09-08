@@ -108,10 +108,6 @@ class ViewEditScreen extends ConsumerWidget {
   }
 }
 
-final _allLensesProvider = StreamProvider.autoDispose<List<LensRow>>(
-  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
-);
-
 /// One lens's dials standalone — pushed right after "New lens here" (with a
 /// [viewId], so the View↔Lens statusFilter chips are offered too) and from
 /// Settings → Library → All lenses (no view: the lens's own dials only).
@@ -137,14 +133,14 @@ class LensEditScreen extends ConsumerWidget {
       final entries = ref.watch(_viewLensesProvider(viewId)).asData?.value;
       entry = entries?.where((e) => e.lens.id == lensId).firstOrNull;
     } else {
-      ref.listen(_allLensesProvider, (_, next) {
+      ref.listen(allLensesProvider, (_, next) {
         final lenses = next.asData?.value;
         if (lenses != null && lenses.every((l) => l.id != lensId)) {
           Navigator.of(context).maybePop();
         }
       });
       final lens = ref
-          .watch(_allLensesProvider)
+          .watch(allLensesProvider)
           .asData
           ?.value
           .where((l) => l.id == lensId)

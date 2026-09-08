@@ -229,10 +229,20 @@ class WindowSelection {
     final (defaultStart, defaultEnd) = b.isEmpty
         ? WindowChoice.anytime.datedWindow(now, null, null)
         : oneOffWindow(now);
-    return (
-      startDate == null ? defaultStart : at(startDate, from),
-      dueDate == null ? defaultEnd : at(dueDate, to),
-    );
+    final start = startDate == null ? defaultStart : at(startDate, from);
+    var end = dueDate == null ? defaultEnd : at(dueDate, to);
+    // A pinned start with no due date: the default end is anchored to
+    // *today*, which can lie before a future start — end on the start day
+    // instead (Anytime → the day after it). Never persist end < start.
+    if (dueDate == null && startDate != null && end != null) {
+      if (b.isEmpty) {
+        end = DateTime(startDate.year, startDate.month, startDate.day + 1);
+      } else if (start != null && !end.isAfter(start)) {
+        end = at(startDate, to);
+      }
+    }
+    if (start != null && end != null && end.isBefore(start)) end = start;
+    return (start, end);
   }
 
   /// "06:00–12:00, 18:00–24:00" in the locale's 24h/12h style.

@@ -817,6 +817,38 @@
       }
     }
   },
+  "seedViewHome": "Home",
+  "@seedViewHome": {
+    "description": "First-run view name (stored in the DB)"
+  },
+  "seedLensDefault": "Default",
+  "@seedLensDefault": {
+    "description": "First-run lens name (stored in the DB)"
+  },
+  "demoViewHome": "Home",
+  "@demoViewHome": {
+    "description": "Demo suite: Home view name"
+  },
+  "notificationChannelName": "Reminders",
+  "@notificationChannelName": {
+    "description": "Android notification channel name (system settings)"
+  },
+  "notificationChannelDescription": "Task reminders",
+  "@notificationChannelDescription": {
+    "description": "Android notification channel description"
+  },
+  "deleteVacationTitle": "Delete this vacation?",
+  "@deleteVacationTitle": {
+    "description": "Confirm dialog title for deleting a vacation"
+  },
+  "deleteAllDataFailed": "Could not delete the data. Nothing was changed.",
+  "@deleteAllDataFailed": {
+    "description": "Snackbar when wipe+reseed failed (rolled back)"
+  },
+  "themePickerTitle": "Theme",
+  "@themePickerTitle": {
+    "description": "Settings: theme picker row title"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",
