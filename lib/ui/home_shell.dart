@@ -155,6 +155,15 @@ class _HomeShellState extends ConsumerState<HomeShell>
           });
         }
       },
+      // Five destinations leave ~72dp per label: shrink the type a notch so
+      // a long view name ("Gewohnheiten") ellipsizes instead of wrapping.
+      labelTextStyle: WidgetStatePropertyAll(
+        Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontSize: shown.length + (overflow ? 1 : 0) + (statsTab ? 1 : 0) >= 4
+              ? 11
+              : null,
+        ),
+      ),
       destinations: [
         for (final v in shown)
           NavigationDestination(

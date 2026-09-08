@@ -102,6 +102,15 @@
     footer{border-top:1px solid var(--line);margin-top:24px;padding:26px 0 10px;text-align:center;color:var(--muted);font-size:.9rem}
     footer a{color:inherit}
     .priv{max-width:52ch;margin:0 auto 16px}
+
+    .shot{width:300px;max-width:88vw;border-radius:28px;border:1px solid var(--line);box-shadow:0 24px 60px -30px rgba(0,0,0,.45);display:block}
+    .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-bottom:30px}
+    @media(max-width:680px){.gallery{grid-template-columns:repeat(2,1fr)}}
+    .gallery figure{margin:0}
+    .gallery img{width:100%;border-radius:18px;border:1px solid var(--line);display:block}
+    .gallery figcaption{font-size:.82rem;color:var(--muted);text-align:center;margin-top:8px}
+    .stores{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;color:var(--muted);font-size:.9rem}
+    @media(max-width:820px){.stores{justify-content:center}}
   </style>
 </head>
 <body>
@@ -116,32 +125,17 @@
 
   <section class="hero">
     <div>
-      <span class="badge">🚧 In development</span>
+      <span class="badge">Coming to Google Play &amp; the App Store</span>
       <h1>Habits and to-dos are <span class="accent">one thing</span>.</h1>
       <p class="lead">A calm habit &amp; to-do app for people who drop rigid systems. One surface for both — your data stays on your phone. No accounts, no nagging.</p>
       <a class="cta" href="https://github.com/Kemenor/checkfuchs">Follow along on GitHub <span class="ms" style="font-size:19px">arrow_forward</span></a>
+      <p class="stores">Free. No ads, no subscription, no account. Store links appear here on release.</p>
     </div>
     <div class="phonewrap">
-      <div class="phone">
-        <div class="tabs"><span class="tab on">Home</span><span class="tab">Habits</span><span class="tab">Short term</span></div>
-        <div class="pbody">
-          <p class="date">Saturday, 27 June</p>
-          <div class="lcard">
-            <div class="lhead"><span>Daily habits</span><span>1 done · 1 missed · 1 left</span></div>
-            <div class="row"><span class="ms" style="color:var(--orange)">radio_button_unchecked</span><span class="nm">Brush teeth</span><span class="pill">NOW</span></div>
-          </div>
-          <div class="lcard">
-            <div class="lhead"><span>This week</span></div>
-            <div class="row"><span class="ms fill" style="color:var(--indigo)">center_focus_strong</span><span class="nm">Empty the PET bin</span><span class="pill foc">FOCUS</span></div>
-          </div>
-          <div class="lcard">
-            <div class="lhead"><span>Coming up</span></div>
-            <div class="row"><span class="ms" style="color:var(--orange)">radio_button_unchecked</span><span class="nm">Mom's birthday gift</span><span class="pill due">3 DAYS</span></div>
-          </div>
-          <div class="fabm"><span class="ms" style="font-size:19px">add</span> Add</div>
-          <div style="height:8px"></div>
-        </div>
-      </div>
+      <picture>
+        <source srcset="img/home-dark.png" media="(prefers-color-scheme: dark)">
+        <img class="shot" src="img/home.png" alt="Checkfuchs Home: daily habits and to-dos" width="300" height="667">
+      </picture>
     </div>
   </section>
 
@@ -160,11 +154,26 @@
     <div class="idea"><div class="ic" style="background:var(--emerald)"><span class="ms fill">event_repeat</span></div>
       <h3>One object, calendar-smart</h3>
       <p>A one-off becomes a series in two taps; "every other Saturday" is easy; editing this occurrence vs. the whole series works like a calendar — no surprises behind your back.</p></div>
+    <div class="idea"><div class="ic" style="background:var(--orange-soft)"><span class="ms fill">schedule</span></div>
+      <h3>Windows and reminders that fit real days</h3>
+      <p>Night, morning, afternoon, evening — or "morning <em>or</em> evening", done once in either — plus your own time bands. Reminders when it opens, before it's due, or "2 days before at 18:00".</p></div>
+    <div class="idea"><div class="ic" style="background:var(--indigo)"><span class="ms fill">insights</span></div>
+      <h3>Stats you compose</h3>
+      <p>A Stats tab built from tiles you switch on and reorder: completion, this week, streaks, by time of day, a habit grid, misses by weekday. Nothing you didn't ask for.</p></div>
+  </div>
+
+  <p class="section-title">A look inside</p>
+  <h2 class="section-sub">Four screens, no tour needed.</h2>
+  <div class="gallery">
+    <figure><img src="img/habits.png" alt="Habits view" loading="lazy"><figcaption>Habits</figcaption></figure>
+    <figure><img src="img/create.png" alt="New task with morning and evening windows" loading="lazy"><figcaption>Windows &amp; reminders</figcaption></figure>
+    <figure><img src="img/stats.png" alt="Stats tiles" loading="lazy"><figcaption>Stats</figcaption></figure>
+    <figure><img src="img/edit-view.png" alt="Edit this view" loading="lazy"><figcaption>Lens dials</figcaption></figure>
   </div>
 
   <footer>
     <p class="priv">Fully on-device — no accounts, no analytics, no server, no ads. Dark + light, four languages, and a typeface picker with dyslexia- and low-vision-friendly fonts. Part of the <a href="https://github.com/Kemenor/fuchsbau">Fuchsbau</a> family.</p>
-    <p><a href="https://checkfuchs.fuchsnest.ch">checkfuchs.fuchsnest.ch</a> · <a href="https://github.com/Kemenor/checkfuchs">source</a> · <a href="https://github.com/Kemenor/checkfuchs/tree/main/examples/ui">more mockups</a></p>
+    <p><a href="https://checkfuchs.fuchsnest.ch">checkfuchs.fuchsnest.ch</a> · <a href="https://github.com/Kemenor/checkfuchs">source</a> · <a href="https://github.com/Kemenor/checkfuchs/tree/main/examples/ui">more mockups</a> · <a href="privacy.html">privacy</a></p>
   </footer>
 </div>
 </body>

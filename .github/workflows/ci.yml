@@ -1,5 +1,9 @@
 name: CI
 
+# Analyze + format + drift-codegen guards + tests on every push/PR to main,
+# plus a weekly debug-APK canary. The Flutter version is single-sourced in
+# .fvmrc — android.yml / ios.yml read the same file, so bump it in one place.
+
 on:
   push:
     branches: [main]
@@ -18,7 +22,7 @@ jobs:
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
-          flutter-version: 3.44.4
+          flutter-version-file: .fvmrc
           cache: true
       - run: flutter pub get
       - run: flutter gen-l10n
@@ -44,7 +48,7 @@ jobs:
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
-          flutter-version: 3.44.4
+          flutter-version-file: .fvmrc
           cache: true
       - run: flutter pub get
       - run: flutter gen-l10n

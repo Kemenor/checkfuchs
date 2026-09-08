@@ -26,9 +26,23 @@ lib/l10n/app_localizations*.dart
 # Secrets — never commit
 play-store-key.json
 *.env
+# Play Store service-account key — NEVER commit (CI: PLAY_STORE_KEY_JSON_BASE64)
+fastlane/play-store-key.json
+fastlane/*.json
+# App Store Connect API key + iOS signing material — NEVER commit
+*.p8
+*.p12
+*.mobileprovision
+# fastlane run artifacts
+fastlane/report.xml
+fastlane/Preview.html
+ios/fastlane/report.xml
 
 # OS
 .DS_Store
 
 # Claude session scratch
 claude.session
+
+# Raw store-screenshot captures (filed copies live under fastlane/)
+/screenshots/

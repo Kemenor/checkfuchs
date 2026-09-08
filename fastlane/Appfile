@@ -1,0 +1,8 @@
+json_key_file("fastlane/play-store-key.json") # service-account key — gitignored, never commit
+package_name("ch.fuchsnest.checkfuchs")
+
+# iOS (deliver / pilot). Auth is the App Store Connect API key set in the
+# Fastfile, so no apple_id/password is needed here — only the bundle id.
+for_platform :ios do
+  app_identifier("ch.fuchsnest.checkfuchs")
+end
