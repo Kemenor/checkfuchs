@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fuchsbau/fuchsbau.dart' show FuchsbauStatusColors;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../l10n/app_localizations.dart';
@@ -329,10 +330,61 @@ class _TaskIllustration extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Card(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _TaskRow(nameWidth: 110),
           SizedBox(height: 18),
           _TaskRow(done: true, nameWidth: 80),
+          SizedBox(height: 18),
+          _SwipedRow(),
+        ],
+      ),
+    );
+  }
+}
+
+/// A row caught mid-swipe: pulled left, revealing the Skip glyph on the
+/// right — the same background the real tile shows (task_tile.dart).
+class _SwipedRow extends StatelessWidget {
+  const _SwipedRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final status = FuchsbauStatusColors.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          Positioned.fill(
+            child: ColoredBox(
+              color: status.neutral.withValues(alpha: .12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Icon(
+                    Symbols.remove_circle_outline_rounded,
+                    size: 22,
+                    color: status.neutral,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // The row itself, shortened from the right so the ring stays put
+          // and the Skip strip peeks out — what a half-done swipe looks like.
+          Padding(
+            padding: const EdgeInsets.only(right: 56),
+            child: ColoredBox(
+              color: scheme.surface,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: _TaskRow(nameWidth: 84),
+              ),
+            ),
+          ),
         ],
       ),
     );

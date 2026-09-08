@@ -675,7 +675,7 @@
   "@introTaskTitle": {
     "description": "Intro page 1 title"
   },
-  "introTaskBody": "A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat, and tap the ring when it's done.",
+  "introTaskBody": "A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat. Tap the ring when it's done, swipe it away to skip.",
   "@introTaskBody": {
     "description": "Intro page 1 body"
   },
