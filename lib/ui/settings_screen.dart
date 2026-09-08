@@ -1,0 +1,398 @@
+import 'package:file_selector/file_selector.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fuchsbau/fuchsbau.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../data/backup/backup_service.dart';
+import '../data/debug/demo_data.dart';
+import '../l10n/app_localizations.dart';
+import '../providers.dart';
+import 'debug_section.dart';
+import 'library_screens.dart';
+import 'vacation_screen.dart';
+
+/// Settings (Phase 8): theme override, the Fuchsbau accessibility typeface
+/// picker, and the honest reminder-lapse disclosure (§5 / no-dark-patterns).
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(settingsProvider);
+    final controller = ref.read(settingsProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settings)),
+      // The knabberfuchs settings anatomy: uppercase section headers + white
+      // cards grouping the rows, hairline dividers between rows.
+      body: ListView(
+        children: [
+          FuchsbauSectionHeader(l10n.appearanceSection),
+          FuchsbauSettingsCard(
+            children: [
+              FuchsbauChoicePicker<ThemeMode>(
+                icon: Symbols.brightness_6_rounded,
+                title: l10n.appearanceSection,
+                value: settings.themeMode,
+                options: {
+                  ThemeMode.system: l10n.themeSystem,
+                  ThemeMode.light: l10n.themeLight,
+                  ThemeMode.dark: l10n.themeDark,
+                },
+                onChanged: controller.setThemeMode,
+              ),
+              FuchsbauChoicePicker<String>(
+                icon: Symbols.translate_rounded,
+                title: l10n.languageSection,
+                value: settings.localeCode,
+                options: {
+                  'system': l10n.languageSystem,
+                  'en': l10n.languageEnglish,
+                  'de': l10n.languageGerman,
+                  'fr': l10n.languageFrench,
+                  'it': l10n.languageItalian,
+                },
+                onChanged: controller.setLocaleCode,
+              ),
+              FuchsbauChoicePicker<FuchsbauFont>(
+                icon: Symbols.text_fields_rounded,
+                title: l10n.typefaceSection,
+                value: settings.font,
+                options: {for (final f in FuchsbauFont.values) f: f.label},
+                subtitles: {
+                  FuchsbauFont.figtree: l10n.typefaceDefault,
+                  FuchsbauFont.atkinsonHyperlegible: l10n.typefaceLowVision,
+                  FuchsbauFont.openDyslexic: l10n.typefaceDyslexia,
+                },
+                onChanged: controller.setFont,
+              ),
+              SwitchListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                secondary: const Icon(Symbols.insights_rounded),
+                title: Text(l10n.statsTabSetting),
+                subtitle: Text(l10n.statsTabSettingSubtitle),
+                value: settings.statsTab,
+                onChanged: controller.setStatsTab,
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.librarySection),
+          FuchsbauSettingsCard(
+            children: [
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.task_alt_rounded),
+                title: Text(l10n.allTasksTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllTasksScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.filter_alt_rounded),
+                title: Text(l10n.allLensesTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllLensesScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.dashboard_rounded),
+                title: Text(l10n.allViewsTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AllViewsScreen()),
+                ),
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.vacation),
+          FuchsbauSettingsCard(
+            children: [
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.beach_access_rounded),
+                title: Text(l10n.vacation),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const VacationScreen()),
+                ),
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.dataSection),
+          FuchsbauSettingsCard(
+            children: [
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.upload_rounded),
+                title: Text(l10n.backupExport),
+                subtitle: Text(l10n.backupExportSub),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => _exportBackup(context, ref),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: const Icon(Symbols.download_rounded),
+                title: Text(l10n.backupImport),
+                subtitle: Text(l10n.backupImportSub),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => _importBackup(context, ref),
+              ),
+              ListTile(
+                contentPadding: fuchsbauCardRowPadding,
+                leading: Icon(
+                  Symbols.delete_forever_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  l10n.deleteAllData,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                subtitle: Text(l10n.deleteAllDataSub),
+                onTap: () => _deleteAllData(context, ref),
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.remindersSection),
+          FuchsbauSettingsCard(
+            children: [
+              // Notification permission (Android 13+): only shown while
+              // missing. The OS stops showing its dialog after two declines,
+              // so the subtitle points at system settings as the way back.
+              if (ref.watch(notificationsEnabledProvider).asData?.value ==
+                  false)
+                ListTile(
+                  contentPadding: fuchsbauCardRowPadding,
+                  leading: const Icon(Symbols.notifications_off_rounded),
+                  title: Text(l10n.notificationsOffTitle),
+                  subtitle: Text(l10n.notificationsOffSubtitle),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final ok = await ref
+                        .read(notificationSchedulerProvider)
+                        .requestPermission();
+                    ref.invalidate(notificationsEnabledProvider);
+                    if (!ok) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.notificationsOffHint)),
+                      );
+                    }
+                  },
+                ),
+              // Exact-alarm grant (Android 14+): only shown while missing.
+              if (ref.watch(exactAlarmsProvider).asData?.value == false)
+                ListTile(
+                  contentPadding: fuchsbauCardRowPadding,
+                  leading: const Icon(Symbols.alarm_on_rounded),
+                  title: Text(l10n.exactAlarmsTitle),
+                  subtitle: Text(l10n.exactAlarmsSubtitle),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: () async {
+                    await ref
+                        .read(notificationSchedulerProvider)
+                        .requestExactAlarms();
+                    ref.invalidate(exactAlarmsProvider);
+                    // Re-fill the schedule so pending pings become exact.
+                    final tasks = await ref
+                        .read(taskRepositoryProvider)
+                        .allTasks();
+                    await ref
+                        .read(notificationSchedulerProvider)
+                        .sync(tasks, ref.read(clockProvider).now());
+                  },
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Text(
+                  l10n.reminderDisclosure,
+                  style: TextStyle(color: scheme.outline),
+                ),
+              ),
+            ],
+          ),
+          FuchsbauSectionHeader(l10n.aboutSection),
+          const FuchsbauSettingsCard(children: [_AboutTile()]),
+          // Hidden developer section — unlocked via the About easter egg.
+          if (settings.debugMenu) const DebugSection(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Export: build the ZIP (sqlite snapshot + JSON) and hand it to the share
+/// sheet. The share sheet itself is the success feedback; failures get an
+/// honest snackbar with the actual error.
+Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
+  try {
+    await ref
+        .read(backupServiceProvider)
+        .shareBackup(subject: l10n.backupShareSubject);
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupExportFailed('$e'))),
+    );
+  }
+}
+
+/// Import: pick a .zip, confirm the replace-all consequence, restore. The
+/// restore applies live (validate → migrate the snapshot → one replace-all
+/// transaction), so no restart is needed; settings are re-read afterwards
+/// because theme/font/locale live in the restored database.
+/// Wipe content (tasks, habits, lenses, views, vacations) and reseed the
+/// default View/Lens; settings stay. The user-facing counterpart to the
+/// developer "Reset to intro" — e.g. to clear the example dataset.
+Future<void> _deleteAllData(BuildContext context, WidgetRef ref) async {
+  final l10n = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.deleteAllDataTitle),
+      content: Text(l10n.deleteAllDataBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            foregroundColor: Theme.of(ctx).colorScheme.onError,
+          ),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l10n.deleteAllDataAction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  final db = ref.read(databaseProvider);
+  await db.transaction(() => wipeContent(db));
+  await ref.read(viewRepositoryProvider).seedDefaults();
+  messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataDone)));
+}
+
+Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
+  final file = await openFile(
+    acceptedTypeGroups: [
+      XTypeGroup(label: l10n.backupFileType, extensions: const ['zip']),
+    ],
+  );
+  if (file == null || !context.mounted) return;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.backupReplaceTitle),
+      content: Text(l10n.backupReplaceBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l10n.backupImportAction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+
+  try {
+    await ref.read(backupServiceProvider).restoreFromZip(file.path);
+    // Theme/font/locale/debug flag were just replaced under the controller.
+    ref.invalidate(settingsProvider);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.backupRestored)));
+  } on BackupVersionException {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImportNewerVersion)),
+    );
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImportFailed('$e'))),
+    );
+  }
+}
+
+/// About entry — shows the real app version+build and opens an about dialog
+/// with a "view licenses" button. Hand-rolled instead of [showAboutDialog]
+/// because the app name doubles as the debug-menu unlock: long-pressing it
+/// toggles the hidden Debug section (the knabberfuchs easter egg).
+class _AboutTile extends ConsumerWidget {
+  const _AboutTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final version = ref.watch(appVersionProvider).asData?.value;
+    return ListTile(
+      contentPadding: fuchsbauCardRowPadding,
+      leading: const Icon(Symbols.info_rounded),
+      title: const Text('Checkfuchs'),
+      subtitle: version == null ? null : Text(version),
+      trailing: const Icon(Symbols.chevron_right_rounded),
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final material = MaterialLocalizations.of(ctx);
+          return AlertDialog(
+            title: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onLongPress: () => _toggleDebugMenu(ctx, ref),
+              child: Text('Checkfuchs 🦊', style: theme.textTheme.titleLarge),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (version != null)
+                  Text(version, style: theme.textTheme.bodySmall),
+                const SizedBox(height: 12),
+                Text(l10n.aboutBody),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => showLicensePage(
+                  context: ctx,
+                  applicationName: 'Checkfuchs',
+                  applicationVersion: version,
+                ),
+                child: Text(material.viewLicensesButtonLabel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(material.closeButtonLabel),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Debug-menu easter egg: flips the setting and closes the dialog so the
+  /// new Settings section is immediately visible. English-only by design.
+  Future<void> _toggleDebugMenu(BuildContext dialogCtx, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(dialogCtx);
+    final on = await ref.read(settingsProvider.notifier).toggleDebugMenu();
+    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+    messenger.showSnackBar(
+      SnackBar(content: Text(on ? 'Debug menu enabled' : 'Debug menu hidden')),
+    );
+  }
+}
