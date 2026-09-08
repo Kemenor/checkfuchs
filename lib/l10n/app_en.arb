@@ -1,0 +1,1155 @@
+{
+  "@@locale": "en",
+  "appTitle": "Checkfuchs",
+  "@appTitle": {
+    "description": "The application name."
+  },
+  "emptyTitle": "Nothing here yet",
+  "@emptyTitle": {
+    "description": "Title of the empty home/View state."
+  },
+  "emptyHint": "Tap + to add your first task or habit.",
+  "@emptyHint": {
+    "description": "Hint shown beneath the empty-state title."
+  },
+  "addTask": "Add",
+  "@addTask": {
+    "description": "Label of the add (FAB) action."
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Generic dialog dismiss button."
+  },
+  "create": "Create",
+  "@create": {
+    "description": "Confirm button of the name-prompt dialog."
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Generic save/confirm button on sheets."
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Generic delete tooltip/action."
+  },
+  "somethingWentWrong": "Something went wrong",
+  "@somethingWentWrong": {
+    "description": "Generic error state shown when a stream/query fails."
+  },
+  "newView": "New view",
+  "@newView": {
+    "description": "Overflow-menu item and dialog title for creating a View."
+  },
+  "newLens": "New lens",
+  "@newLens": {
+    "description": "Dialog title for creating a Lens."
+  },
+  "newLensHere": "New lens here",
+  "@newLensHere": {
+    "description": "Overflow-menu item: create a Lens in the current View."
+  },
+  "vacation": "Vacation",
+  "@vacation": {
+    "description": "Overflow-menu item and screen title for vacation periods."
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Overflow-menu item and screen title for settings."
+  },
+  "nameLabel": "Name",
+  "@nameLabel": {
+    "description": "Label/hint of a name text field."
+  },
+  "allDone": "all done",
+  "@allDone": {
+    "description": "Lens-card breakdown when no open/done/missed counts remain."
+  },
+  "countDone": "{count, plural, one{1 done} other{{count} done}}",
+  "@countDone": {
+    "description": "Lens-card breakdown segment: completed tasks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countMissed": "{count, plural, one{1 missed} other{{count} missed}}",
+  "@countMissed": {
+    "description": "Lens-card breakdown segment: missed tasks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countLeft": "{count, plural, one{1 left} other{{count} left}}",
+  "@countLeft": {
+    "description": "Lens-card breakdown segment: tasks still open.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newTask": "New task",
+  "@newTask": {
+    "description": "Title of the create-task sheet."
+  },
+  "taskNameHint": "e.g. Brush teeth",
+  "@taskNameHint": {
+    "description": "Example hint inside the task-name field."
+  },
+  "activeWindowSection": "Active window",
+  "@activeWindowSection": {
+    "description": "Section label above the active-window chips."
+  },
+  "repeatSection": "Repeat",
+  "@repeatSection": {
+    "description": "Section label above the recurrence editor."
+  },
+  "windowAnytime": "Anytime",
+  "@windowAnytime": {
+    "description": "Active-window chip: no time bound."
+  },
+  "windowNight": "Night",
+  "@windowNight": {
+    "description": "Active-window chip: 00:00–06:00"
+  },
+  "windowMorning": "Morning",
+  "@windowMorning": {
+    "description": "Active-window chip: morning slice."
+  },
+  "windowAfternoon": "Afternoon",
+  "@windowAfternoon": {
+    "description": "Active-window chip: afternoon slice."
+  },
+  "windowEvening": "Evening",
+  "@windowEvening": {
+    "description": "Active-window chip: evening slice."
+  },
+  "dayStreak": "{count, plural, one{1-day streak} other{{count}-day streak}}",
+  "@dayStreak": {
+    "description": "Current habit streak in the task detail sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "percentDone": "{percent}% done",
+  "@percentDone": {
+    "description": "Habit completion rate in the task detail sheet.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "editRepeat": "Edit repeat",
+  "@editRepeat": {
+    "description": "Row/sheet title: edit an existing repeat rule."
+  },
+  "makeItAHabit": "Make it a habit",
+  "@makeItAHabit": {
+    "description": "Row/sheet title: give a one-off task a repeat rule."
+  },
+  "paused": "Paused",
+  "@paused": {
+    "description": "Switch title: series generation is paused."
+  },
+  "pausedSubtitle": "Stop generating new instances",
+  "@pausedSubtitle": {
+    "description": "Subtitle explaining the paused switch."
+  },
+  "deleteThisTask": "Delete this task",
+  "@deleteThisTask": {
+    "description": "Delete one occurrence of a recurring task."
+  },
+  "deleteTask": "Delete task",
+  "@deleteTask": {
+    "description": "Delete a one-off task."
+  },
+  "deleteWholeSeries": "Delete the whole series",
+  "@deleteWholeSeries": {
+    "description": "Delete a template and all its tasks."
+  },
+  "vacationIntro": "Vacation pauses your recurring tasks for the dates you pick — no missed-habit pile-up while you're away. Real deadlines still pass.",
+  "@vacationIntro": {
+    "description": "Explainer at the top of the vacation screen."
+  },
+  "noVacations": "No vacations scheduled",
+  "@noVacations": {
+    "description": "Empty state of the vacation list."
+  },
+  "markDone": "Mark done",
+  "@markDone": {
+    "description": "Tooltip of the completion ring on a task row."
+  },
+  "reopenTask": "Reopen",
+  "@reopenTask": {
+    "description": "Detail-sheet button on a done/skipped task: back to open"
+  },
+  "historyTitle": "History",
+  "@historyTitle": {
+    "description": "Detail-sheet row + screen title: a habit\u2019s past occurrences"
+  },
+  "historyEmpty": "No occurrences yet.",
+  "@historyEmpty": {
+    "description": "History screen empty state"
+  },
+  "markDoneAnyway": "Mark done anyway",
+  "@markDoneAnyway": {
+    "description": "Ring tooltip / detail button on a missed habit: the Missed→Done logging correction"
+  },
+  "swipeDone": "Done",
+  "@swipeDone": {
+    "description": "Right-swipe action label: complete the task."
+  },
+  "swipeSkip": "Skip",
+  "@swipeSkip": {
+    "description": "Left-swipe action label: deliberately decline the task."
+  },
+  "swipePass": "Pass",
+  "@swipePass": {
+    "description": "Left-swipe action label in a periodic lens: pass this period."
+  },
+  "appearanceSection": "Appearance",
+  "@appearanceSection": {
+    "description": "Settings section: theme."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme segment: follow the system."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme segment: light mode."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme segment: dark mode."
+  },
+  "typefaceSection": "Typeface",
+  "@typefaceSection": {
+    "description": "Settings section: font picker."
+  },
+  "remindersSection": "Reminders",
+  "@remindersSection": {
+    "description": "Settings section: reminders."
+  },
+  "reminderDisclosure": "Reminders are scheduled locally on your device — no server, no account. If you don't open Checkfuchs for a long stretch, some reminders may stop firing until you come back.",
+  "@reminderDisclosure": {
+    "description": "Honest disclosure about local-only reminder scheduling."
+  },
+  "freqOff": "Off",
+  "@freqOff": {
+    "description": "Frequency segment: doesn't repeat."
+  },
+  "freqDay": "Day",
+  "@freqDay": {
+    "description": "Frequency segment: daily."
+  },
+  "freqWeek": "Week",
+  "@freqWeek": {
+    "description": "Frequency segment: weekly."
+  },
+  "freqMonth": "Month",
+  "@freqMonth": {
+    "description": "Frequency segment: monthly."
+  },
+  "freqYear": "Year",
+  "@freqYear": {
+    "description": "Frequency segment: yearly."
+  },
+  "every": "Every",
+  "@every": {
+    "description": "Label of the interval stepper (Every [n] weeks)."
+  },
+  "unitDays": "{count, plural, one{day} other{days}}",
+  "@unitDays": {
+    "description": "Interval stepper unit, daily.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitWeeks": "{count, plural, one{week} other{weeks}}",
+  "@unitWeeks": {
+    "description": "Interval stepper unit, weekly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitMonths": "{count, plural, one{month} other{months}}",
+  "@unitMonths": {
+    "description": "Interval stepper unit, monthly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unitYears": "{count, plural, one{year} other{years}}",
+  "@unitYears": {
+    "description": "Interval stepper unit, yearly.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onDay": "On day",
+  "@onDay": {
+    "description": "Label of the monthly day-of-month stepper."
+  },
+  "lastDay": "Last day",
+  "@lastDay": {
+    "description": "Chip: repeat on the last day of the month."
+  },
+  "monthLabel": "Month",
+  "@monthLabel": {
+    "description": "Label of the yearly month dropdown."
+  },
+  "dayLabel": "Day",
+  "@dayLabel": {
+    "description": "Label of the yearly day stepper."
+  },
+  "starts": "Starts",
+  "@starts": {
+    "description": "Row label: the recurrence anchor date."
+  },
+  "increase": "Increase",
+  "@increase": {
+    "description": "Tooltip of the stepper + button."
+  },
+  "decrease": "Decrease",
+  "@decrease": {
+    "description": "Tooltip of the stepper - button."
+  },
+  "weekdayInitialMon": "M",
+  "@weekdayInitialMon": {
+    "description": "Weekday chip initial: Monday."
+  },
+  "weekdayInitialTue": "T",
+  "@weekdayInitialTue": {
+    "description": "Weekday chip initial: Tuesday."
+  },
+  "weekdayInitialWed": "W",
+  "@weekdayInitialWed": {
+    "description": "Weekday chip initial: Wednesday."
+  },
+  "weekdayInitialThu": "T",
+  "@weekdayInitialThu": {
+    "description": "Weekday chip initial: Thursday."
+  },
+  "weekdayInitialFri": "F",
+  "@weekdayInitialFri": {
+    "description": "Weekday chip initial: Friday."
+  },
+  "weekdayInitialSat": "S",
+  "@weekdayInitialSat": {
+    "description": "Weekday chip initial: Saturday."
+  },
+  "weekdayInitialSun": "S",
+  "@weekdayInitialSun": {
+    "description": "Weekday chip initial: Sunday."
+  },
+  "summaryNoRepeat": "Doesn't repeat",
+  "@summaryNoRepeat": {
+    "description": "Recurrence summary: no rule."
+  },
+  "summaryDaily": "{count, plural, one{Every day} other{Every {count} days}}",
+  "@summaryDaily": {
+    "description": "Recurrence summary: daily every n days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryWeeklySingle": "Every {weekday}",
+  "@summaryWeeklySingle": {
+    "description": "Recurrence summary: weekly, one day, interval 1. {weekday} is a full localized weekday name.",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryWeeklyOn": "{count, plural, one{Every week on {days}} other{Every {count} weeks on {days}}}",
+  "@summaryWeeklyOn": {
+    "description": "Recurrence summary: weekly on listed days. {days} is a comma-joined list of abbreviated weekday names.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryMonthlyDay": "{count, plural, one{On day {day} of every month} other{Every {count} months on day {day}}}",
+  "@summaryMonthlyDay": {
+    "description": "Recurrence summary: monthly on a day of the month.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryMonthlyLastDay": "{count, plural, one{On the last day of every month} other{Every {count} months on the last day}}",
+  "@summaryMonthlyLastDay": {
+    "description": "Recurrence summary: monthly on the last day of the month.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryYearly": "{count, plural, one{Every year on {day} {month}} other{Every {count} years on {day} {month}}}",
+  "@summaryYearly": {
+    "description": "Recurrence summary: yearly on a day + month. {month} is a full localized month name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryYearlyLastDay": "{count, plural, one{Every year on the last day of {month}} other{Every {count} years on the last day of {month}}}",
+  "@summaryYearlyLastDay": {
+    "description": "Recurrence summary: yearly on the last day of a month. {month} may carry a locale-required preposition (French elision).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "remindWhenOpens": "When it opens",
+  "remindBeforeDue": "2 hours before due",
+  "remindAtDue": "When it's due",
+  "@remindWhenOpens": {
+    "description": "Reminder preset: ping when the task window opens"
+  },
+  "@remindBeforeDue": {
+    "description": "Reminder preset: ping two hours before the window ends"
+  },
+  "@remindAtDue": {
+    "description": "Reminder preset: ping at the window end"
+  },
+  "windowCustom": "Custom…",
+  "@windowCustom": {
+    "description": "Chip that adds a custom time band"
+  },
+  "windowBandsSummary": "Open {bands}",
+  "@windowBandsSummary": {
+    "description": "Summary line under the window chips, single band. {bands} = e.g. 06:00\u201312:00",
+    "placeholders": {"bands": {"type": "String"}}
+  },
+  "windowBandsSummaryMulti": "Open {bands} · done once in any of them",
+  "@windowBandsSummaryMulti": {
+    "description": "Summary line, several bands: the task is done once in any of them",
+    "placeholders": {"bands": {"type": "String"}}
+  },
+  "remindAtTime": "At a time…",
+  "@remindAtTime": {
+    "description": "Button that adds a custom day-offset reminder row"
+  },
+  "remindOnTheDay": "On the day",
+  "@remindOnTheDay": {
+    "description": "Custom reminder: zero days before"
+  },
+  "remindDaysBefore": "{n, plural, =1{1 day before} other{{n} days before}}",
+  "@remindDaysBefore": {
+    "description": "Custom reminder: N days before the task day",
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "remindDaysBeforeMore": "One more day before",
+  "@remindDaysBeforeMore": {
+    "description": "Tooltip: increase days-before"
+  },
+  "remindDaysBeforeFewer": "One day less before",
+  "@remindDaysBeforeFewer": {
+    "description": "Tooltip: decrease days-before"
+  },
+  "remindNeedsDueDate": "Set a due date so day-based reminders know which day.",
+  "@remindNeedsDueDate": {
+    "description": "Hint under custom reminders on a one-off without any date"
+  },
+  "moreLabel": "More",
+  "@moreLabel": {
+    "description": "Overflow destination in the bottom navigation bar"
+  },
+  "structureTooltip": "Views & lenses",
+  "@structureTooltip": {
+    "description": "Tooltip/sheet title of the small secondary FAB with the structure actions"
+  },
+  "aboutSection": "About",
+  "aboutBody": "A combined habit & to-do app: one daily habit keeps you opening the app, and everything else rides along. Local-first — no accounts, no ads, your data stays on your phone.",
+  "@aboutSection": {
+    "description": "Settings section header for the About entry"
+  },
+  "@aboutBody": {
+    "description": "Body text of the About dialog"
+  },
+  "typefaceDefault": "Default",
+  "typefaceLowVision": "Low-vision legibility",
+  "typefaceDyslexia": "Dyslexia",
+  "@typefaceDefault": {
+    "description": "Typeface option subtitle: the default font"
+  },
+  "@typefaceLowVision": {
+    "description": "Typeface option subtitle: Atkinson Hyperlegible"
+  },
+  "@typefaceDyslexia": {
+    "description": "Typeface option subtitle: OpenDyslexic"
+  },
+  "languageSection": "App language",
+  "languageSystem": "System default",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "languageFrench": "Français",
+  "languageItalian": "Italiano",
+  "@languageSection": {
+    "description": "Settings picker: app language override"
+  },
+  "@languageSystem": {
+    "description": "Language option: follow the system locale"
+  },
+  "@languageEnglish": {
+    "description": "Language endonym"
+  },
+  "@languageGerman": {
+    "description": "Language endonym"
+  },
+  "@languageFrench": {
+    "description": "Language endonym"
+  },
+  "@languageItalian": {
+    "description": "Language endonym"
+  },
+  "exactAlarmsTitle": "Allow exact reminders",
+  "exactAlarmsSubtitle": "Without this, pings can arrive up to an hour late.",
+  "@exactAlarmsTitle": {
+    "description": "Settings tile: grant the Android Alarms & reminders special access"
+  },
+  "@exactAlarmsSubtitle": {
+    "description": "Why exact alarms matter"
+  },
+  "notificationsOffTitle": "Allow notifications",
+  "@notificationsOffTitle": {
+    "description": "Settings \u203a Reminders row shown while the notification permission is missing"
+  },
+  "notificationsOffSubtitle": "Reminders are off until Checkfuchs may notify you.",
+  "@notificationsOffSubtitle": {
+    "description": "Its subtitle"
+  },
+  "notificationsOffHint": "Turn on notifications for Checkfuchs in your phone’s settings.",
+  "@notificationsOffHint": {
+    "description": "Snackbar when the OS no longer shows its permission dialog"
+  },
+  "editThisView": "Edit this view",
+  "@editThisView": {
+    "description": "Structure-sheet entry + screen title: edit the current View and its lenses."
+  },
+  "viewSection": "View",
+  "@viewSection": {
+    "description": "View-edit screen section header: the View itself (rename/delete)."
+  },
+  "lensesSection": "Lenses",
+  "@lensesSection": {
+    "description": "View-edit screen section header: the View's lenses."
+  },
+  "renameView": "Rename view",
+  "@renameView": {
+    "description": "Dialog title: rename a View (with icon picker)."
+  },
+  "renameLens": "Rename lens",
+  "@renameLens": {
+    "description": "Dialog title: rename a Lens."
+  },
+  "showCountDial": "Tasks shown",
+  "@showCountDial": {
+    "description": "Lens dial picker title: how many tasks are surfaced."
+  },
+  "showCountAll": "All",
+  "@showCountAll": {
+    "description": "showCount option: surface every member (-1 sentinel)."
+  },
+  "orderingDial": "Order",
+  "@orderingDial": {
+    "description": "Lens dial picker title: how members are ranked."
+  },
+  "orderingAutomatic": "Automatic (first added first)",
+  "@orderingAutomatic": {
+    "description": "Ordering option: first added first (FIFO)."
+  },
+  "orderingDueDate": "By due date",
+  "@orderingDueDate": {
+    "description": "Ordering option: by due date."
+  },
+  "orderingManual": "Manual",
+  "@orderingManual": {
+    "description": "Ordering option: manual priority order."
+  },
+  "selectionDial": "Pick",
+  "@selectionDial": {
+    "description": "Lens dial picker title: how the shown set is drawn."
+  },
+  "selectionTop": "Top of the list",
+  "@selectionTop": {
+    "description": "Selection option: the first showCount by order."
+  },
+  "selectionRandom": "Random",
+  "@selectionRandom": {
+    "description": "Selection option: showCount at random."
+  },
+  "periodDial": "Period",
+  "@periodDial": {
+    "description": "Lens dial tile title: the refill cadence (continuous vs periodic)."
+  },
+  "periodContinuous": "Continuous — refills right away",
+  "@periodContinuous": {
+    "description": "Period subtitle when the lens has no period: refills immediately."
+  },
+  "dormantDial": "Rest after",
+  "@dormantDial": {
+    "description": "Lens dial picker title: periods unworked before a member goes dormant."
+  },
+  "dormantOff": "Never",
+  "@dormantOff": {
+    "description": "dormantAfter option: never go dormant."
+  },
+  "dormantPeriods": "{count, plural, one{1 period untouched} other{{count} periods untouched}}",
+  "@dormantPeriods": {
+    "description": "dormantAfter option: go dormant after {count} periods.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusFilterLabel": "Also show",
+  "@statusFilterLabel": {
+    "description": "Label above the terminal-status filter chips (which resolved tasks to also show)."
+  },
+  "filterShowDone": "Done",
+  "@filterShowDone": {
+    "description": "Status-filter chip: also show Done tasks."
+  },
+  "filterShowSkipped": "Skipped",
+  "@filterShowSkipped": {
+    "description": "Status-filter chip: also show Skipped tasks."
+  },
+  "filterShowMissed": "Missed",
+  "@filterShowMissed": {
+    "description": "Status-filter chip: also show Missed tasks."
+  },
+  "deleteView": "Delete view",
+  "@deleteView": {
+    "description": "Tile + confirm-dialog title: delete this View."
+  },
+  "deleteLens": "Delete lens",
+  "@deleteLens": {
+    "description": "Tile + confirm-dialog title: delete this Lens."
+  },
+  "confirmDeleteViewBody": "This removes the view from the bar. Its lenses and your tasks stay.",
+  "@confirmDeleteViewBody": {
+    "description": "Confirm-dialog body: what deleting a View does (lenses and tasks survive)."
+  },
+  "confirmDeleteLensBody": "This removes the lens and its memberships. Your tasks stay.",
+  "@confirmDeleteLensBody": {
+    "description": "Confirm-dialog body: what deleting a Lens does (tasks survive)."
+  },
+  "introTaskEyebrow": "Task",
+  "@introTaskEyebrow": {
+    "description": "Intro page 1 eyebrow"
+  },
+  "introTaskTitle": "A task is anything you do.",
+  "@introTaskTitle": {
+    "description": "Intro page 1 title"
+  },
+  "introTaskBody": "A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat. Tap the ring when it's done, swipe it away to skip.",
+  "@introTaskBody": {
+    "description": "Intro page 1 body"
+  },
+  "introLensEyebrow": "Lens",
+  "@introLensEyebrow": {
+    "description": "Intro page 2 eyebrow"
+  },
+  "introLensTitle": "A lens picks a slice of your tasks.",
+  "@introLensTitle": {
+    "description": "Intro page 2 title"
+  },
+  "introLensBody": "All your daily habits. One chore a week to chip at. The next few due dates. A lens filters and orders; it never changes a task.",
+  "@introLensBody": {
+    "description": "Intro page 2 body"
+  },
+  "introViewEyebrow": "View",
+  "@introViewEyebrow": {
+    "description": "Intro page 3 eyebrow"
+  },
+  "introViewTitle": "A view arranges lenses into a screen.",
+  "@introViewTitle": {
+    "description": "Intro page 3 title"
+  },
+  "introViewBody": "Home is a calm glance. Habits tracks the day. Long-term holds the backlog. Each is a tab you shape yourself — not a category we chose for you.",
+  "@introViewBody": {
+    "description": "Intro page 3 body"
+  },
+  "introSkip": "Skip",
+  "@introSkip": {
+    "description": "Intro pager: dismiss"
+  },
+  "introNext": "Next",
+  "@introNext": {
+    "description": "Intro pager: next page"
+  },
+  "introStartClean": "Start clean",
+  "@introStartClean": {
+    "description": "Intro last page: primary button, leads to the carrier-habit sheet"
+  },
+  "introLoadDemo": "Load example data",
+  "@introLoadDemo": {
+    "description": "Intro last page: secondary button, seeds the example dataset instead"
+  },
+  "dataSection": "Data & backup",
+  "@dataSection": {
+    "description": "Settings section header: backup export/import."
+  },
+  "backupExport": "Export backup",
+  "@backupExport": {
+    "description": "Settings tile: share a backup ZIP."
+  },
+  "backupExportSub": "Share a .zip (database + JSON)",
+  "@backupExportSub": {
+    "description": "Subtitle of the export tile."
+  },
+  "backupImport": "Import backup",
+  "@backupImport": {
+    "description": "Settings tile: restore from a backup ZIP."
+  },
+  "backupImportSub": "Restore from a .zip (replaces all data)",
+  "@backupImportSub": {
+    "description": "Subtitle of the import tile."
+  },
+  "deleteAllData": "Delete all data",
+  "@deleteAllData": {
+    "description": "Settings \u203a Data & backup row"
+  },
+  "deleteAllDataSub": "Tasks, habits, lenses, views and vacations. Settings stay.",
+  "@deleteAllDataSub": {
+    "description": "Row subtitle"
+  },
+  "deleteAllDataTitle": "Delete all data?",
+  "@deleteAllDataTitle": {
+    "description": "Confirm dialog title"
+  },
+  "deleteAllDataBody": "This removes every task, habit, lens, view and vacation. Your settings stay. This cannot be undone — export a backup first if in doubt.",
+  "@deleteAllDataBody": {
+    "description": "Confirm dialog body"
+  },
+  "deleteAllDataAction": "Delete",
+  "@deleteAllDataAction": {
+    "description": "Confirm dialog destructive button"
+  },
+  "deleteAllDataDone": "All data deleted",
+  "@deleteAllDataDone": {
+    "description": "Snackbar after wiping"
+  },
+  "backupImportAction": "Import",
+  "@backupImportAction": {
+    "description": "Confirm button of the replace-all import dialog."
+  },
+  "backupShareSubject": "Checkfuchs backup",
+  "@backupShareSubject": {
+    "description": "Share-sheet subject line for the exported ZIP."
+  },
+  "backupFileType": "Backup",
+  "@backupFileType": {
+    "description": "File-picker type-group label for .zip backups."
+  },
+  "backupReplaceTitle": "Replace all data?",
+  "@backupReplaceTitle": {
+    "description": "Title of the import confirmation dialog."
+  },
+  "backupReplaceBody": "Importing will replace your current tasks, habits, views, lenses, vacations, and settings with the backup contents.",
+  "@backupReplaceBody": {
+    "description": "Body of the import confirmation dialog — honest about the replace-all consequence."
+  },
+  "backupRestored": "Backup restored.",
+  "@backupRestored": {
+    "description": "Snackbar after a successful import."
+  },
+  "backupImportNewerVersion": "This backup was created by a newer app version. Update the app, then try importing again.",
+  "@backupImportNewerVersion": {
+    "description": "Snackbar when the backup's schema version is newer than this build supports."
+  },
+  "backupImportFailed": "Import failed: {error}",
+  "@backupImportFailed": {
+    "description": "Snackbar when the import fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backupExportFailed": "Export failed: {error}",
+  "@backupExportFailed": {
+    "description": "Snackbar when the export fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "demoViewHabits": "Habits",
+  "demoViewLongterm": "Long-term",
+  "demoLensDaily": "Daily habits",
+  "demoLensTodos": "To-dos",
+  "demoLensWeekly": "This week",
+  "demoLensBacklog": "Backlog",
+  "demoBrushTeeth": "Brush teeth",
+  "demoStretch": "Stretch",
+  "demoJournal": "Journal",
+  "demoWaterPlants": "Water plants",
+  "demoVacuum": "Vacuum",
+  "demoCallDentist": "Call the dentist",
+  "demoLibraryBooks": "Return library books",
+  "demoTrainTickets": "Book train tickets",
+  "demoBikeLight": "Fix bike light",
+  "demoBirthday": "Plan birthday dinner",
+  "demoPostcard": "Write postcard to Oma",
+  "@demoViewHabits": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoViewLongterm": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensDaily": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensTodos": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensWeekly": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLensBacklog": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBrushTeeth": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoStretch": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoJournal": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoWaterPlants": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoVacuum": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoCallDentist": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoLibraryBooks": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoTrainTickets": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBikeLight": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoBirthday": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "@demoPostcard": {
+    "description": "Demo-suite content name (debug seed / store screenshots)"
+  },
+  "pillToday": "Today",
+  "pillTomorrow": "Tomorrow",
+  "@pillToday": {
+    "description": "Tile pill: due/opens today (rendered uppercase)"
+  },
+  "@pillTomorrow": {
+    "description": "Tile pill: due/opens tomorrow (rendered uppercase)"
+  },
+  "showOutcomes": "Show outcomes",
+  "hideOutcomes": "Hide outcomes",
+  "@showOutcomes": {
+    "description": "Tooltip on the lens breakdown header when tapping expands the hidden current outcomes"
+  },
+  "@hideOutcomes": {
+    "description": "Tooltip on the lens breakdown header when tapping collapses the peeked outcomes"
+  },
+  "librarySection": "Library",
+  "allTasksTitle": "All tasks",
+  "allLensesTitle": "All lenses",
+  "allViewsTitle": "All views",
+  "openSection": "Open",
+  "resolvedSection": "Resolved",
+  "taskCount": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@librarySection": {
+    "description": "Settings section header for the browse-everything screens"
+  },
+  "@allTasksTitle": {
+    "description": "Library: every task instance"
+  },
+  "@allLensesTitle": {
+    "description": "Library: every lens"
+  },
+  "@allViewsTitle": {
+    "description": "Library: every view"
+  },
+  "@openSection": {
+    "description": "Library task list: open instances"
+  },
+  "@resolvedSection": {
+    "description": "Library task list: terminal instances"
+  },
+  "@taskCount": {
+    "description": "Lens subtitle: member count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lensInViews": "In {views}",
+  "lensNoView": "Not in any view",
+  "@lensInViews": {
+    "description": "Library lens subtitle: comma-separated view names the lens is mounted in",
+    "placeholders": {
+      "views": {
+        "type": "String"
+      }
+    }
+  },
+  "@lensNoView": {
+    "description": "Library lens subtitle when the lens is in no view (orphaned)"
+  },
+  "habitsSection": "Habits",
+  "todosSection": "To-dos",
+  "@habitsSection": {
+    "description": "Library All-tasks header: open cyclical (template) instances"
+  },
+  "@todosSection": {
+    "description": "Library All-tasks header: open one-off tasks"
+  },
+  "showAllResolved": "Show all {count}",
+  "@showAllResolved": {
+    "description": "Library: load resolved tasks older than 30 days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emptyLensCard": "Nothing to do. Well done 🦊",
+  "@emptyLensCard": {
+    "description": "Body of a lens card with no rows to show"
+  },
+  "lensSection": "Lens",
+  "@lensSection": {
+    "description": "Label for the lens (bucket) a task lives in — create sheet section + detail sheet row"
+  },
+  "lensOutsideViewHint": "This view has no lens yet, so the task goes to a lens shown elsewhere. Add a lens here with the ⊞ button.",
+  "@lensOutsideViewHint": {
+    "description": "Create sheet: shown when the current view has no lens, so the chips list lenses from other views"
+  },
+  "startsNow": "Now",
+  "dueLabel": "Due",
+  "noDueDate": "No due date",
+  "@startsNow": {
+    "description": "Create sheet: start-date row placeholder — window opens immediately"
+  },
+  "@dueLabel": {
+    "description": "Create sheet: due-date row label"
+  },
+  "@noDueDate": {
+    "description": "Create sheet: due-date row placeholder — no deadline"
+  },
+  "statsTitle": "Stats",
+  "@statsTitle": {
+    "description": "Stats: statsTitle"
+  },
+  "statsEditTiles": "Edit tiles",
+  "@statsEditTiles": {
+    "description": "Stats: statsEditTiles"
+  },
+  "statsEditTilesHint": "Tiles you switch on appear on Stats in this order. Drag the handle to reorder.",
+  "@statsEditTilesHint": {
+    "description": "Stats: statsEditTilesHint"
+  },
+  "statsTabSetting": "Stats tab",
+  "@statsTabSetting": {
+    "description": "Stats: statsTabSetting"
+  },
+  "statsTabSettingSubtitle": "Show Stats in the bottom bar",
+  "@statsTabSettingSubtitle": {
+    "description": "Stats: statsTabSettingSubtitle"
+  },
+  "statsNoHabits": "No habits yet. Stats fill in as your days go by.",
+  "@statsNoHabits": {
+    "description": "Stats: statsNoHabits"
+  },
+  "tileCompletion": "Completion",
+  "@tileCompletion": {
+    "description": "Stats: tileCompletion"
+  },
+  "tileCompletionSub": "7-day and 30-day done rate",
+  "@tileCompletionSub": {
+    "description": "Stats: tileCompletionSub"
+  },
+  "tileWeek": "This week",
+  "@tileWeek": {
+    "description": "Stats: tileWeek"
+  },
+  "tileWeekSub": "One dot per day, per habit",
+  "@tileWeekSub": {
+    "description": "Stats: tileWeekSub"
+  },
+  "tileStreaks": "Streaks",
+  "@tileStreaks": {
+    "description": "Stats: tileStreaks"
+  },
+  "tileStreaksSub": "Current and best, per habit",
+  "@tileStreaksSub": {
+    "description": "Stats: tileStreaksSub"
+  },
+  "tileInsight": "Insight",
+  "@tileInsight": {
+    "description": "Stats: tileInsight"
+  },
+  "tileInsightSub": "One sentence about your pattern",
+  "@tileInsightSub": {
+    "description": "Stats: tileInsightSub"
+  },
+  "tileHeatmap": "Habit grid",
+  "@tileHeatmap": {
+    "description": "Stats: tileHeatmap"
+  },
+  "tileHeatmapSub": "30-day grid per habit",
+  "@tileHeatmapSub": {
+    "description": "Stats: tileHeatmapSub"
+  },
+  "tileByWindow": "By window",
+  "@tileByWindow": {
+    "description": "Stats: tileByWindow"
+  },
+  "tileByWindowSub": "Done rate for night, morning, afternoon, evening",
+  "@tileByWindowSub": {
+    "description": "Stats: tileByWindowSub"
+  },
+  "tileMissesByWeekday": "Misses by weekday",
+  "@tileMissesByWeekday": {
+    "description": "Stats: tileMissesByWeekday"
+  },
+  "tileMissesByWeekdaySub": "Which days slip, last 30 days",
+  "@tileMissesByWeekdaySub": {
+    "description": "Stats: tileMissesByWeekdaySub"
+  },
+  "statsLast7Days": "Last 7 days",
+  "@statsLast7Days": {
+    "description": "Stats: statsLast7Days"
+  },
+  "statsLast30Days": "Last 30 days",
+  "@statsLast30Days": {
+    "description": "Stats: statsLast30Days"
+  },
+  "statsDoneRate30": "Done rate · 30 days",
+  "@statsDoneRate30": {
+    "description": "Stats: statsDoneRate30"
+  },
+  "statsWeekBreakdown": "{done} done · {skipped} skipped · {missed} missed of {total} windows this week",
+  "@statsWeekBreakdown": {
+    "description": "Stats: statsWeekBreakdown",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      },
+      "missed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "statsStreakDays": "days · best {best}",
+  "@statsStreakDays": {
+    "description": "Stats: statsStreakDays",
+    "placeholders": {
+      "best": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLegendDone": "Done",
+  "@statsLegendDone": {
+    "description": "Stats: statsLegendDone"
+  },
+  "statsLegendSkipped": "Skipped",
+  "@statsLegendSkipped": {
+    "description": "Stats: statsLegendSkipped"
+  },
+  "statsLegendMissed": "Missed",
+  "@statsLegendMissed": {
+    "description": "Stats: statsLegendMissed"
+  },
+  "statsLegendOpen": "Open",
+  "@statsLegendOpen": {
+    "description": "Stats: statsLegendOpen"
+  },
+  "statsLegendNoWindow": "No window",
+  "@statsLegendNoWindow": {
+    "description": "Stats: statsLegendNoWindow"
+  },
+  "statsInsightWeakWindow": "{window} is your weak spot — {rate} done.",
+  "@statsInsightWeakWindow": {
+    "description": "Stats: statsInsightWeakWindow",
+    "placeholders": {
+      "window": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "statsInsightBestWeekday": "Best day: {day}.",
+  "@statsInsightBestWeekday": {
+    "description": "Stats: statsInsightBestWeekday",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "statsInsightNone": "Not enough days yet — the pattern shows up as you go.",
+  "@statsInsightNone": {
+    "description": "Stats: statsInsightNone"
+  }
+}
