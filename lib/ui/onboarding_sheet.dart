@@ -57,6 +57,7 @@ class _OnboardingSheetState extends ConsumerState<_OnboardingSheet> {
       ),
     );
     await repo.reconcileAll(now);
+    if (_reminders.isNotEmpty) await ensureNotificationPermission(ref);
     if (mounted) Navigator.of(context).pop();
   }
 

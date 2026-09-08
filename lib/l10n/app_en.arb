@@ -538,6 +538,18 @@
   "@exactAlarmsSubtitle": {
     "description": "Why exact alarms matter"
   },
+  "notificationsOffTitle": "Allow notifications",
+  "@notificationsOffTitle": {
+    "description": "Settings \u203a Reminders row shown while the notification permission is missing"
+  },
+  "notificationsOffSubtitle": "Reminders are off until Checkfuchs may notify you.",
+  "@notificationsOffSubtitle": {
+    "description": "Its subtitle"
+  },
+  "notificationsOffHint": "Turn on notifications for Checkfuchs in your phone’s settings.",
+  "@notificationsOffHint": {
+    "description": "Snackbar when the OS no longer shows its permission dialog"
+  },
   "editThisView": "Edit this view",
   "@editThisView": {
     "description": "Structure-sheet entry + screen title: edit the current View and its lenses."

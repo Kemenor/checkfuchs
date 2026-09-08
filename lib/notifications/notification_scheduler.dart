@@ -59,7 +59,9 @@ class NotificationScheduler {
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      await android?.requestNotificationsPermission();
+      // No permission prompt here: the OS dialog is asked for in context —
+      // the first time a reminder is chosen (see [requestPermission]) — never
+      // at launch.
       _exact = await android?.canScheduleExactNotifications() ?? true;
 
       _ready = true;
@@ -88,6 +90,49 @@ class NotificationScheduler {
   Future<bool> canScheduleExact() async {
     if (!await _ensureReady()) return true; // nothing to grant elsewhere
     return _exact;
+  }
+
+  /// Whether the OS lets us post notifications at all. Null when unknown
+  /// (no runtime here, or a platform without the concept).
+  Future<bool?> notificationsEnabled() async {
+    if (!await _ensureReady()) return null;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await android?.areNotificationsEnabled();
+    } catch (e) {
+      debugPrint('notificationsEnabled failed: $e');
+      return null;
+    }
+  }
+
+  /// Show the OS notification-permission dialog (Android 13+; a no-op once
+  /// the user has declined twice). Returns the resulting state. Called the
+  /// first time a task is saved with a reminder, and from Settings.
+  Future<bool> requestPermission() async {
+    if (!await _ensureReady()) return false;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = await android?.requestNotificationsPermission();
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final iosGranted = await ios?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? iosGranted ?? false;
+    } catch (e) {
+      debugPrint('requestPermission failed: $e');
+      return false;
+    }
   }
 
   /// Open the system "Alarms & reminders" grant, then re-read the state so

@@ -122,6 +122,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
       );
     }
     await repo.reconcileAll(now);
+    if (notifications.isNotEmpty) await ensureNotificationPermission(ref);
     if (mounted) Navigator.of(context).pop();
   }
 

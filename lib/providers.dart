@@ -118,6 +118,24 @@ final notificationSyncProvider = Provider<void>((ref) {
   }, fireImmediately: true);
 });
 
+/// Whether the OS lets us post notifications (null = unknown / no runtime).
+/// Settings shows a grant row while it's false. Invalidate after requesting.
+final notificationsEnabledProvider = FutureProvider<bool?>(
+  (ref) => ref.watch(notificationSchedulerProvider).notificationsEnabled(),
+);
+
+/// The in-context permission ask: call after saving a task that carries at
+/// least one reminder. Asks only while notifications aren't enabled yet —
+/// the OS itself stops re-prompting after two declines, so this stays quiet
+/// for people who said no. Never called at launch.
+Future<void> ensureNotificationPermission(WidgetRef ref) async {
+  final scheduler = ref.read(notificationSchedulerProvider);
+  final enabled = await scheduler.notificationsEnabled();
+  if (enabled != false) return;
+  await scheduler.requestPermission();
+  ref.invalidate(notificationsEnabledProvider);
+}
+
 /// Whether exact-alarm scheduling is granted (Settings surfaces a grant tile
 /// while it isn't). Invalidate after requesting.
 final exactAlarmsProvider = FutureProvider<bool>(

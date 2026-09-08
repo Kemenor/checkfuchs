@@ -108,8 +108,10 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   Set<int> _lensIds = const {};
 
   Future<void> _setReminders(List<TaskNotification> n) async {
+    final hadNone = _notifications.isEmpty;
     setState(() => _notifications = n);
     final repo = ref.read(taskRepositoryProvider);
+    if (hadNone && n.isNotEmpty) await ensureNotificationPermission(ref);
     // A series edit updates the defaults AND the open instances; a one-off
     // edit touches just this task.
     if (_task.templateId != null) {

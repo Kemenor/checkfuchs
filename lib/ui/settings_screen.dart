@@ -162,6 +162,30 @@ class SettingsScreen extends ConsumerWidget {
           FuchsbauSectionHeader(l10n.remindersSection),
           FuchsbauSettingsCard(
             children: [
+              // Notification permission (Android 13+): only shown while
+              // missing. The OS stops showing its dialog after two declines,
+              // so the subtitle points at system settings as the way back.
+              if (ref.watch(notificationsEnabledProvider).asData?.value ==
+                  false)
+                ListTile(
+                  contentPadding: fuchsbauCardRowPadding,
+                  leading: const Icon(Symbols.notifications_off_rounded),
+                  title: Text(l10n.notificationsOffTitle),
+                  subtitle: Text(l10n.notificationsOffSubtitle),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final ok = await ref
+                        .read(notificationSchedulerProvider)
+                        .requestPermission();
+                    ref.invalidate(notificationsEnabledProvider);
+                    if (!ok) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.notificationsOffHint)),
+                      );
+                    }
+                  },
+                ),
               // Exact-alarm grant (Android 14+): only shown while missing.
               if (ref.watch(exactAlarmsProvider).asData?.value == false)
                 ListTile(
