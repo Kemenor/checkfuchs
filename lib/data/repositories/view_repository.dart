@@ -124,7 +124,9 @@ class ViewRepository {
     );
   }
 
-  /// First-run defaults: a "Home" View showing one continuous "All tasks" Lens.
+  /// First-run defaults: a "Home" View showing one continuous "Default" Lens
+  /// (named for what it is — the bucket tasks land in when nothing else is
+  /// picked — not "All tasks", which it isn't once more lenses exist).
   /// Returns the default lens id (new tasks join it). Idempotent, and
   /// transactional — a partial seed (lens without its view) would otherwise
   /// trip the guard forever and leave the app without a Home view.
@@ -136,7 +138,7 @@ class ViewRepository {
         .into(db.lenses)
         .insert(
           LensesCompanion.insert(
-            name: 'All tasks',
+            name: 'Default',
             ordering: LensOrdering.automatic,
             selection: LensSelection.top,
           ),

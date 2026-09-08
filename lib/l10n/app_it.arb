@@ -208,6 +208,7 @@
   "showAllResolved": "Mostra tutte ({count})",
   "emptyLensCard": "Niente da fare. Ben fatto 🦊",
   "lensSection": "Lente",
+  "lensOutsideViewHint": "Questa vista non ha ancora una lente: l’attività finirà in una lente mostrata altrove. Aggiungine una qui con il pulsante ⊞.",
   "startsNow": "Adesso",
   "dueLabel": "Scadenza",
   "noDueDate": "Nessuna scadenza",

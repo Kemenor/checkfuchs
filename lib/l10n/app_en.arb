@@ -960,6 +960,10 @@
   "@lensSection": {
     "description": "Label for the lens (bucket) a task lives in — create sheet section + detail sheet row"
   },
+  "lensOutsideViewHint": "This view has no lens yet, so the task goes to a lens shown elsewhere. Add a lens here with the ⊞ button.",
+  "@lensOutsideViewHint": {
+    "description": "Create sheet: shown when the current view has no lens, so the chips list lenses from other views"
+  },
   "startsNow": "Now",
   "dueLabel": "Due",
   "noDueDate": "No due date",

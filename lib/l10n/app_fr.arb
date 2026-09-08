@@ -208,6 +208,7 @@
   "showAllResolved": "Tout afficher ({count})",
   "emptyLensCard": "Rien à faire. Bien joué 🦊",
   "lensSection": "Lentille",
+  "lensOutsideViewHint": "Cette vue n’a pas encore de lentille : la tâche ira dans une lentille affichée ailleurs. Ajoutez-en une ici avec le bouton ⊞.",
   "startsNow": "Maintenant",
   "dueLabel": "Échéance",
   "noDueDate": "Sans échéance",

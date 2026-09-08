@@ -208,6 +208,7 @@
   "showAllResolved": "Alle {count} anzeigen",
   "emptyLensCard": "Nichts zu tun. Gut gemacht 🦊",
   "lensSection": "Linse",
+  "lensOutsideViewHint": "Diese Ansicht hat noch keine Linse – die Aufgabe landet in einer Linse, die woanders angezeigt wird. Füge hier mit ⊞ eine Linse hinzu.",
   "startsNow": "Jetzt",
   "dueLabel": "Fällig",
   "noDueDate": "Kein Fälligkeitsdatum",

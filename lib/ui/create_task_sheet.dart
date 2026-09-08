@@ -79,14 +79,23 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   void initState() {
     super.initState();
     // Default bucket when none was preselected: the first lens of the view
-    // the sheet was opened from.
-    final viewId = widget.viewId;
-    if (_lensIds.isEmpty && viewId != null) {
-      ref.read(viewRepositoryProvider).watchViewLenses(viewId).first.then((
-        entries,
-      ) {
-        if (mounted && _lensIds.isEmpty && entries.isNotEmpty) {
-          setState(() => _lensIds = {entries.first.lens.id});
+    // the sheet was opened from — or, when that view has no lens yet, the
+    // first lens overall (a task must land somewhere visible).
+    if (_lensIds.isEmpty) {
+      final repo = ref.read(viewRepositoryProvider);
+      final viewId = widget.viewId;
+      final fromView = viewId == null
+          ? Future.value(const <LensRow>[])
+          : repo
+                .watchViewLenses(viewId)
+                .first
+                .then((e) => [for (final x in e) x.lens]);
+      fromView.then((lenses) async {
+        final pick = lenses.isNotEmpty
+            ? lenses
+            : await repo.watchAllLenses().first;
+        if (mounted && _lensIds.isEmpty && pick.isNotEmpty) {
+          setState(() => _lensIds = {pick.first.id});
         }
       });
     }
@@ -96,6 +105,19 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /// The lenses to offer as chips, and whether they lie outside the current
+  /// view (it has none of its own — the task would otherwise vanish into a
+  /// lens the user can't see from here).
+  (List<LensRow>?, bool) _lensChoices(WidgetRef ref) {
+    final all = ref.watch(_lensesProvider).asData?.value;
+    final viewId = widget.viewId;
+    if (viewId == null) return (all, false);
+    final inView = ref.watch(_viewLensesProvider(viewId)).asData?.value;
+    if (inView == null) return (null, false);
+    if (inView.isEmpty) return (all, true);
+    return (inView, false);
   }
 
   Future<void> _save() async {
@@ -170,14 +192,20 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               // never empty (a task in no lens is invisible). Scoped to the
               // current view's lenses — the detail sheet can move a task
               // anywhere later.
-              ...switch (widget.viewId == null
-                  ? ref.watch(_lensesProvider).asData?.value
-                  : ref
-                        .watch(_viewLensesProvider(widget.viewId!))
-                        .asData
-                        ?.value) {
-                null || [] || [_] => const [],
-                final lenses => [
+              ...switch (_lensChoices(ref)) {
+                (null, _) => const [],
+                // One lens and it's in this view: nothing to choose.
+                (final lenses?, false) when lenses.length <= 1 => const [],
+                (final lenses?, final outsideView) => [
+                  if (outsideView) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.lensOutsideViewHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   _SectionLabel(l10n.lensSection),
                   const SizedBox(height: 8),
