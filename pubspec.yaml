@@ -45,6 +45,19 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.0
   build_runner: ^2.15.0
+  flutter_launcher_icons: ^0.14.4
+
+# App icon (Checkfuchs). Regenerate with: dart run flutter_launcher_icons
+# Same recipe as knabberfuchs: full art for legacy/iOS, transparent fox as the
+# adaptive foreground on the family emerald. No monochrome layer on purpose —
+# a colour bitmap used as one collapses into a silhouette under themed icons.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/checkfuchs.png"
+  adaptive_icon_background: "#1FA85D"
+  adaptive_icon_foreground: "assets/icon/checkfuchs_fg.png"
+  min_sdk_android: 26
 
 flutter:
   uses-material-design: true
