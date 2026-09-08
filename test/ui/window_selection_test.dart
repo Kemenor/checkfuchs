@@ -76,7 +76,7 @@ void main() {
           null,
         );
         expect(s2, DateTime(2026, 7, 15));
-        expect(e2, DateTime(2026, 7, 16));
+        expect(e2, isNull); // Anytime: open-ended, never misses
       },
     );
 
