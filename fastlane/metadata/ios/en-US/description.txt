@@ -1,0 +1,22 @@
+Checkfuchs is a habit and to-do app for people who drop rigid systems. One surface for both — because a daily habit you can't skip (brushing your teeth) is what keeps you opening the app, and that daily glance keeps everything else visible too.
+
+Built because habit apps and to-do apps split one mental object in two — and pure to-do apps die the moment you have a full day and nothing gets ticked off.
+
+HOW IT WORKS
+• Habits carry the app. As long as one unavoidable daily habit exists, you open Checkfuchs every day — and your dated tasks and backlog ride along, never silently vanishing.
+• "Not done" is data, not a verdict. A missed habit just fades — it never nags or bleeds red. The only real failure is a hard deadline you let pass. Forgot to log something you did? Mark it done afterwards.
+• Lenses and views — look at your tasks your way. A lens picks and orders a slice of your tasks: all your daily habits, one weekly chore to chip at, the next due dates. A view arranges the lenses you care about into a screen — a calm Home, a detailed Habits tracker, a Long-term backlog. Not rigid categories; dials you set.
+• Habits and to-dos are one object. A one-off becomes a series in two taps. "Every other Saturday" and "the 25th of each month" are easy. Editing this occurrence vs. the whole series works like a calendar.
+• Windows that fit real days. Night, morning, afternoon, evening — or "morning or evening", done once in either — plus your own time bands.
+• Reminders, your way. When it opens, before it's due, when it's due, or "2 days before at 18:00".
+• Stats you compose. A Stats tab built from tiles you switch on and reorder: completion, this week, streaks, by time of day, a habit grid, misses by weekday.
+• Vacation mode. Pause your habits for the dates you're away — no missed-habit pile-up. Real deadlines still pass.
+• Backup and restore. Export everything to a ZIP and restore it any time. No cloud, no lock-in.
+
+CALM BY DESIGN
+No ads, no subscription, no dark patterns. Dark and light themes, four languages, and a typeface picker that includes dyslexia- and low-vision-friendly fonts.
+
+PRIVACY BY DESIGN
+Fully on-device. No accounts, no analytics, no server, no ads, no subscription. Every reminder is computed locally from your tasks — nothing ever leaves the phone.
+
+Made in Switzerland. 🦊

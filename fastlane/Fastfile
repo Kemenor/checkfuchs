@@ -1,0 +1,143 @@
+default_platform(:android)
+
+# Checkfuchs — Play Store metadata & releases (the knabberfuchs recipe).
+# All lanes upload as a DRAFT (changes_not_sent_for_review) so nothing goes
+# live without you pressing "send for review" in the Play Console. Binaries
+# normally ship via the v-tag CI flow (tool/play_upload_aab.py), not here.
+
+platform :android do
+  desc "Validate the metadata locally — no upload, catches length/format errors"
+  lane :validate do
+    upload_to_play_store(
+      validate_only: true,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+    )
+  end
+
+  desc "Push store listing text + screenshots only (no binary) as a draft"
+  lane :listing do
+    upload_to_play_store(
+      # supply anchors ANY metadata edit to a release on the target track;
+      # the default (production) has none while the app is in closed
+      # testing, which aborts with the misleading "version code ''" error.
+      # The listing itself is app-wide — the anchor track doesn't matter.
+      track: "alpha",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      # Changelogs attach to releases and ship with the AAB via the v-tag
+      # flow; uploading them here would target the anchor release instead.
+      skip_upload_changelogs: true,
+      changes_not_sent_for_review: true,
+    )
+  end
+
+  desc "Upload the release AAB to the internal testing track as a draft"
+  lane :internal do
+    upload_to_play_store(
+      track: "internal",
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      changes_not_sent_for_review: true,
+    )
+  end
+end
+
+# Checkfuchs — App Store Connect (TestFlight + metadata), the iOS twin of the
+# Play lanes above. Auth is the App Store Connect API key (App Manager) — an
+# account-level key shared with knabberfuchs, so the same key/issuer ids
+# apply. The ids aren't secret and live here as fallbacks; the private .p8 is
+# gitignored in fastlane/ (backed up in ProtonDrive). On CI the workflow
+# recreates the .p8 from a base64 secret at the same path.
+platform :ios do
+  def asc_key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"] || "B8TQ2VVZMA",
+      issuer_id: ENV["ASC_ISSUER_ID"] || "cb228e56-508d-4ed5-9a25-89923265a7ad",
+      key_filepath: ENV["ASC_KEY_FILEPATH"] || "fastlane/AuthKey_B8TQ2VVZMA.p8",
+      duration: 1200,
+    )
+  end
+
+  desc "Upload the built IPA to TestFlight (run `flutter build ipa` first)"
+  lane :beta do
+    # Anchor paths to the repo root (one level above this Fastfile) so the lane
+    # works regardless of fastlane's working directory, which differs on CI.
+    root = File.expand_path("..", __dir__)
+    ipa_glob = File.join(root, "build/ios/ipa/*.ipa")
+    ipa = Dir[ipa_glob].max_by { |f| File.mtime(f) }
+    UI.user_error!("No IPA matching #{ipa_glob} — run `flutter build ipa` first") unless ipa
+    upload_to_testflight(
+      api_key: asc_key,
+      ipa: ipa,
+      # Wait for Apple to finish processing: the tagged release flow submits
+      # for App Store review in the very next job, and the `release` lane can
+      # only select a build that is already processed.
+      skip_waiting_for_build_processing: false,
+      changelog: File.read(File.join(root, "fastlane/metadata/ios/en-US/release_notes.txt")).strip,
+    )
+  end
+
+  desc "Push App Store listing text (no binary, no screenshots) — staged, not submitted"
+  lane :listing do
+    upload_to_app_store(
+      api_key: asc_key,
+      app_version: ENV["ASC_APP_VERSION"], # target/create this editable version (nil = auto)
+      metadata_path: "fastlane/metadata/ios",
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      force: true, # no interactive HTML preview
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
+    )
+  end
+
+  desc "Replace the App Store screenshots with the repo set (overwrites all — fixes dupes)"
+  lane :screenshots do
+    upload_to_app_store(
+      api_key: asc_key,
+      app_version: ENV["ASC_APP_VERSION"], # target/create this editable version (nil = auto)
+      screenshots_path: "fastlane/screenshots",
+      metadata_path: "fastlane/metadata/ios", # avoids scanning the default path's ios/android subdirs
+      skip_binary_upload: true,
+      skip_metadata: true,
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      force: true,
+      run_precheck_before_submit: false,
+    )
+  end
+
+  desc "Submit an uploaded TestFlight build for App Store review (auto-release on approval)"
+  lane :release do |options|
+    UI.user_error!("Pass version:x.y.z build:N (the TestFlight build to submit)") unless options[:version] && options[:build]
+    upload_to_app_store(
+      api_key: asc_key,
+      app_version: options[:version],
+      build_number: options[:build].to_s,
+      metadata_path: "fastlane/metadata/ios", # release_notes.txt ×4 = the What's New
+      skip_binary_upload: true,   # the build is already on TestFlight
+      skip_screenshots: true,     # screenshots go via the `screenshots` lane
+      submit_for_review: true,
+      automatic_release: true,    # goes live when Apple approves
+      force: true,
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
+      # Encryption is answered by ITSAppUsesNonExemptEncryption in Info.plist.
+      submission_information: { add_id_info_uses_idfa: false },
+    )
+  end
+
+  desc "Validate the App Store metadata locally — no upload"
+  lane :validate do
+    upload_to_app_store(
+      api_key: asc_key,
+      metadata_path: "fastlane/metadata/ios",
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      verify_only: true,
+      force: true,
+      run_precheck_before_submit: false,
+    )
+  end
+end
