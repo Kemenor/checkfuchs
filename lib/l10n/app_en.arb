@@ -185,6 +185,24 @@
   "@markDone": {
     "description": "Tooltip of the completion ring on a task row."
   },
+  "undo": "Undo",
+  "@undo": {
+    "description": "Snackbar action"
+  },
+  "markedDone": "Done: {name}",
+  "@markedDone": {
+    "description": "Snackbar after completing a task",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "markedSkipped": "Skipped: {name}",
+  "@markedSkipped": {
+    "description": "Snackbar after skipping a task",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "reopenTask": "Reopen",
+  "@reopenTask": {
+    "description": "Detail-sheet button on a done/skipped task: back to open"
+  },
   "markDoneAnyway": "Mark done anyway",
   "@markDoneAnyway": {
     "description": "Ring tooltip / detail button on a missed habit: the Missed→Done logging correction"

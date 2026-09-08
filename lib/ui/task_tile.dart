@@ -33,6 +33,43 @@ class TaskTile extends ConsumerWidget {
   /// The series is past the consecutive-miss avoidance threshold.
   final bool avoided;
 
+  /// Done, with an Undo snackbar — a mis-tap or mis-swipe shouldn't be
+  /// permanent. The row leaves the list via the stream; Undo reopens it.
+  Future<void> _complete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await ref
+        .read(taskRepositoryProvider)
+        .completeTask(task, ref.read(clockProvider).now());
+    _offerUndo(messenger, ref, l10n.markedDone(task.name), l10n.undo);
+  }
+
+  void _offerUndo(
+    ScaffoldMessengerState messenger,
+    WidgetRef ref,
+    String text,
+    String undoLabel,
+  ) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(text),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: undoLabel,
+          onPressed: () async {
+            final fresh = await ref
+                .read(taskRepositoryProvider)
+                .taskById(task.id!);
+            if (fresh != null) {
+              await ref.read(taskRepositoryProvider).reopenTask(fresh);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -90,9 +127,7 @@ class TaskTile extends ConsumerWidget {
             ? null
             : task.status == TaskStatus.missed
             ? () => ref.read(taskRepositoryProvider).correctMissedTask(task)
-            : () => ref
-                  .read(taskRepositoryProvider)
-                  .completeTask(task, ref.read(clockProvider).now()),
+            : () => _complete(context, ref),
       ),
       title: Text(
         task.name,
@@ -143,11 +178,13 @@ class TaskTile extends ConsumerWidget {
         final repo = ref.read(taskRepositoryProvider);
         final now = ref.read(clockProvider).now();
         if (direction == DismissDirection.startToEnd) {
-          await repo.completeTask(task, now);
+          await _complete(context, ref);
         } else if (periodic && task.id != null && lens?.id != null) {
           await repo.passTask(task.id!, lens!.id!, now);
         } else {
+          final messenger = ScaffoldMessenger.of(context);
           await repo.skipTask(task, now);
+          _offerUndo(messenger, ref, l10n.markedSkipped(task.name), l10n.undo);
         }
         return false;
       },

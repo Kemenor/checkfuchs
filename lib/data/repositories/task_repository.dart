@@ -216,6 +216,14 @@ class TaskRepository {
     await _writeStatus(task.id!, done.status, done.resolvedAt);
   }
 
+  /// Undo a Done/Skip: the instance is open again (the next reconcile will
+  /// still Miss it if its window has meanwhile passed — that's truthful).
+  Future<void> reopenTask(domain.Task task) async {
+    if (!domain.canReopen(task) || task.id == null) return;
+    final open = domain.reopen(task);
+    await _writeStatus(task.id!, open.status, open.resolvedAt);
+  }
+
   Future<void> skipTask(domain.Task task, DateTime now) async {
     if (task.id == null || !domain.canSkip(task, now)) return;
     final skipped = domain.skip(task, now);

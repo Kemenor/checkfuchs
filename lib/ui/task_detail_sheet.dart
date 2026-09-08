@@ -355,6 +355,18 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 label: Text(l10n.markDoneAnyway),
               ),
             ],
+            // Done/Skipped: undo it (mis-tap, mis-swipe, changed your mind).
+            if (canReopen(_task)) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await ref.read(taskRepositoryProvider).reopenTask(_task);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
+                icon: const Icon(Symbols.undo_rounded),
+                label: Text(l10n.reopenTask),
+              ),
+            ],
             if (_stats?.hasData ?? false) ...[
               const SizedBox(height: 14),
               Row(

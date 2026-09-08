@@ -185,4 +185,26 @@ void main() {
       expect(fixed.resolvedAt, DateTime(2026, 9, 8, 12));
     });
   });
+
+  group('reopen (undo a Done/Skip)', () {
+    final done = Task(
+      id: 3,
+      name: 'Stretch',
+      status: TaskStatus.done,
+      start: DateTime(2026, 9, 8, 6),
+      end: DateTime(2026, 9, 8, 12),
+      createdAt: DateTime(2026, 9, 8),
+      resolvedAt: DateTime(2026, 9, 8, 7),
+    );
+
+    test('done and skipped reopen; open and missed do not', () {
+      expect(canReopen(done), isTrue);
+      expect(canReopen(done.copyWith(status: TaskStatus.skipped)), isTrue);
+      expect(canReopen(done.copyWith(status: TaskStatus.open)), isFalse);
+      expect(canReopen(done.copyWith(status: TaskStatus.missed)), isFalse);
+      final back = reopen(done);
+      expect(back.status, TaskStatus.open);
+      expect(back.resolvedAt, isNull);
+    });
+  });
 }

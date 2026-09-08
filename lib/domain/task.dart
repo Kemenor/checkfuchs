@@ -225,6 +225,17 @@ Task correctMiss(Task t) {
   return t.copyWith(status: TaskStatus.done, resolvedAt: t.end ?? t.resolvedAt);
 }
 
+/// Undo a Done/Skip (a mis-tap, a mis-swipe): back to Open, as if nothing
+/// happened. Missed is not undone this way — it's a *window* fact, and the
+/// habit case has its own correction ([correctMiss]).
+bool canReopen(Task t) =>
+    t.status == TaskStatus.done || t.status == TaskStatus.skipped;
+
+Task reopen(Task t) {
+  assert(canReopen(t), 'reopen() requires a done or skipped task');
+  return t.copyWith(status: TaskStatus.open, resolvedAt: null);
+}
+
 /// Auto-transition an open task whose window has passed → `Missed`. Returns the
 /// updated task, or `null` if nothing changes. `resolvedAt` is the window **end**
 /// (when it actually failed), so back-filling on a later open stays truthful.
