@@ -711,9 +711,13 @@
   "@introNext": {
     "description": "Intro pager: next page"
   },
-  "introStart": "Set up my first habit",
-  "@introStart": {
-    "description": "Intro pager: last button, leads to the carrier-habit sheet"
+  "introStartClean": "Start clean",
+  "@introStartClean": {
+    "description": "Intro last page: primary button, leads to the carrier-habit sheet"
+  },
+  "introLoadDemo": "Load example data",
+  "@introLoadDemo": {
+    "description": "Intro last page: secondary button, seeds the example dataset instead"
   },
   "dataSection": "Data & backup",
   "@dataSection": {

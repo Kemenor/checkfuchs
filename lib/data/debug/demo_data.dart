@@ -38,14 +38,7 @@ Future<void> loadDemoData(
   );
 
   await db.transaction(() async {
-    // --- wipe content (children → parents; appSettings stays) --------------
-    await db.delete(db.taskLens).go();
-    await db.delete(db.viewLens).go();
-    await db.delete(db.tasks).go();
-    await db.delete(db.templates).go();
-    await db.delete(db.lenses).go();
-    await db.delete(db.views).go();
-    await db.delete(db.vacations).go();
+    await wipeContent(db);
 
     // --- views ---------------------------------------------------------------
     Future<int> view(String name, String icon, int sort) => db
@@ -314,4 +307,17 @@ Future<void> loadDemoData(
   // transaction (both are idempotent).
   await TaskRepository(db).reconcileAll(now);
   await ViewRepository(db).refreshSurfaced(now);
+}
+
+/// Wipe every content table (children → parents); `app_settings` stays.
+/// Call inside a transaction. Shared by the demo loader and "Reset to intro".
+Future<void> wipeContent(AppDatabase db) async {
+  await db.delete(db.taskLens).go();
+  await db.delete(db.viewLens).go();
+  await db.delete(db.templateLens).go();
+  await db.delete(db.tasks).go();
+  await db.delete(db.templates).go();
+  await db.delete(db.lenses).go();
+  await db.delete(db.views).go();
+  await db.delete(db.vacations).go();
 }

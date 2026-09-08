@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  IntroChoice? result;
+  var returned = false;
   Widget host() => MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
@@ -11,13 +13,20 @@ void main() {
       builder: (context) => Scaffold(
         body: Center(
           child: TextButton(
-            onPressed: () => showOnboardingIntro(context),
+            onPressed: () async {
+              result = await showOnboardingIntro(context);
+              returned = true;
+            },
             child: const Text('open'),
           ),
         ),
       ),
     ),
   );
+  setUp(() {
+    result = null;
+    returned = false;
+  });
 
   testWidgets('walks Task → Lens → View and finishes on the last button', (
     tester,
@@ -35,9 +44,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('A view arranges lenses into a screen.'), findsOneWidget);
     expect(find.text('Next'), findsNothing);
-    await tester.tap(find.text('Set up my first habit'));
+    expect(find.text('Load example data'), findsOneWidget);
+    await tester.tap(find.text('Start clean'));
     await tester.pumpAndSettle();
     expect(find.byType(OnboardingIntroScreen), findsNothing);
+    expect(returned, isTrue);
+    expect(result, IntroChoice.clean);
+  });
+
+  testWidgets('the example-data button returns the demo choice', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host());
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Load example data'));
+    await tester.pumpAndSettle();
+    expect(result, IntroChoice.demo);
   });
 
   testWidgets('Skip leaves from any page', (tester) async {
@@ -47,5 +74,7 @@ void main() {
     await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
     expect(find.byType(OnboardingIntroScreen), findsNothing);
+    expect(returned, isTrue);
+    expect(result, isNull);
   });
 }

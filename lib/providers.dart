@@ -272,6 +272,13 @@ class SettingsController extends Notifier<Settings> {
     await _persist();
   }
 
+  /// Developer reset: offer the first-run flow again.
+  Future<void> resetOnboarding() async {
+    _touched = true;
+    state = state.copyWith(onboardingDone: false);
+    await _persist();
+  }
+
   Future<void> setThemeMode(ThemeMode mode) async {
     _touched = true;
     state = state.copyWith(themeMode: mode);

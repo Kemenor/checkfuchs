@@ -9,8 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'create_task_sheet.dart';
 import 'name_prompt_dialog.dart';
-import 'onboarding_intro.dart';
-import 'onboarding_sheet.dart';
+import 'first_launch.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
 import 'task_tile.dart';
@@ -86,12 +85,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (anyTemplate.isNotEmpty || anyTask.isNotEmpty) return;
 
     if (!mounted) return;
-    await ref.read(settingsProvider.notifier).markOnboardingDone();
-    if (!mounted) return;
-    // Three ideas first (Task → Lens → View), then the carrier habit.
-    await showOnboardingIntro(context);
-    if (!mounted) return;
-    await showOnboardingSheet(context);
+    // Three ideas first (Task → Lens → View), then a clean start or the
+    // example dataset.
+    await runFirstLaunch(context, ref);
   }
 
   Future<void> _newView() async {

@@ -9,6 +9,7 @@ import '../data/debug/demo_data.dart';
 import '../l10n/app_localizations.dart';
 import '../notifications/background_refresh.dart';
 import '../providers.dart';
+import 'first_launch.dart';
 
 /// Hidden developer/tester section, unlocked by long-pressing the app name in
 /// the About dialog (the knabberfuchs pattern). Deliberately English-only
@@ -58,6 +59,26 @@ class DebugSection extends ConsumerWidget {
               title: const Text('Pending notifications'),
               subtitle: const Text('What the OS has scheduled'),
               onTap: () => _showPending(context, ref),
+            ),
+            ListTile(
+              contentPadding: fuchsbauCardRowPadding,
+              leading: const Icon(Symbols.restart_alt_rounded),
+              title: Text(
+                'Reset to intro',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+              subtitle: const Text(
+                'Factory reset: wipe everything, run first launch again',
+              ),
+              onTap: () => _resetToIntro(context, ref),
+            ),
+            ListTile(
+              contentPadding: fuchsbauCardRowPadding,
+              leading: const Icon(Symbols.visibility_off_rounded),
+              title: const Text('Hide debug menu'),
+              subtitle: const Text('Long-press the name in About to unhide'),
+              onTap: () =>
+                  ref.read(settingsProvider.notifier).toggleDebugMenu(),
             ),
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
@@ -112,6 +133,39 @@ class DebugSection extends ConsumerWidget {
       l10n,
     );
     messenger.showSnackBar(const SnackBar(content: Text('Demo suite loaded')));
+  }
+
+  /// Factory reset: wipe content, reseed the default View/Lens (the carrier
+  /// sheet needs a lens to land in), clear the onboarding flag, and run the
+  /// first-launch flow right away.
+  Future<void> _resetToIntro(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reset to intro?'),
+        content: const Text(
+          'This wipes all tasks, habits, views, lenses and vacations, then '
+          'shows the first-launch intro again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final db = ref.read(databaseProvider);
+    await db.transaction(() => wipeContent(db));
+    await ref.read(viewRepositoryProvider).seedDefaults();
+    await ref.read(settingsProvider.notifier).resetOnboarding();
+    if (!context.mounted) return;
+    await runFirstLaunch(context, ref);
   }
 
   Future<void> _reconcile(BuildContext context, WidgetRef ref) async {

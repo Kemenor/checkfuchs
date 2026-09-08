@@ -8,15 +8,19 @@ import '../l10n/app_localizations.dart';
 /// habit sheet. Illustrations are the app's own shapes (ring + row + pill,
 /// the dashed lens outline, the tabbed screen) so what the user sees here is
 /// what they meet on Home. Text-free illustrations: nothing to translate.
-/// Skip is always available; nothing here is required.
-Future<void> showOnboardingIntro(BuildContext context) {
+/// Skip is always available; nothing here is required. The last page offers
+/// two ways in: a clean start (the carrier-habit sheet) or the example
+/// dataset. Returns null when skipped.
+Future<IntroChoice?> showOnboardingIntro(BuildContext context) {
   return Navigator.of(context).push(
-    MaterialPageRoute<void>(
+    MaterialPageRoute<IntroChoice>(
       fullscreenDialog: true,
       builder: (_) => const OnboardingIntroScreen(),
     ),
   );
 }
+
+enum IntroChoice { clean, demo }
 
 class OnboardingIntroScreen extends StatefulWidget {
   const OnboardingIntroScreen({super.key});
@@ -38,10 +42,6 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen> {
   }
 
   void _next() {
-    if (_index >= _count - 1) {
-      Navigator.of(context).pop();
-      return;
-    }
     _pages.nextPage(
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
@@ -121,15 +121,38 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: _next,
-                    icon: const Icon(Symbols.arrow_forward_rounded),
-                    iconAlignment: IconAlignment.end,
-                    label: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(last ? l10n.introStart : l10n.introNext),
+                  if (!last)
+                    FilledButton.icon(
+                      onPressed: _next,
+                      icon: const Icon(Symbols.arrow_forward_rounded),
+                      iconAlignment: IconAlignment.end,
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(l10n.introNext),
+                      ),
+                    )
+                  else ...[
+                    FilledButton.icon(
+                      onPressed: () =>
+                          Navigator.of(context).pop(IntroChoice.clean),
+                      icon: const Icon(Symbols.arrow_forward_rounded),
+                      iconAlignment: IconAlignment.end,
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(l10n.introStartClean),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          Navigator.of(context).pop(IntroChoice.demo),
+                      icon: const Icon(Symbols.science_rounded),
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(l10n.introLoadDemo),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
