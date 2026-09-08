@@ -14,6 +14,7 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
 import 'reminder_editor.dart';
+import 'task_history_screen.dart';
 import 'window_choice.dart';
 import 'window_editor.dart';
 
@@ -453,6 +454,21 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 onClear: () => _writeWindow(null, isEnd: true),
               ),
             ],
+            if (recurring)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Symbols.history_rounded),
+                title: Text(l10n.historyTitle),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => TaskHistoryScreen(
+                      templateId: _task.templateId!,
+                      name: _task.name,
+                    ),
+                  ),
+                ),
+              ),
             // A habit's active window sits next to its reminders — it's a
             // property of the series, not of the repeat rule.
             if (recurring && _templateRule != null)
