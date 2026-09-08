@@ -62,11 +62,16 @@ distrobox enter flutter -- bash -lc 'cd ~/Documents/fuchs/checkfuchs && flutter 
   not on every machine). Store listing text: `fastlane/RELEASING.md`.
   The CI Flutter version is single-sourced in `.fvmrc` (all workflows read it
   via `flutter-version-file`).
-  **Status (2026-09-08):** pipeline scaffolded, not yet exercised — the Play
-  Console / App Store Connect app records, the upload keystore (+ the four
-  `ANDROID_*` secrets), the iOS signing secrets and `ios/ExportOptions.plist`
-  (first signed build on the Mac) are still to be created. Only
-  `PLAY_STORE_KEY_JSON_BASE64` is set.
+  **Status (2026-09-08):** Play Console app record exists; the Android side
+  is complete — upload keystore generated (local copy in
+  `~/Documents/fuchs-secrets/checkfuchs/`, later ProtonDrive) and all five
+  `ANDROID_*` / `PLAY_STORE_KEY_JSON_BASE64` secrets set; the store listing
+  (text, screenshots, icon, feature graphics, 4 locales) is uploaded as a
+  draft via `tool/play_publish.py --commit`. No build has been uploaded yet
+  (first one: `gh workflow run android.yml -f track=alpha`). iOS: App Store
+  Connect record, signing secrets and `ios/ExportOptions.plist` still to be
+  created on the Mac. Store screenshots: `tool/screenshots.sh android` from
+  the container against the host emulator.
 - **Secrets:** keystore, `android/key.properties`, `fastlane/play-store-key.json`,
   `*.p8` / `*.p12` / `*.mobileprovision` are gitignored — never commit, print
   or paste them. Backups live in ProtonDrive; CI copies are base64 secrets.
