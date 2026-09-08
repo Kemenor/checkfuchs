@@ -40,6 +40,7 @@
   "vacationIntro": "Les vacances mettent en pause vos tâches récurrentes pour les dates choisies — pas d'habitudes manquées qui s'accumulent pendant votre absence. Les vraies échéances continuent de s'appliquer.",
   "noVacations": "Aucunes vacances prévues",
   "markDone": "Marquer comme fait",
+  "markDoneAnyway": "Marquer comme fait quand même",
   "swipeDone": "Fait",
   "swipeSkip": "Ignorer",
   "swipePass": "Passer",

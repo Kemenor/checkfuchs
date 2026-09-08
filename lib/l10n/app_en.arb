@@ -185,6 +185,10 @@
   "@markDone": {
     "description": "Tooltip of the completion ring on a task row."
   },
+  "markDoneAnyway": "Mark done anyway",
+  "@markDoneAnyway": {
+    "description": "Ring tooltip / detail button on a missed habit: the Missed→Done logging correction"
+  },
   "swipeDone": "Done",
   "@swipeDone": {
     "description": "Right-swipe action label: complete the task."

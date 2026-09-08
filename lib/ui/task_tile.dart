@@ -49,10 +49,12 @@ class TaskTile extends ConsumerWidget {
         status.neutral,
         false,
       ),
+      // A missed *habit* stays tappable: "I did it, forgot to log it" (§11
+      // q7). One-offs are display-only — a hard deadline is irrevocable.
       TaskStatus.missed => (
         Symbols.radio_button_unchecked_rounded,
         status.taupe,
-        false,
+        canCorrectMiss(task),
       ),
       TaskStatus.open => switch (phase) {
         // Avoidance (§1 "soft amber — information, not a command"): the ring
@@ -78,13 +80,19 @@ class TaskTile extends ConsumerWidget {
       onTap: () => showTaskDetailSheet(context, ref, task),
       leading: IconButton(
         iconSize: 26,
-        tooltip: actionable ? l10n.markDone : null,
+        tooltip: !actionable
+            ? null
+            : task.status == TaskStatus.missed
+            ? l10n.markDoneAnyway
+            : l10n.markDone,
         icon: Icon(icon, color: color),
-        onPressed: actionable
-            ? () => ref
+        onPressed: !actionable
+            ? null
+            : task.status == TaskStatus.missed
+            ? () => ref.read(taskRepositoryProvider).correctMissedTask(task)
+            : () => ref
                   .read(taskRepositoryProvider)
-                  .completeTask(task, ref.read(clockProvider).now())
-            : null,
+                  .completeTask(task, ref.read(clockProvider).now()),
       ),
       title: Text(
         task.name,

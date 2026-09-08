@@ -156,4 +156,33 @@ void main() {
       expect(missed?.resolvedAt, end);
     });
   });
+
+  group('Missed → Done correction (§11 q7)', () {
+    final missedHabit = Task(
+      id: 1,
+      templateId: 7,
+      name: 'Brush teeth',
+      status: TaskStatus.missed,
+      start: DateTime(2026, 9, 8, 6),
+      end: DateTime(2026, 9, 8, 12),
+      occurrence: DateTime(2026, 9, 8),
+      createdAt: DateTime(2026, 9, 8),
+      resolvedAt: DateTime(2026, 9, 8, 12),
+    );
+
+    test('a missed habit instance can be corrected; one-offs cannot', () {
+      expect(canCorrectMiss(missedHabit), isTrue);
+      expect(canCorrectMiss(missedHabit.copyWith(templateId: null)), isFalse);
+      expect(
+        canCorrectMiss(missedHabit.copyWith(status: TaskStatus.skipped)),
+        isFalse,
+      );
+    });
+
+    test('correction lands as done at the window end', () {
+      final fixed = correctMiss(missedHabit);
+      expect(fixed.status, TaskStatus.done);
+      expect(fixed.resolvedAt, DateTime(2026, 9, 8, 12));
+    });
+  });
 }

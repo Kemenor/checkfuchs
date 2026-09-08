@@ -210,6 +210,21 @@ Task skip(Task t, DateTime now) {
   return t.copyWith(status: TaskStatus.skipped, resolvedAt: now);
 }
 
+/// Missed → Done correction (concept §11 open question 7, resolved): a
+/// *recurring* instance that was done but not logged may be corrected after
+/// the fact — it's a logging fix, not doing it late. A one-off's hard deadline
+/// stays irrevocable.
+bool canCorrectMiss(Task t) =>
+    t.status == TaskStatus.missed && t.templateId != null;
+
+/// Apply the correction. `resolvedAt` is the window end — the latest instant
+/// the habit could have been done inside its window — so analytics keep
+/// reading it as an in-window completion, never as "done late".
+Task correctMiss(Task t) {
+  assert(canCorrectMiss(t), 'correctMiss() requires a missed habit instance');
+  return t.copyWith(status: TaskStatus.done, resolvedAt: t.end ?? t.resolvedAt);
+}
+
 /// Auto-transition an open task whose window has passed → `Missed`. Returns the
 /// updated task, or `null` if nothing changes. `resolvedAt` is the window **end**
 /// (when it actually failed), so back-filling on a later open stays truthful.

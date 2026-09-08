@@ -293,6 +293,21 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 child: Text(l10n.save),
               ),
             ),
+            // Missed habit: the logging correction (§11 q7). Pops the sheet —
+            // the stream re-renders the row as done.
+            if (canCorrectMiss(_task)) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await ref
+                      .read(taskRepositoryProvider)
+                      .correctMissedTask(_task);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
+                icon: const Icon(Symbols.check_circle_rounded),
+                label: Text(l10n.markDoneAnyway),
+              ),
+            ],
             if (_stats?.hasData ?? false) ...[
               const SizedBox(height: 14),
               Row(

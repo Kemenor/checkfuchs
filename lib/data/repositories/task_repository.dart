@@ -209,6 +209,13 @@ class TaskRepository {
   }
 
   /// Swipe Skip — declines this instance, then reconciles.
+  /// Missed → Done on a habit instance (logging correction, §11 q7).
+  Future<void> correctMissedTask(domain.Task task) async {
+    if (!domain.canCorrectMiss(task)) return;
+    final done = domain.correctMiss(task);
+    await _writeStatus(task.id!, done.status, done.resolvedAt);
+  }
+
   Future<void> skipTask(domain.Task task, DateTime now) async {
     if (task.id == null || !domain.canSkip(task, now)) return;
     final skipped = domain.skip(task, now);
