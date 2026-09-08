@@ -100,25 +100,43 @@ def main():
 
         notes = release_notes(vc)
         name = release_name()
-        for track in TRACKS:
-            release = {'versionCodes': [str(vc)],
-                       'status': 'completed',
-                       'releaseNotes': notes}
-            if name:
-                release['name'] = name
-            svc.edits().tracks().update(
-                packageName=PKG, editId=edit_id, track=track,
-                body={'track': track, 'releases': [release]}
-            ).execute()
-            print('assigned to track "%s" (name=%s)' % (track, name or 'auto'))
 
+        def assign(status):
+            for track in TRACKS:
+                release = {'versionCodes': [str(vc)],
+                           'status': status,
+                           'releaseNotes': notes}
+                if name:
+                    release['name'] = name
+                svc.edits().tracks().update(
+                    packageName=PKG, editId=edit_id, track=track,
+                    body={'track': track, 'releases': [release]}
+                ).execute()
+                print('assigned to track "%s" (status=%s, name=%s)'
+                      % (track, status, name or 'auto'))
+
+        def commit():
+            try:
+                svc.edits().commit(packageName=PKG, editId=edit_id,
+                                   changesNotSentForReview=True).execute()
+            except HttpError as e:
+                if e.resp.status == 400 and 'changesNotSentForReview' in str(
+                        e._get_reason()):
+                    svc.edits().commit(packageName=PKG, editId=edit_id
+                                       ).execute()
+                else:
+                    raise
+
+        assign('completed')
         try:
-            svc.edits().commit(packageName=PKG, editId=edit_id,
-                               changesNotSentForReview=True).execute()
+            commit()
         except HttpError as e:
-            if e.resp.status == 400 and 'changesNotSentForReview' in str(
-                    e._get_reason()):
-                svc.edits().commit(packageName=PKG, editId=edit_id).execute()
+            # An app that has never been published only accepts draft
+            # releases; the Console then publishes the track by hand.
+            if e.resp.status == 400 and 'draft app' in str(e._get_reason()):
+                print('app is still a draft — staging the release as draft')
+                assign('draft')
+                commit()
             else:
                 raise
         print('committed — release staged on: %s' % ', '.join(
