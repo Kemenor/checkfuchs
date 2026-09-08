@@ -663,22 +663,6 @@
   "@confirmDeleteLensBody": {
     "description": "Confirm-dialog body: what deleting a Lens does (tasks survive)."
   },
-  "onboardingTitle": "Welcome to Checkfuchs",
-  "@onboardingTitle": {
-    "description": "Title of the first-run onboarding sheet."
-  },
-  "onboardingBody": "One small daily habit brings you back every day — pick one you already do, and everything else rides along.",
-  "@onboardingBody": {
-    "description": "One calm sentence explaining the carrier idea (the first daily habit)."
-  },
-  "onboardingNameHint": "e.g. Brush your teeth",
-  "@onboardingNameHint": {
-    "description": "Example hint inside the onboarding habit-name field."
-  },
-  "onboardingStart": "Start",
-  "@onboardingStart": {
-    "description": "Filled button that creates the first daily habit."
-  },
   "introTaskEyebrow": "Task",
   "@introTaskEyebrow": {
     "description": "Intro page 1 eyebrow"

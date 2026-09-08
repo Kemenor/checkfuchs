@@ -37,17 +37,27 @@ Future<void> showCreateTaskSheet(
   WidgetRef ref, {
   int? viewId,
   int? lensId,
+  Recurrence? initialRecurrence,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _CreateTaskSheet(viewId: viewId, lensId: lensId),
+    builder: (_) => _CreateTaskSheet(
+      viewId: viewId,
+      lensId: lensId,
+      initialRecurrence: initialRecurrence,
+    ),
   );
 }
 
 class _CreateTaskSheet extends ConsumerStatefulWidget {
-  const _CreateTaskSheet({this.viewId, this.lensId});
+  const _CreateTaskSheet({this.viewId, this.lensId, this.initialRecurrence});
+
+  /// Preset repeat rule — the first-launch "Start clean" opens the sheet as
+  /// a daily habit (the carrier), so the first thing created keeps the app
+  /// opening every day unless the user says otherwise.
+  final Recurrence? initialRecurrence;
 
   final int? viewId;
   final int? lensId;
@@ -58,7 +68,7 @@ class _CreateTaskSheet extends ConsumerStatefulWidget {
 
 class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
-  Recurrence? _recurrence;
+  late Recurrence? _recurrence = widget.initialRecurrence;
   WindowSelection _window = WindowSelection.anytime;
   List<TaskNotification> _notifications = const [];
   late Set<int> _lensIds = {if (widget.lensId != null) widget.lensId!};
@@ -239,6 +249,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 10),
               RecurrenceEditor(
                 anchor: anchor,
+                initial: widget.initialRecurrence,
                 onChanged: (r) => setState(() => _recurrence = r),
               ),
               const SizedBox(height: 20),
