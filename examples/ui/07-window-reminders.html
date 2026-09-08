@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — active window (multi + custom bands) + reminders (inline rows)</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;--field:#f3eee9;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;--missed:#a8988c;--amber:#e0a33b;--red:#c0473a;
+    --sh:0 12px 30px -24px rgba(0,0,0,.4);}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;--field:#2a2420;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;--missed:#b6a79b;--amber:#edb45a;--red:#e0796b;
+    --sh:0 12px 30px -22px rgba(0,0,0,.7);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:1.3rem;margin:0;letter-spacing:-.02em}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit}
+  .ms{font-family:'Material Symbols Rounded';font-size:22px;line-height:1;font-variation-settings:'opsz' 24,'wght' 400,'GRAD' 0,'FILL' 0;flex:none}
+  .ms.fill{font-variation-settings:'FILL' 1}
+  .stage{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}
+  @media(max-width:760px){.stage{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+  .cap{font-weight:700;margin:0 0 8px;font-size:.92rem}.cap small{color:var(--muted);font-weight:500}
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;min-height:760px;box-shadow:var(--sh)}
+
+  /* sheet, full-height create flavour */
+  .sheet{position:absolute;inset:0;background:var(--card);padding:6px 16px 16px;overflow:hidden}
+  .handle{width:36px;height:4px;border-radius:999px;background:var(--line);margin:6px auto 10px}
+  .ttl{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0 0 10px}
+  .field{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font-weight:600;color:var(--ink);margin-bottom:14px}
+  .field small{display:block;color:var(--muted);font-weight:600;font-size:.72rem;margin-bottom:2px}
+  .lhead{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:6px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .lhead em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted);font-size:.74rem}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:.8rem;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--field);color:var(--ink);display:inline-flex;align-items:center;gap:5px;border:1.5px solid transparent}
+  .chip .ms{font-size:16px}
+  .chip.on{background:color-mix(in srgb,var(--indigo) 16%,transparent);color:var(--indigo)}
+  .chip.dash{border-style:dashed;border-color:var(--line);background:transparent;color:var(--muted)}
+  .chip .t{font-weight:500;opacity:.75;font-variant-numeric:tabular-nums;font-size:.72rem}
+  .summary{font-size:.8rem;color:var(--muted);margin:0 0 12px 2px;display:flex;align-items:flex-start;gap:6px;line-height:1.35}
+  .summary .ms{font-size:16px;color:var(--indigo);margin-top:1px}
+  .summary b{color:var(--ink);font-weight:600;white-space:nowrap}
+
+  /* custom band rows: each "Custom…" tap appends one */
+  .band{border:1.5px solid var(--indigo);border-radius:14px;padding:8px 10px;margin:-2px 0 10px;display:grid;grid-template-columns:auto 1fr auto 1fr auto;align-items:center;gap:8px;background:color-mix(in srgb,var(--indigo) 5%,transparent)}
+  .band .lab{font-size:.68rem;font-weight:700;color:var(--indigo);letter-spacing:.04em}
+  .time{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;font-size:.92rem}
+  .band .ms{color:var(--muted);font-size:20px}
+
+  /* reminder rows: preset rows are read-only, custom rows carry a stepper + time */
+  .rlist{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:8px;background:var(--card)}
+  .rrow{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;min-height:50px}
+  .rrow+.rrow{border-top:1px solid var(--line)}
+  .rrow>.ms{color:var(--muted)}
+  .rlab{flex:1;line-height:1.25}.rlab b{display:block;font-weight:600;font-size:.9rem}.rlab span{font-size:.74rem;color:var(--muted)}
+  .rrow .x{color:var(--muted);font-size:20px}
+  .step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--field)}
+  .step .ms{font-size:18px;color:var(--ink);padding:6px 5px;background:var(--card)}
+  .step .v{font-size:.78rem;font-weight:700;padding:0 8px;white-space:nowrap;min-width:92px;text-align:center}
+  .rrow .time{padding:6px 8px;font-size:.88rem;min-width:58px}
+  .add{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.86rem;color:var(--orange);padding:4px 4px 12px}
+  .add .ms{font-size:18px;color:var(--orange)}
+  .fine{font-size:.7rem;color:var(--muted);margin:-6px 2px 10px;line-height:1.35}
+
+  .save{margin-top:4px;width:100%;background:var(--orange);color:#fff;font-weight:700;border:none;border-radius:999px;padding:14px;font-family:inherit;font-size:.98rem}
+  body.dark .save{color:#1a1411}
+  .note{color:var(--muted);font-size:.82rem;margin-top:14px;max-width:72ch}
+  .note b{color:var(--ink)}
+  .kbd{font-size:.72rem;font-weight:700;color:var(--indigo);background:color-mix(in srgb,var(--indigo) 12%,transparent);padding:1px 6px;border-radius:6px}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 Active window (multi + custom bands) + reminders (inline rows)</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="stage">
+
+    <!-- A: daily habit — three bands (two presets + one custom), one custom reminder -->
+    <div>
+      <p class="cap">Daily habit <small>· Morning + Evening + a custom band; one custom reminder</small></p>
+      <div class="phone"><div class="sheet">
+        <div class="handle"></div>
+        <p class="ttl">New task</p>
+        <div class="field"><small>Name</small>Walk the dog</div>
+
+        <div class="lhead"><span>Active window</span><em>pick one or more</em></div>
+        <div class="chips">
+          <span class="chip"><span class="ms">bedtime</span>Night <span class="t">00–06</span></span>
+          <span class="chip on"><span class="ms">check</span>Morning <span class="t">06–12</span></span>
+          <span class="chip"><span class="ms">light_mode</span>Afternoon <span class="t">12–18</span></span>
+          <span class="chip on"><span class="ms">check</span>Evening <span class="t">18–24</span></span>
+          <span class="chip"><span class="ms">all_inclusive</span>Anytime</span>
+          <span class="chip dash"><span class="ms">add</span>Custom…</span>
+        </div>
+        <!-- one band row per "Custom…" tap; × removes just that band -->
+        <div class="band">
+          <span class="lab">BAND</span><span class="time">13:00</span>
+          <span class="ms">arrow_forward</span>
+          <span class="time">14:30</span><span class="ms">close</span>
+        </div>
+        <div class="summary"><span class="ms">schedule</span><span>Open <b>06:00–12:00</b>, <b>13:00–14:30</b> and <b>18:00–24:00</b> · done once in any of them</span></div>
+
+        <div class="lhead"><span>Reminders</span><em>presets + your own</em></div>
+        <div class="chips">
+          <span class="chip on"><span class="ms">check</span>When it opens</span>
+          <span class="chip">2 hours before due</span>
+          <span class="chip">When it's due</span>
+        </div>
+        <div class="rlist">
+          <div class="rrow"><span class="ms">notifications</span><span class="rlab"><b>When it opens</b><span>06:00, 13:00 and 18:00 — once per band</span></span><span class="ms x">close</span></div>
+          <div class="rrow"><span class="ms">alarm</span>
+            <span class="step"><span class="ms">remove</span><span class="v">On the day</span><span class="ms">add</span></span>
+            <span class="time">09:00</span>
+            <span class="ms x">close</span></div>
+        </div>
+        <div class="add"><span class="ms">add_alarm</span>Add a reminder</div>
+
+        <div class="lhead"><span>Repeat</span></div>
+        <div class="chips"><span class="chip on"><span class="ms">event_repeat</span>Every day</span></div>
+        <button class="save">Save</button>
+      </div></div>
+    </div>
+
+    <!-- B: yearly task — two custom reminders with day offsets -->
+    <div>
+      <p class="cap">Yearly task <small>· “2 days before · 18:00” and “On the day · 09:00”</small></p>
+      <div class="phone"><div class="sheet">
+        <div class="handle"></div>
+        <p class="ttl">New task</p>
+        <div class="field"><small>Name</small>Mum's birthday</div>
+
+        <div class="lhead"><span>Active window</span><em>pick one or more</em></div>
+        <div class="chips">
+          <span class="chip"><span class="ms">bedtime</span>Night</span>
+          <span class="chip"><span class="ms">wb_twilight</span>Morning</span>
+          <span class="chip"><span class="ms">light_mode</span>Afternoon</span>
+          <span class="chip"><span class="ms">nights_stay</span>Evening</span>
+          <span class="chip on"><span class="ms">check</span>Anytime</span>
+          <span class="chip dash"><span class="ms">add</span>Custom…</span>
+        </div>
+        <div class="summary"><span class="ms">event_repeat</span><span>Every year on <b>14 March</b> · open all day</span></div>
+
+        <div class="lhead"><span>Reminders</span><em>relative to the day</em></div>
+        <div class="chips">
+          <span class="chip">When it opens</span>
+          <span class="chip">2 hours before due</span>
+          <span class="chip">When it's due</span>
+        </div>
+        <div class="rlist">
+          <div class="rrow"><span class="ms">alarm</span>
+            <span class="step"><span class="ms">remove</span><span class="v">2 days before</span><span class="ms">add</span></span>
+            <span class="time">18:00</span>
+            <span class="ms x">close</span></div>
+          <div class="rrow"><span class="ms">alarm</span>
+            <span class="step"><span class="ms">remove</span><span class="v">On the day</span><span class="ms">add</span></span>
+            <span class="time">09:00</span>
+            <span class="ms x">close</span></div>
+        </div>
+        <div class="add"><span class="ms">add_alarm</span>Add a reminder</div>
+        <p class="fine">The stepper counts days before the occurrence. A one-off with no due date has no “day” to count from, so its custom reminder asks for a date instead.</p>
+
+        <div class="lhead"><span>Repeat</span></div>
+        <div class="chips"><span class="chip on"><span class="ms">event_repeat</span>Every year · 14 Mar</span></div>
+        <button class="save">Save</button>
+      </div></div>
+    </div>
+
+  </div>
+
+  <p class="note"><b>Model.</b> Window chips are a set. One preset = today's behaviour. Two or more = the union of bands; the task is <b>one instance</b>, done once in whichever band you catch it in (want it twice a day? make two tasks). <b>Custom…</b> is additive: every tap appends a <span class="kbd">from → to</span> band row, so a day can hold as many bands as you like, presets included; × removes one band. Reminders are a <b>list</b>: the three presets stay one-tap chips and appear as read-only rows; <b>Add a reminder</b> appends an inline row with a day-offset stepper (<em>On the day · 1 day before · 2 days before…</em>) and a clock time — no popup. Each row is removable; un-ticking a preset chip removes its row. Engine side: bands are a list of <code>Slice</code>s, presets are <code>(anchor, offset)</code>, a custom row is an <code>absolute</code> time resolved per occurrence from its day offset.</p>
+</div></body></html>

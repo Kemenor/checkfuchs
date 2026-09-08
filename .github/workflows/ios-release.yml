@@ -1,0 +1,61 @@
+name: iOS · App Store release
+
+# Submit a build that is ALREADY on TestFlight for App Store review, pushing
+# the four release_notes.txt as the version's "What's New". The version is
+# released automatically when Apple approves. Pure App Store Connect API work
+# — no build, no signing — so it runs on Linux.
+#
+#   gh workflow run ios-release.yml -f version=1.0.0 -f build_number=3
+#
+# Required repository secrets (same as ios.yml):
+#   ASC_KEY_ID / ASC_ISSUER_ID / ASC_API_KEY_P8_BASE64
+#
+# Guardrails: the fastlane `release` lane fails cleanly if the (version,
+# build) pair doesn't exist on TestFlight, and never uploads a binary or
+# screenshots — metadata + submission only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "App version to submit (x.y.z — must match the build's pubspec version)"
+        required: true
+        type: string
+      build_number:
+        description: "TestFlight build number to submit (the +N part)"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install App Store Connect API key (.p8)
+        env:
+          ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p fastlane
+          echo "$ASC_API_KEY_P8_BASE64" | base64 --decode > "fastlane/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Install fastlane
+        # Pinned to the verified version: an unpinned latest can fail (or
+        # subtly alter) an App Store submission on release day.
+        run: sudo gem install fastlane --no-document -v 2.236.1
+
+      - name: Submit for review
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_FILEPATH: fastlane/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+          # Inputs via env, not inline interpolation (injection-safe).
+          REL_VERSION: ${{ inputs.version }}
+          REL_BUILD: ${{ inputs.build_number }}
+        run: fastlane ios release version:"$REL_VERSION" build:"$REL_BUILD"

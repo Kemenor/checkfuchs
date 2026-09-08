@@ -1,0 +1,1 @@
+Erste Version. Gewohnheiten und To-dos auf einer Oberfläche, Linsen und Ansichten, Zeitfenster und Erinnerungen für echte Tage, ein Statistik-Tab zum Zusammenstellen, Ferienmodus, Backup und Wiederherstellung.
