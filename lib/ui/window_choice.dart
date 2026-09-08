@@ -231,17 +231,16 @@ class WindowSelection {
         : oneOffWindow(now);
     final start = startDate == null ? defaultStart : at(startDate, from);
     var end = dueDate == null ? defaultEnd : at(dueDate, to);
-    // A pinned start with no due date: the default end is anchored to
-    // *today*, which can lie before a future start — end on the start day
-    // instead (Anytime → the day after it). Never persist end < start.
-    if (dueDate == null && startDate != null && end != null) {
-      if (b.isEmpty) {
-        end = DateTime(startDate.year, startDate.month, startDate.day + 1);
-      } else if (start != null && !end.isAfter(start)) {
-        end = at(startDate, to);
-      }
+    // A pinned start with no due date and a slice: the default end is
+    // anchored to *today*, which can lie before a future start — end on the
+    // start day instead. (Anytime stays open-ended: end null, never misses.)
+    if (dueDate == null &&
+        startDate != null &&
+        start != null &&
+        end != null &&
+        !end.isAfter(start)) {
+      end = at(startDate, to);
     }
-    if (start != null && end != null && end.isBefore(start)) end = start;
     return (start, end);
   }
 
