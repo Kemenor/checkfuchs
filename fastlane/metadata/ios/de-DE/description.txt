@@ -1,0 +1,22 @@
+Checkfuchs ist eine Gewohnheits- und To-do-App für alle, die starre Systeme fallen lassen. Eine Oberfläche für beides – denn eine tägliche Gewohnheit, die du nicht auslassen kannst (Zähne putzen), ist der Grund, die App jeden Tag zu öffnen. Und dieser tägliche Blick hält alles andere sichtbar.
+
+Entstanden, weil Gewohnheits-Apps und To-do-Apps ein und dieselbe Sache in zwei Teile reissen – und reine To-do-Apps sterben, sobald ein voller Tag kommt und nichts abgehakt wird.
+
+SO FUNKTIONIERT ES
+• Gewohnheiten tragen die App. Solange es eine unvermeidbare tägliche Gewohnheit gibt, öffnest du Checkfuchs jeden Tag – und deine terminierten Aufgaben und dein Rückstand laufen mit, ohne stillschweigend zu verschwinden.
+• «Nicht erledigt» sind Daten, kein Urteil. Eine verpasste Gewohnheit verblasst einfach – sie nörgelt nie und wird nie rot. Der einzige echte Fehlschlag ist eine harte Frist, die du verstreichen lässt. Etwas getan, aber vergessen einzutragen? Trag es nachträglich als erledigt ein.
+• Linsen und Ansichten – sieh deine Aufgaben, wie du willst. Eine Linse wählt und ordnet einen Ausschnitt deiner Aufgaben: alle täglichen Gewohnheiten, eine Hausarbeit pro Woche, die nächsten Fälligkeiten. Eine Ansicht ordnet die Linsen, die dir wichtig sind, zu einem Bildschirm – ein ruhiger Start, ein detaillierter Gewohnheits-Tracker, ein langfristiger Rückstand. Keine starren Kategorien; Regler, die du einstellst.
+• Gewohnheiten und To-dos sind ein Objekt. Eine einmalige Aufgabe wird mit zwei Tipps zur Serie. «Jeden zweiten Samstag» und «am 25. jedes Monats» sind einfach. Diesen Termin oder die ganze Serie bearbeiten funktioniert wie im Kalender.
+• Zeitfenster, die zu echten Tagen passen. Nachts, morgens, nachmittags, abends – oder «morgens oder abends», einmal erledigt in einem davon – plus eigene Zeitbänder.
+• Erinnerungen nach deinem Geschmack. Wenn es losgeht, vor der Fälligkeit, bei Fälligkeit oder «2 Tage vorher um 18:00».
+• Statistiken, die du zusammenstellst. Ein Statistik-Tab aus Kacheln, die du ein- und ausschaltest und ordnest: Erledigungsquote, diese Woche, Serien, nach Tageszeit, ein Gewohnheitsraster, Verpasstes nach Wochentag.
+• Ferienmodus. Pausiere deine Gewohnheiten für die Tage, an denen du weg bist – kein Berg verpasster Gewohnheiten. Echte Fristen laufen trotzdem ab.
+• Backup und Wiederherstellung. Exportiere alles als ZIP und stelle es jederzeit wieder her. Keine Cloud, kein Lock-in.
+
+RUHIG GESTALTET
+Keine Werbung, kein Abo, keine dunklen Muster. Dunkles und helles Design, vier Sprachen und eine Schriftauswahl mit Schriften für Legasthenie und Sehschwäche.
+
+DATENSCHUTZ VON ANFANG AN
+Vollständig auf dem Gerät. Keine Konten, keine Analyse, kein Server, keine Werbung, kein Abo. Jede Erinnerung wird lokal aus deinen Aufgaben berechnet – nichts verlässt je das Handy.
+
+Made in Switzerland. 🦊
