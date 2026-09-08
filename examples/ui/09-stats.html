@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — Stats view, customizable tiles</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;--field:#f3eee9;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;--missed:#a8988c;--skipped:#8c857e;--amber:#e0a33b;
+    --em1:#d6efe0;--em2:#9fd9b8;--em3:#5cc08a;--em4:#1fa85d;
+    --sh:0 12px 30px -24px rgba(0,0,0,.4);}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;--field:#2a2420;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;--missed:#b6a79b;--skipped:#9a938c;--amber:#edb45a;
+    --em1:#24402f;--em2:#2a6b45;--em3:#2f9a5f;--em4:#37ce78;
+    --sh:0 12px 30px -22px rgba(0,0,0,.7);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:1.3rem;margin:0;letter-spacing:-.02em}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit}
+  .ms{font-family:'Material Symbols Rounded';font-size:22px;line-height:1;font-variation-settings:'opsz' 24,'wght' 400,'GRAD' 0,'FILL' 0;flex:none}
+  .ms.fill{font-variation-settings:'FILL' 1}
+  .stage{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-top:18px;align-items:start}
+  @media(max-width:1000px){.stage{grid-template-columns:1fr 1fr}}
+  @media(max-width:700px){.stage{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+  .cap{font-weight:700;margin:0 0 8px;font-size:.92rem}.cap small{color:var(--muted);font-weight:500}
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;min-height:760px;box-shadow:var(--sh);display:flex;flex-direction:column}
+  .phone.short{min-height:0}
+  .ttl{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0;text-align:center;padding:18px 0 10px;position:relative}
+  .ttl .ms{position:absolute;right:16px;top:22px;color:var(--muted)}
+  .ttl .ms.back{left:16px;right:auto}
+  .body{padding:0 14px;flex:1}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ---- tile = a lens-card with a title row + drag handle ---- */
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:2px 14px 12px;margin-bottom:12px}
+  .thead{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:12px 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .thead .range{text-transform:none;letter-spacing:0;font-weight:600;font-size:.74rem;display:flex;align-items:center;gap:2px;margin-left:auto}
+  .thead .range .ms{font-size:16px}
+  .thead .grip{font-size:18px;color:var(--line);margin-left:2px}
+  .tile:hover .thead .grip{color:var(--muted)}
+
+  /* bottom nav */
+  .nav{border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 6px 12px;background:var(--bg)}
+  .nav div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.66rem;font-weight:600;color:var(--muted);width:60px}
+  .nav div .ms{font-size:20px;padding:4px 14px;border-radius:999px}
+  .nav div.on{color:var(--ink)}
+  .nav div.on .ms{background:color-mix(in srgb,var(--indigo) 20%,transparent);color:var(--indigo)}
+
+  /* completion pair */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 6px}
+  .stat{background:var(--field);border-radius:14px;padding:10px 12px}
+  .stat b{display:block;font-size:1.5rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+  .stat span{font-size:.72rem;color:var(--muted);font-weight:600}
+  .stat .delta{font-size:.7rem;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:2px;margin-left:6px}
+  .stat .delta .ms{font-size:14px}
+  /* week strip */
+  .strip{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:8px 0}
+  .strip+.strip{border-top:1px solid var(--line)}
+  .strip .n{font-weight:600;font-size:.9rem;flex:1}
+  .strip .w{display:flex;gap:6px}
+  .strip .st{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
+  .dayhead{display:grid;grid-template-columns:1fr auto;gap:10px;padding:2px 0 0}
+  .dayhead .w{display:flex;gap:6px}
+  .dayhead .w span{width:14px;text-align:center;font-size:.62rem;font-weight:700;color:var(--muted)}
+  .dayhead .st{min-width:28px}
+  /* day marks: shape + colour, never colour alone */
+  .d{width:14px;height:14px;border-radius:999px;display:block;position:relative}
+  .d.done{background:var(--emerald)}
+  .d.done:after{content:"";position:absolute;left:4px;top:3px;width:4px;height:6px;border:solid var(--card);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .d.skip{border:2px solid var(--skipped)}
+  .d.skip:after{content:"";position:absolute;left:2px;right:2px;top:4px;height:2px;background:var(--skipped)}
+  .d.miss{border:2px dashed var(--missed)}
+  .d.open{border:2px solid var(--orange)}
+  .d.pend{border:1.5px solid var(--line)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 0 0;font-size:.68rem;color:var(--muted);font-weight:600}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend .d{width:11px;height:11px}
+  .legend .d.done:after{left:3px;top:2px;width:3px;height:5px}
+  /* streaks */
+  .streaks .r{display:flex;align-items:center;gap:10px;padding:9px 0}
+  .streaks .r+.r{border-top:1px solid var(--line)}
+  .streaks .n{flex:1;font-weight:600;font-size:.9rem}
+  .streaks .fl{color:var(--orange);font-size:18px}
+  .streaks .v{font-weight:700;font-variant-numeric:tabular-nums}
+  .streaks .v small{color:var(--muted);font-weight:600;font-size:.72rem;margin-left:4px}
+  /* by-window bars */
+  .bars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;padding:4px 0}
+  .bars .l{font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:6px}
+  .bars .l .ms{font-size:16px;color:var(--muted)}
+  .bars .track{height:10px;background:var(--field);border-radius:0 4px 4px 0;position:relative}
+  .bars .track i{position:absolute;left:0;top:0;bottom:0;background:var(--emerald);border-radius:0 4px 4px 0;display:block}
+  .bars .v{font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+
+  /* ---- Edit tiles: switch rows with drag handles ---- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:12px}
+  .row{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:56px}
+  .row+.row{border-top:1px solid var(--line)}
+  .row .grip{color:var(--muted);font-size:20px}
+  .row .lab{flex:1;line-height:1.25}
+  .row .lab b{display:block;font-weight:600;font-size:.92rem}
+  .row .lab span{font-size:.74rem;color:var(--muted)}
+  .row.off .lab b{color:var(--muted);font-weight:500}
+  .row .ic{color:var(--muted);font-size:20px}
+  .sw{width:44px;height:26px;border-radius:999px;background:var(--line);position:relative;flex:none}
+  .sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .sw.on{background:var(--indigo)}
+  .sw.on:after{left:21px}
+  .sec{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 4px 6px}
+  .hint{font-size:.76rem;color:var(--muted);padding:0 4px 12px;line-height:1.4}
+  .sett .row .lab span{display:block}
+  .sett .row .ms.chev{color:var(--muted);font-size:20px}
+
+  .note{color:var(--muted);font-size:.82rem;margin-top:14px;max-width:74ch}
+  .note b{color:var(--ink)}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 Stats view — customizable tiles</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="stage">
+
+    <!-- ===== 1: the Stats view, 4 tiles on ===== -->
+    <div>
+      <p class="cap">Stats <small>· 4 of 7 tiles on, in the user's order</small></p>
+      <div class="phone">
+        <p class="ttl">Stats<span class="ms">tune</span></p>
+        <div class="body">
+
+          <div class="tile">
+            <div class="thead"><span>Completion</span><span class="range">30 days<span class="ms">expand_more</span></span><span class="ms grip">drag_indicator</span></div>
+            <div class="pair">
+              <div class="stat"><span>Last 7 days</span><b class="num">86%<span class="delta"><span class="ms">arrow_upward</span>4</span></b></div>
+              <div class="stat"><span>Last 30 days</span><b class="num">79%</b></div>
+            </div>
+            <div style="font-size:.76rem;color:var(--muted)">24 done · 3 skipped · 4 missed of 31 windows this week</div>
+          </div>
+
+          <div class="tile">
+            <div class="thead"><span>This week</span><span class="range">Mon 1 – Sun 7 Sep</span><span class="ms grip">drag_indicator</span></div>
+            <div class="dayhead"><span></span><div class="w"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span class="st"></span></div></div>
+            <div class="strip"><span class="n">Brush teeth</span><div class="w"><i class="d done"></i><i class="d done"></i><i class="d done"></i><i class="d done"></i><i class="d done"></i><i class="d done"></i><i class="d open"></i><span class="st">6/6</span></div></div>
+            <div class="strip"><span class="n">Journal</span><div class="w"><i class="d done"></i><i class="d miss"></i><i class="d done"></i><i class="d done"></i><i class="d skip"></i><i class="d miss"></i><i class="d open"></i><span class="st">3/6</span></div></div>
+            <div class="strip"><span class="n">Stretch</span><div class="w"><i class="d done"></i><i class="d done"></i><i class="d skip"></i><i class="d done"></i><i class="d done"></i><i class="d done"></i><i class="d done"></i><span class="st">6/7</span></div></div>
+            <div class="strip"><span class="n">Water plants</span><div class="w"><i class="d pend"></i><i class="d pend"></i><i class="d done"></i><i class="d pend"></i><i class="d pend"></i><i class="d done"></i><i class="d pend"></i><span class="st">2/2</span></div></div>
+            <div class="strip"><span class="n">Vacuum</span><div class="w"><i class="d pend"></i><i class="d pend"></i><i class="d pend"></i><i class="d pend"></i><i class="d pend"></i><i class="d pend"></i><i class="d open"></i><span class="st">0/1</span></div></div>
+            <div class="legend"><span><i class="d done"></i>Done</span><span><i class="d skip"></i>Skipped</span><span><i class="d miss"></i>Missed</span><span><i class="d open"></i>Open</span><span><i class="d pend"></i>No window</span></div>
+          </div>
+
+          <div class="tile streaks">
+            <div class="thead"><span>Streaks</span><span class="ms grip">drag_indicator</span></div>
+            <div class="r"><span class="ms fill fl">local_fire_department</span><span class="n">Brush teeth</span><span class="v num">41<small>days · best 41</small></span></div>
+            <div class="r"><span class="ms fill fl">local_fire_department</span><span class="n">Stretch</span><span class="v num">5<small>days · best 12</small></span></div>
+            <div class="r"><span class="ms fl" style="color:var(--muted)">local_fire_department</span><span class="n">Journal</span><span class="v num">0<small>days · best 9</small></span></div>
+          </div>
+
+          <div class="tile">
+            <div class="thead"><span>By window</span><span class="range">Done rate · 30 days</span><span class="ms grip">drag_indicator</span></div>
+            <div class="bars">
+              <span class="l"><span class="ms">bedtime</span>Night</span><div class="track"><i style="width:0%"></i></div><span class="v">—</span>
+              <span class="l"><span class="ms">wb_twilight</span>Morning</span><div class="track"><i style="width:94%"></i></div><span class="v num">94%</span>
+              <span class="l"><span class="ms">light_mode</span>Afternoon</span><div class="track"><i style="width:88%"></i></div><span class="v num">88%</span>
+              <span class="l"><span class="ms">nights_stay</span>Evening</span><div class="track"><i style="width:61%"></i></div><span class="v num">61%</span>
+            </div>
+          </div>
+          <div style="height:8px"></div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">home</span>Home</div>
+          <div><span class="ms">event_repeat</span>Habits</div>
+          <div><span class="ms">inbox</span>Long-term</div>
+          <div class="on"><span class="ms">insights</span>Stats</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 2: Edit tiles ===== -->
+    <div>
+      <p class="cap">Edit tiles <small>· switch each on/off, drag to reorder</small></p>
+      <div class="phone">
+        <p class="ttl"><span class="ms back">arrow_back</span>Edit tiles</p>
+        <div class="body">
+          <p class="hint">Tiles you switch on appear on Stats in this order. Drag the handle to reorder. New tiles land here as they ship.</p>
+          <div class="card">
+            <div class="row"><span class="ms grip">drag_indicator</span><span class="ms ic">percent</span><span class="lab"><b>Completion</b><span>7-day and 30-day done rate</span></span><span class="sw on"></span></div>
+            <div class="row"><span class="ms grip">drag_indicator</span><span class="ms ic">date_range</span><span class="lab"><b>This week</b><span>One dot per day, per habit</span></span><span class="sw on"></span></div>
+            <div class="row"><span class="ms grip">drag_indicator</span><span class="ms ic">local_fire_department</span><span class="lab"><b>Streaks</b><span>Current and best, per habit</span></span><span class="sw on"></span></div>
+            <div class="row"><span class="ms grip">drag_indicator</span><span class="ms ic">schedule</span><span class="lab"><b>By window</b><span>Done rate for night, morning, afternoon, evening</span></span><span class="sw on"></span></div>
+            <div class="row off"><span class="ms grip">drag_indicator</span><span class="ms ic">lightbulb</span><span class="lab"><b>Insight</b><span>One sentence about your pattern</span></span><span class="sw"></span></div>
+            <div class="row off"><span class="ms grip">drag_indicator</span><span class="ms ic">grid_on</span><span class="lab"><b>Habit grid</b><span>30-day heatmap per habit</span></span><span class="sw"></span></div>
+            <div class="row off"><span class="ms grip">drag_indicator</span><span class="ms ic">bar_chart</span><span class="lab"><b>Misses by weekday</b><span>Which days slip, last 30 days</span></span><span class="sw"></span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">home</span>Home</div>
+          <div><span class="ms">event_repeat</span>Habits</div>
+          <div><span class="ms">inbox</span>Long-term</div>
+          <div class="on"><span class="ms">insights</span>Stats</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 3: Settings toggle ===== -->
+    <div>
+      <p class="cap">Settings <small>· "Stats tab" switch, default on</small></p>
+      <div class="phone short sett">
+        <p class="ttl">Settings</p>
+        <div class="body">
+          <div class="sec">Appearance</div>
+          <div class="card">
+            <div class="row"><span class="ms ic">contrast</span><span class="lab"><b>Appearance</b><span>System</span></span><span class="ms chev">expand_more</span></div>
+            <div class="row"><span class="ms ic">translate</span><span class="lab"><b>App language</b><span>System default</span></span><span class="ms chev">expand_more</span></div>
+            <div class="row"><span class="ms ic">text_fields</span><span class="lab"><b>Typeface</b><span>Figtree</span></span><span class="ms chev">expand_more</span></div>
+            <div class="row"><span class="ms ic">insights</span><span class="lab"><b>Stats tab</b><span>Show Stats in the bottom bar</span></span><span class="sw on"></span></div>
+          </div>
+          <div class="sec">Library</div>
+          <div class="card">
+            <div class="row"><span class="ms ic">task_alt</span><span class="lab"><b>All tasks</b></span><span class="ms chev">chevron_right</span></div>
+            <div class="row"><span class="ms ic">filter_alt</span><span class="lab"><b>All lenses</b></span><span class="ms chev">chevron_right</span></div>
+            <div class="row"><span class="ms ic">dashboard</span><span class="lab"><b>All views</b></span><span class="ms chev">chevron_right</span></div>
+          </div>
+          <div style="height:8px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note"><b>One Stats screen, made of tiles.</b> Every tile is a lens-card with a small uppercase title and a drag handle; the <span class="ms" style="font-size:14px;vertical-align:-2px">tune</span> in the title bar opens <b>Edit tiles</b>, a switch list in display order — off tiles sit at the bottom, and new tiles can be appended later without touching the screen. Seven tiles to start: Completion, This week, Streaks, Insight, Habit grid, By window, Misses by weekday (the last three carry the same marks as before: emerald heatmap, per-window bars, amber-highlighted weekday columns). The palette law holds inside each tile: a miss is a dashed taupe outline, never red; skipped is a struck grey ring; only <em>done</em> gets colour, and every state also differs by shape. Stats is a View in the nav; the <b>Stats tab</b> switch in Settings (default on) only hides the tab — the tiles and their order are kept.</p>
+</div></body></html>

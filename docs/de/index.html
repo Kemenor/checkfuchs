@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkfuchs — Gewohnheiten & To-dos, eine ruhige Oberfläche</title>
+  <meta name="description" content="Eine kombinierte Gewohnheits- und To-do-App für alle, die starre Systeme wieder fallen lassen. Local-first, keine Konten, kein Nörgeln. Verpasst ist ein Datenpunkt, kein Urteil.">
+  <meta property="og:title" content="Checkfuchs">
+  <meta property="og:description" content="Gewohnheiten und To-dos sind eine Sache. Eine ruhige, local-first App — keine Konten, kein Nörgeln.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://checkfuchs.fuchsnest.ch/de/">
+  <link rel="alternate" hreflang="en" href="https://checkfuchs.fuchsnest.ch/">
+  <link rel="alternate" hreflang="de" href="https://checkfuchs.fuchsnest.ch/de/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#faf7f4; --card:#fff; --ink:#221d1a; --muted:#7a6f68; --line:#ece4dd;
+      --orange:#ea7a24; --orange-soft:#f0883e; --indigo:#8559d0; --emerald:#1fa85d;
+      --missed:#a8988c; --amber:#e0a33b;
+      --sh:0 24px 60px -34px rgba(0,0,0,.45); --fab:0 8px 18px -8px rgba(234,122,36,.55);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#161311; --card:#211c19; --ink:#f3ede9; --muted:#a99e96; --line:#322a25;
+        --orange:#f39c4e; --orange-soft:#f3a55f; --indigo:#a98cee; --emerald:#37ce78;
+        --missed:#b6a79b; --amber:#edb45a;
+        --sh:0 24px 60px -30px rgba(0,0,0,.8); --fab:0 8px 20px -8px rgba(243,156,78,.5);
+      }
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Figtree',system-ui,sans-serif;color:var(--ink);line-height:1.6;
+      background:radial-gradient(1100px 520px at 78% -8%, rgba(234,122,36,.13), transparent 60%) var(--bg);}
+    .ms{font-family:'Material Symbols Rounded';line-height:1;font-variation-settings:'opsz' 24,'wght' 400,'GRAD' 0,'FILL' 0;flex:none}
+    .ms.fill{font-variation-settings:'FILL' 1}
+    .wrap{max-width:1060px;margin:0 auto;padding:28px 22px}
+
+    nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;letter-spacing:-.02em}
+    .brand .fox{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:19px;
+      background:linear-gradient(150deg,var(--orange-soft),var(--orange));box-shadow:var(--fab)}
+    .navbtns{display:flex;gap:8px}
+    .ghbtn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-weight:700;font-size:.9rem;
+      color:var(--ink);border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:11px}
+
+    .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;padding:30px 0 50px}
+    @media(max-width:820px){.hero{grid-template-columns:1fr;gap:30px;text-align:center}}
+    .badge{display:inline-block;font-size:.78rem;font-weight:700;color:var(--orange);
+      background:color-mix(in srgb,var(--orange) 13%,transparent);border:1px solid color-mix(in srgb,var(--orange) 26%,transparent);
+      padding:4px 12px;border-radius:999px;margin-bottom:18px}
+    h1{font-size:2.7rem;line-height:1.08;letter-spacing:-.03em;margin:0 0 14px}
+    h1 .accent{color:var(--orange)}
+    .lead{font-size:1.12rem;color:var(--muted);margin:0 0 24px;max-width:34ch}
+    @media(max-width:820px){.lead{margin-inline:auto}}
+    .cta{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;
+      color:#fff;background:var(--orange);padding:13px 22px;border-radius:13px;box-shadow:var(--fab)}
+    @media (prefers-color-scheme: dark){.cta{color:#1a1411}}
+
+    /* phone mockup */
+    .phonewrap{display:flex;justify-content:center}
+    .phone{width:300px;background:var(--bg);border:1px solid var(--line);border-radius:30px;padding:0 0 16px;
+      box-shadow:var(--sh);overflow:hidden}
+    .tabs{display:flex;gap:2px;padding:16px 14px 0;overflow:hidden}
+    .tab{font-size:.82rem;font-weight:700;color:var(--muted);padding:8px 10px 12px;white-space:nowrap;position:relative}
+    .tab.on{color:var(--ink)}
+    .tab.on:after{content:"";position:absolute;left:8px;right:8px;bottom:6px;height:3px;border-radius:99px;background:var(--orange)}
+    .pbody{padding:6px 14px 0}
+    .date{color:var(--muted);font-size:.8rem;margin:6px 2px 12px;text-align:left}
+    .lcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:2px 14px 6px;margin-bottom:11px}
+    .lhead{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+      padding:11px 0 6px;display:flex;justify-content:space-between}
+    .row{display:flex;align-items:center;gap:11px;min-height:50px;text-align:left}
+    .row+.row{border-top:1px solid var(--line)}
+    .row .ms{font-size:21px}
+    .nm{flex:1;font-weight:600;font-size:.92rem}
+    .hint{font-size:.76rem;color:var(--muted)}
+    .missed .nm{color:var(--missed);text-decoration:line-through}
+    .pill{font-size:.64rem;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--orange);
+      background:color-mix(in srgb,var(--orange) 15%,transparent)}
+    .pill.due{color:var(--amber);background:color-mix(in srgb,var(--amber) 18%,transparent)}
+    .pill.foc{color:var(--indigo);background:color-mix(in srgb,var(--indigo) 16%,transparent)}
+    .fabm{display:flex;align-items:center;gap:7px;width:max-content;margin:6px 2px 0;
+      background:var(--orange);color:#fff;font-weight:700;padding:11px 18px;border-radius:999px;box-shadow:var(--fab);font-size:.9rem}
+    @media (prefers-color-scheme: dark){.fabm{color:#1a1411}}
+
+    /* idea grid */
+    .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700;text-align:center;margin:20px 0 6px}
+    .section-sub{text-align:center;font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 28px}
+    .ideas{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding-bottom:20px}
+    @media(max-width:680px){.ideas{grid-template-columns:1fr}}
+    .idea{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+    .idea .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;margin-bottom:12px;color:#fff}
+    @media (prefers-color-scheme: dark){.idea .ic{color:#1a1411}}
+    .idea h3{margin:0 0 6px;font-size:1.05rem}
+    .idea p{margin:0;color:var(--muted);font-size:.95rem}
+
+    footer{border-top:1px solid var(--line);margin-top:24px;padding:26px 0 10px;text-align:center;color:var(--muted);font-size:.9rem}
+    footer a{color:inherit}
+    .priv{max-width:52ch;margin:0 auto 16px}
+
+    .shot{width:300px;max-width:88vw;border-radius:28px;border:1px solid var(--line);box-shadow:0 24px 60px -30px rgba(0,0,0,.45);display:block}
+    .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-bottom:30px}
+    @media(max-width:680px){.gallery{grid-template-columns:repeat(2,1fr)}}
+    .gallery figure{margin:0}
+    .gallery img{width:100%;border-radius:18px;border:1px solid var(--line);display:block}
+    .gallery figcaption{font-size:.82rem;color:var(--muted);text-align:center;margin-top:8px}
+    .stores{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;color:var(--muted);font-size:.9rem}
+    @media(max-width:820px){.stores{justify-content:center}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="brand"><span class="fox">🦊</span> Checkfuchs</div>
+    <div class="navbtns">
+      <a class="ghbtn" href="../" lang="en">English</a>
+      <a class="ghbtn" href="https://github.com/Kemenor/checkfuchs"><span class="ms" style="font-size:18px">code</span> GitHub</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <span class="badge">Bald bei Google Play &amp; im App Store</span>
+      <h1>Gewohnheiten und To-dos sind <span class="accent">eine Sache</span>.</h1>
+      <p class="lead">Eine ruhige Gewohnheits- und To-do-App für alle, die starre Systeme wieder fallen lassen. Eine Oberfläche für beides — deine Daten bleiben auf deinem Handy. Keine Konten, kein Nörgeln.</p>
+      <a class="cta" href="https://github.com/Kemenor/checkfuchs">Auf GitHub mitverfolgen <span class="ms" style="font-size:19px">arrow_forward</span></a>
+      <p class="stores">Gratis. Keine Werbung, kein Abo, kein Konto. Die Store-Links erscheinen hier zum Release.</p>
+    </div>
+    <div class="phonewrap">
+      <picture>
+        <source srcset="../img/home-dark-de.png" media="(prefers-color-scheme: dark)">
+        <img class="shot" src="../img/home-de.png" alt="Checkfuchs Start: tägliche Gewohnheiten und To-dos" width="300" height="667">
+      </picture>
+    </div>
+  </section>
+
+  <p class="section-title">Die Idee</p>
+  <h2 class="section-sub">Eine To-do-App, die an einem vollen Tag nicht stirbt.</h2>
+  <div class="ideas">
+    <div class="idea"><div class="ic" style="background:var(--orange)"><span class="ms fill">repeat</span></div>
+      <h3>Gewohnheiten tragen die App</h3>
+      <p>Eine unvermeidbare tägliche Gewohnheit bringt dich jeden Tag in die App — und deine terminierten Aufgaben und dein Backlog reisen mit, statt still zu verschwinden.</p></div>
+    <div class="idea"><div class="ic" style="background:var(--missed)"><span class="ms">spa</span></div>
+      <h3>«Nicht erledigt» ist ein Datenpunkt, kein Urteil</h3>
+      <p>Eine verpasste Gewohnheit <em>verblasst</em> einfach — sie nörgelt nie und färbt nichts rot. Der einzige echte Fehlschlag ist eine harte Deadline, die verstreicht.</p></div>
+    <div class="idea"><div class="ic" style="background:var(--indigo)"><span class="ms fill">center_focus_strong</span></div>
+      <h3>Linsen &amp; Ansichten</h3>
+      <p>Eine Linse wählt und ordnet einen Ausschnitt deiner Aufgaben; eine Ansicht arrangiert die Linsen, die dir wichtig sind, zu einem Bildschirm. Ein ruhiger Start, ein detaillierter Tracker — Regler, die du stellst, keine starren Kategorien.</p></div>
+    <div class="idea"><div class="ic" style="background:var(--emerald)"><span class="ms fill">event_repeat</span></div>
+      <h3>Ein Objekt, kalenderklug</h3>
+      <p>Aus einer einmaligen Aufgabe wird in zwei Tipps eine Serie; «jeden zweiten Samstag» ist einfach; nur diesen Termin oder die ganze Serie bearbeiten funktioniert wie im Kalender — keine Überraschungen hinter deinem Rücken.</p></div>
+    <div class="idea"><div class="ic" style="background:var(--orange-soft)"><span class="ms fill">schedule</span></div>
+      <h3>Zeitfenster und Erinnerungen für echte Tage</h3>
+      <p>Nachts, morgens, nachmittags, abends — oder «morgens <em>oder</em> abends», einmal erledigt in einem davon — plus eigene Zeitbänder. Erinnerungen wenn es losgeht, vor der Fälligkeit oder «2 Tage vorher um 18:00».</p></div>
+    <div class="idea"><div class="ic" style="background:var(--indigo)"><span class="ms fill">insights</span></div>
+      <h3>Statistiken, die du zusammenstellst</h3>
+      <p>Ein Statistik-Tab aus Kacheln, die du ein- und ausschaltest und ordnest: Erledigungsquote, diese Woche, Serien, nach Tageszeit, ein Gewohnheitsraster, Verpasstes nach Wochentag. Nichts, was du nicht wolltest.</p></div>
+  </div>
+
+  <p class="section-title">Ein Blick hinein</p>
+  <h2 class="section-sub">Vier Bildschirme, keine Tour nötig.</h2>
+  <div class="gallery">
+    <figure><img src="../img/habits-de.png" alt="Ansicht Gewohnheiten" loading="lazy"><figcaption>Gewohnheiten</figcaption></figure>
+    <figure><img src="../img/create-de.png" alt="Neue Aufgabe mit Morgen- und Abendfenster" loading="lazy"><figcaption>Zeitfenster &amp; Erinnerungen</figcaption></figure>
+    <figure><img src="../img/stats-de.png" alt="Statistik-Kacheln" loading="lazy"><figcaption>Statistik</figcaption></figure>
+    <figure><img src="../img/edit-view-de.png" alt="Ansicht bearbeiten" loading="lazy"><figcaption>Linsen-Regler</figcaption></figure>
+  </div>
+
+  <footer>
+    <p class="priv">Alles auf dem Gerät — keine Konten, keine Analyse, kein Server, keine Werbung. Dunkel + hell, vier Sprachen und eine Schriftauswahl mit Schriften für Legasthenie und schwache Augen. Teil der <a href="https://fuchsnest.ch/de/">Fuchsnest-Familie</a>.</p>
+    <p><a href="https://checkfuchs.fuchsnest.ch/de/">checkfuchs.fuchsnest.ch</a> · <a href="https://github.com/Kemenor/checkfuchs">Quellcode</a> · <a href="https://github.com/Kemenor/checkfuchs/tree/main/examples/ui">Mockups</a> · <a href="../privacy-de.html">Datenschutz</a></p>
+  </footer>
+</div>
+</body>
+</html>

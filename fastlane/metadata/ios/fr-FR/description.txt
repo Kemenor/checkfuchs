@@ -1,0 +1,22 @@
+Checkfuchs est une app d’habitudes et de tâches pour celles et ceux qui abandonnent les systèmes rigides. Une seule surface pour les deux — parce qu’une habitude quotidienne impossible à sauter (se brosser les dents) est ce qui vous fait ouvrir l’app chaque jour, et ce coup d’œil quotidien garde tout le reste visible.
+
+Créée parce que les apps d’habitudes et les apps de tâches coupent un même objet mental en deux — et les apps de tâches pures meurent dès qu’une journée chargée arrive et que rien n’est coché.
+
+COMMENT ÇA MARCHE
+• Les habitudes portent l’app. Tant qu’une habitude quotidienne incontournable existe, vous ouvrez Checkfuchs chaque jour — et vos tâches datées et votre arriéré suivent, sans jamais disparaître en silence.
+• « Pas fait » est une donnée, pas un verdict. Une habitude manquée s’efface simplement — elle ne harcèle jamais et ne vire jamais au rouge. Le seul vrai échec est une échéance ferme que vous laissez passer. Oublié de noter quelque chose que vous avez fait ? Marquez-le fait après coup.
+• Lentilles et vues — regardez vos tâches à votre façon. Une lentille choisit et ordonne une tranche de vos tâches : toutes vos habitudes quotidiennes, une corvée par semaine à grignoter, les prochaines échéances. Une vue dispose les lentilles qui comptent pour vous en un écran — un Accueil calme, un suivi Habitudes détaillé, un arriéré Long terme. Pas de catégories rigides ; des réglages que vous choisissez.
+• Habitudes et tâches sont un seul objet. Une tâche ponctuelle devient une série en deux touches. « Un samedi sur deux » et « le 25 de chaque mois » sont faciles. Modifier cette occurrence ou toute la série fonctionne comme dans un calendrier.
+• Des créneaux adaptés aux vraies journées. Nuit, matin, après-midi, soir — ou « matin ou soir », fait une fois dans l’un des deux — plus vos propres plages horaires.
+• Des rappels à votre façon. À l’ouverture, avant l’échéance, à l’échéance, ou « 2 jours avant à 18:00 ».
+• Des statistiques que vous composez. Un onglet Stats fait de tuiles que vous activez et réordonnez : taux de réussite, cette semaine, séries, par moment de la journée, une grille d’habitudes, les oublis par jour de la semaine.
+• Mode vacances. Mettez vos habitudes en pause pour les dates où vous êtes absent — pas d’accumulation d’habitudes manquées. Les vraies échéances passent quand même.
+• Sauvegarde et restauration. Exportez tout dans un ZIP et restaurez-le quand vous voulez. Pas de cloud, pas de verrou.
+
+CALME PAR CONCEPTION
+Pas de pub, pas d’abonnement, pas de manipulation. Thèmes sombre et clair, quatre langues, et un choix de polices incluant des polices adaptées à la dyslexie et à la basse vision.
+
+CONFIDENTIALITÉ PAR CONCEPTION
+Entièrement sur l’appareil. Pas de compte, pas d’analyse, pas de serveur, pas de pub, pas d’abonnement. Chaque rappel est calculé localement à partir de vos tâches — rien ne quitte jamais le téléphone.
+
+Fabriqué en Suisse. 🦊
