@@ -89,7 +89,10 @@ class _Tiles extends StatelessWidget {
       );
     }
     return ListView(
-      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      padding: EdgeInsets.only(
+        top: 4,
+        bottom: 24 + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
         for (final t in tiles)
           _Tile(

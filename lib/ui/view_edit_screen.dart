@@ -50,7 +50,9 @@ class ViewEditScreen extends ConsumerWidget {
       body: (view == null || lenses == null)
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(
+                bottom: 24 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [
                 FuchsbauSectionHeader(l10n.viewSection),
                 FuchsbauSettingsCard(
@@ -154,7 +156,10 @@ class LensEditScreen extends ConsumerWidget {
       body: entry == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.only(top: 12, bottom: 24),
+              padding: EdgeInsets.only(
+                top: 12,
+                bottom: 24 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [
                 if (viewId == null)
                   FuchsbauSettingsCard(

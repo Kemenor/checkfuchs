@@ -145,7 +145,9 @@ class _TaskSectionsState extends ConsumerState<_TaskSections> {
         : [(l10n.openSection, open)];
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: EdgeInsets.only(
+        bottom: 24 + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
         for (final (header, items) in openBlocks)
           if (items.isNotEmpty) section(header, items.toList()),
@@ -180,7 +182,10 @@ class AllLensesScreen extends ConsumerWidget {
           : lenses.isEmpty
           ? Center(child: Text(l10n.emptyTitle))
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.only(
+                top: 12,
+                bottom: 12 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [
                 FuchsbauSettingsCard(
                   children: [
@@ -229,7 +234,10 @@ class AllViewsScreen extends ConsumerWidget {
           : views.isEmpty
           ? Center(child: Text(l10n.emptyTitle))
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.only(
+                top: 12,
+                bottom: 12 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [
                 FuchsbauSettingsCard(
                   children: [

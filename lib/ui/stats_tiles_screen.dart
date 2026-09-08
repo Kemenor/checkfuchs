@@ -43,7 +43,10 @@ class StatsTilesScreen extends ConsumerWidget {
           ),
           Expanded(
             child: ReorderableListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.only(
+                top: 8,
+                bottom: 8 + MediaQuery.paddingOf(context).bottom,
+              ),
               buildDefaultDragHandles: false,
               itemCount: all.length,
               onReorderItem: (from, to) {
