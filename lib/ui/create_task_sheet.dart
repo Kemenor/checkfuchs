@@ -59,7 +59,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   Recurrence? _recurrence;
   WindowChoice _window = WindowChoice.anytime;
   Set<ReminderPreset> _reminders = const {};
-  late int? _lensId = widget.lensId;
+  late Set<int> _lensIds = {if (widget.lensId != null) widget.lensId!};
   DateTime? _startDate;
   DateTime? _dueDate;
 
@@ -69,12 +69,12 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     // Default bucket when none was preselected: the first lens of the view
     // the sheet was opened from.
     final viewId = widget.viewId;
-    if (_lensId == null && viewId != null) {
+    if (_lensIds.isEmpty && viewId != null) {
       ref.read(viewRepositoryProvider).watchViewLenses(viewId).first.then((
         entries,
       ) {
-        if (mounted && _lensId == null && entries.isNotEmpty) {
-          setState(() => _lensId = entries.first.lens.id);
+        if (mounted && _lensIds.isEmpty && entries.isNotEmpty) {
+          setState(() => _lensIds = {entries.first.lens.id});
         }
       });
     }
@@ -102,7 +102,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           createdAt: now,
           notifications: notifications,
         ),
-        defaultLensId: _lensId,
+        lensIds: _lensIds,
       );
     } else {
       final (start, end) = _window.datedWindow(now, _startDate, _dueDate);
@@ -114,7 +114,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           createdAt: now,
           notifications: notifications,
         ),
-        lensId: _lensId,
+        lensIds: _lensIds,
       );
     }
     await repo.reconcileAll(now);
@@ -150,9 +150,10 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              // The bucket: which lens this task lives in (concept §4.6 —
-              // membership is data; views merely arrange lenses). Scoped to
-              // the current view's lenses — the detail sheet can move a task
+              // The buckets: which lenses this task lives in (concept §4.6 —
+              // membership is data; views merely arrange lenses). Multi-select,
+              // never empty (a task in no lens is invisible). Scoped to the
+              // current view's lenses — the detail sheet can move a task
               // anywhere later.
               ...switch (widget.viewId == null
                   ? ref.watch(_lensesProvider).asData?.value
@@ -169,10 +170,16 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                     spacing: 8,
                     children: [
                       for (final lens in lenses)
-                        ChoiceChip(
+                        FilterChip(
                           label: Text(lens.name),
-                          selected: _lensId == lens.id,
-                          onSelected: (_) => setState(() => _lensId = lens.id),
+                          selected: _lensIds.contains(lens.id),
+                          onSelected: (on) => setState(() {
+                            if (on) {
+                              _lensIds = {..._lensIds, lens.id};
+                            } else if (_lensIds.length > 1) {
+                              _lensIds = {..._lensIds}..remove(lens.id);
+                            }
+                          }),
                         ),
                     ],
                   ),

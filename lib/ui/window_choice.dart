@@ -1,17 +1,20 @@
 import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 
-/// The friendly active-window picker (Anytime / Morning / Afternoon / Evening)
+/// The friendly active-window picker (Anytime / Night / Morning / Afternoon /
+/// Evening)
 /// over the general [WindowRule] — shared by the create-task sheet and the
 /// first-run onboarding sheet.
 enum WindowChoice {
   anytime,
+  night,
   morning,
   afternoon,
   evening;
 
   String label(AppLocalizations l10n) => switch (this) {
     WindowChoice.anytime => l10n.windowAnytime,
+    WindowChoice.night => l10n.windowNight,
     WindowChoice.morning => l10n.windowMorning,
     WindowChoice.afternoon => l10n.windowAfternoon,
     WindowChoice.evening => l10n.windowEvening,
@@ -19,6 +22,7 @@ enum WindowChoice {
 
   WindowRule toRule() => switch (this) {
     WindowChoice.anytime => const UntilNextOccurrence(),
+    WindowChoice.night => Slice.night,
     WindowChoice.morning => Slice.morning,
     WindowChoice.afternoon => Slice.afternoon,
     WindowChoice.evening => Slice.evening,
@@ -30,13 +34,8 @@ enum WindowChoice {
   /// born expired: uncompletable, unskippable, and dead on arrival. Bounds are
   /// built civilly (calendar date + wall-clock time), so they're DST-safe.
   (DateTime?, DateTime?) oneOffWindow(DateTime now) {
-    final (int fromHour, int toHour) = switch (this) {
-      WindowChoice.anytime => (0, 0),
-      WindowChoice.morning => (0, 12),
-      WindowChoice.afternoon => (12, 18),
-      WindowChoice.evening => (18, 24),
-    };
     if (this == WindowChoice.anytime) return (null, null);
+    final (fromHour, toHour) = _hours;
 
     DateTime at(DateTime d, int hour) =>
         DateTime(d.year, d.month, d.day + (hour ~/ 24), hour % 24);
@@ -60,12 +59,7 @@ enum WindowChoice {
     DateTime? startDate,
     DateTime? dueDate,
   ) {
-    final (int fromHour, int toHour) = switch (this) {
-      WindowChoice.anytime => (0, 24),
-      WindowChoice.morning => (0, 12),
-      WindowChoice.afternoon => (12, 18),
-      WindowChoice.evening => (18, 24),
-    };
+    final (fromHour, toHour) = this == WindowChoice.anytime ? (0, 24) : _hours;
     DateTime at(DateTime d, int hour) =>
         DateTime(d.year, d.month, d.day + (hour ~/ 24), hour % 24);
 
@@ -75,4 +69,13 @@ enum WindowChoice {
       dueDate == null ? defaultEnd : at(dueDate, toHour),
     );
   }
+
+  /// The wall-clock band (from, to) in hours — mirrors the [Slice] presets.
+  (int, int) get _hours => switch (this) {
+    WindowChoice.anytime => (0, 24),
+    WindowChoice.night => (0, 6),
+    WindowChoice.morning => (6, 12),
+    WindowChoice.afternoon => (12, 18),
+    WindowChoice.evening => (18, 24),
+  };
 }

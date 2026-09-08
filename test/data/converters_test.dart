@@ -63,7 +63,7 @@ void main() {
 
     test('Slice.morning keeps its offsets', () {
       final w = roundTrip(Slice.morning) as Slice;
-      expect(w.from, Duration.zero);
+      expect(w.from, const Duration(hours: 6));
       expect(w.to, const Duration(hours: 12));
     });
 

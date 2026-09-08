@@ -2787,6 +2787,229 @@ class ViewLensCompanion extends UpdateCompanion<ViewLensRow> {
   }
 }
 
+class $TemplateLensTable extends TemplateLens
+    with TableInfo<$TemplateLensTable, TemplateLensRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplateLensTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<int> templateId = GeneratedColumn<int>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES templates (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _lensIdMeta = const VerificationMeta('lensId');
+  @override
+  late final GeneratedColumn<int> lensId = GeneratedColumn<int>(
+    'lens_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES lenses (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [templateId, lensId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'template_lens';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateLensRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('lens_id')) {
+      context.handle(
+        _lensIdMeta,
+        lensId.isAcceptableOrUnknown(data['lens_id']!, _lensIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lensIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {templateId, lensId};
+  @override
+  TemplateLensRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateLensRow(
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}template_id'],
+      )!,
+      lensId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lens_id'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplateLensTable createAlias(String alias) {
+    return $TemplateLensTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateLensRow extends DataClass implements Insertable<TemplateLensRow> {
+  final int templateId;
+  final int lensId;
+  const TemplateLensRow({required this.templateId, required this.lensId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['template_id'] = Variable<int>(templateId);
+    map['lens_id'] = Variable<int>(lensId);
+    return map;
+  }
+
+  TemplateLensCompanion toCompanion(bool nullToAbsent) {
+    return TemplateLensCompanion(
+      templateId: Value(templateId),
+      lensId: Value(lensId),
+    );
+  }
+
+  factory TemplateLensRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateLensRow(
+      templateId: serializer.fromJson<int>(json['templateId']),
+      lensId: serializer.fromJson<int>(json['lensId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'templateId': serializer.toJson<int>(templateId),
+      'lensId': serializer.toJson<int>(lensId),
+    };
+  }
+
+  TemplateLensRow copyWith({int? templateId, int? lensId}) => TemplateLensRow(
+    templateId: templateId ?? this.templateId,
+    lensId: lensId ?? this.lensId,
+  );
+  TemplateLensRow copyWithCompanion(TemplateLensCompanion data) {
+    return TemplateLensRow(
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      lensId: data.lensId.present ? data.lensId.value : this.lensId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateLensRow(')
+          ..write('templateId: $templateId, ')
+          ..write('lensId: $lensId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(templateId, lensId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateLensRow &&
+          other.templateId == this.templateId &&
+          other.lensId == this.lensId);
+}
+
+class TemplateLensCompanion extends UpdateCompanion<TemplateLensRow> {
+  final Value<int> templateId;
+  final Value<int> lensId;
+  final Value<int> rowid;
+  const TemplateLensCompanion({
+    this.templateId = const Value.absent(),
+    this.lensId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplateLensCompanion.insert({
+    required int templateId,
+    required int lensId,
+    this.rowid = const Value.absent(),
+  }) : templateId = Value(templateId),
+       lensId = Value(lensId);
+  static Insertable<TemplateLensRow> custom({
+    Expression<int>? templateId,
+    Expression<int>? lensId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (templateId != null) 'template_id': templateId,
+      if (lensId != null) 'lens_id': lensId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplateLensCompanion copyWith({
+    Value<int>? templateId,
+    Value<int>? lensId,
+    Value<int>? rowid,
+  }) {
+    return TemplateLensCompanion(
+      templateId: templateId ?? this.templateId,
+      lensId: lensId ?? this.lensId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (templateId.present) {
+      map['template_id'] = Variable<int>(templateId.value);
+    }
+    if (lensId.present) {
+      map['lens_id'] = Variable<int>(lensId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateLensCompanion(')
+          ..write('templateId: $templateId, ')
+          ..write('lensId: $lensId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VacationsTable extends Vacations
     with TableInfo<$VacationsTable, VacationRow> {
   @override
@@ -3458,6 +3681,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ViewsTable views = $ViewsTable(this);
   late final $TaskLensTable taskLens = $TaskLensTable(this);
   late final $ViewLensTable viewLens = $ViewLensTable(this);
+  late final $TemplateLensTable templateLens = $TemplateLensTable(this);
   late final $VacationsTable vacations = $VacationsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
@@ -3471,6 +3695,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     views,
     taskLens,
     viewLens,
+    templateLens,
     vacations,
     appSettings,
   ];
@@ -3510,6 +3735,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('view_lens', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'templates',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('template_lens', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'lenses',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('template_lens', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -3590,6 +3829,24 @@ final class $$LensesTableReferences
     ).filter((f) => f.lensId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_viewLensRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TemplateLensTable, List<TemplateLensRow>>
+  _templateLensRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.templateLens,
+    aliasName: 'lenses__id__template_lens__lens_id',
+  );
+
+  $$TemplateLensTableProcessedTableManager get templateLensRefs {
+    final manager = $$TemplateLensTableTableManager(
+      $_db,
+      $_db.templateLens,
+    ).filter((f) => f.lensId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_templateLensRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3714,6 +3971,31 @@ class $$LensesTableFilterComposer
           }) => $$ViewLensTableFilterComposer(
             $db: $db,
             $table: $db.viewLens,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> templateLensRefs(
+    Expression<bool> Function($$TemplateLensTableFilterComposer f) f,
+  ) {
+    final $$TemplateLensTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateLens,
+      getReferencedColumn: (t) => t.lensId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateLensTableFilterComposer(
+            $db: $db,
+            $table: $db.templateLens,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3883,6 +4165,31 @@ class $$LensesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> templateLensRefs<T extends Object>(
+    Expression<T> Function($$TemplateLensTableAnnotationComposer a) f,
+  ) {
+    final $$TemplateLensTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateLens,
+      getReferencedColumn: (t) => t.lensId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateLensTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateLens,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LensesTableTableManager
@@ -3902,6 +4209,7 @@ class $$LensesTableTableManager
             bool templatesRefs,
             bool taskLensRefs,
             bool viewLensRefs,
+            bool templateLensRefs,
           })
         > {
   $$LensesTableTableManager(_$AppDatabase db, $LensesTable table)
@@ -3966,6 +4274,7 @@ class $$LensesTableTableManager
                 templatesRefs = false,
                 taskLensRefs = false,
                 viewLensRefs = false,
+                templateLensRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -3973,6 +4282,7 @@ class $$LensesTableTableManager
                     if (templatesRefs) db.templates,
                     if (taskLensRefs) db.taskLens,
                     if (viewLensRefs) db.viewLens,
+                    if (templateLensRefs) db.templateLens,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4040,6 +4350,27 @@ class $$LensesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (templateLensRefs)
+                        await $_getPrefetchedData<
+                          LensRow,
+                          $LensesTable,
+                          TemplateLensRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LensesTableReferences
+                              ._templateLensRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LensesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).templateLensRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.lensId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4064,6 +4395,7 @@ typedef $$LensesTableProcessedTableManager =
         bool templatesRefs,
         bool taskLensRefs,
         bool viewLensRefs,
+        bool templateLensRefs,
       })
     >;
 typedef $$TemplatesTableCreateCompanionBuilder =
@@ -4128,6 +4460,24 @@ final class $$TemplatesTableReferences
     ).filter((f) => f.templateId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_tasksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TemplateLensTable, List<TemplateLensRow>>
+  _templateLensRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.templateLens,
+    aliasName: 'templates__id__template_lens__template_id',
+  );
+
+  $$TemplateLensTableProcessedTableManager get templateLensRefs {
+    final manager = $$TemplateLensTableTableManager(
+      $_db,
+      $_db.templateLens,
+    ).filter((f) => f.templateId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_templateLensRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4234,6 +4584,31 @@ class $$TemplatesTableFilterComposer
           }) => $$TasksTableFilterComposer(
             $db: $db,
             $table: $db.tasks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> templateLensRefs(
+    Expression<bool> Function($$TemplateLensTableFilterComposer f) f,
+  ) {
+    final $$TemplateLensTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateLens,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateLensTableFilterComposer(
+            $db: $db,
+            $table: $db.templateLens,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4414,6 +4789,31 @@ class $$TemplatesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> templateLensRefs<T extends Object>(
+    Expression<T> Function($$TemplateLensTableAnnotationComposer a) f,
+  ) {
+    final $$TemplateLensTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateLens,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateLensTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateLens,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TemplatesTableTableManager
@@ -4429,7 +4829,11 @@ class $$TemplatesTableTableManager
           $$TemplatesTableUpdateCompanionBuilder,
           (TemplateRow, $$TemplatesTableReferences),
           TemplateRow,
-          PrefetchHooks Function({bool defaultLensId, bool tasksRefs})
+          PrefetchHooks Function({
+            bool defaultLensId,
+            bool tasksRefs,
+            bool templateLensRefs,
+          })
         > {
   $$TemplatesTableTableManager(_$AppDatabase db, $TemplatesTable table)
     : super(
@@ -4500,63 +4904,98 @@ class $$TemplatesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({defaultLensId = false, tasksRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (tasksRefs) db.tasks],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (defaultLensId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.defaultLensId,
-                                referencedTable: $$TemplatesTableReferences
-                                    ._defaultLensIdTable(db),
-                                referencedColumn: $$TemplatesTableReferences
-                                    ._defaultLensIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                defaultLensId = false,
+                tasksRefs = false,
+                templateLensRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (tasksRefs) db.tasks,
+                    if (templateLensRefs) db.templateLens,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (defaultLensId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.defaultLensId,
+                                    referencedTable: $$TemplatesTableReferences
+                                        ._defaultLensIdTable(db),
+                                    referencedColumn: $$TemplatesTableReferences
+                                        ._defaultLensIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (tasksRefs)
+                        await $_getPrefetchedData<
+                          TemplateRow,
+                          $TemplatesTable,
+                          TaskRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TemplatesTableReferences
+                              ._tasksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TemplatesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).tasksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.templateId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (templateLensRefs)
+                        await $_getPrefetchedData<
+                          TemplateRow,
+                          $TemplatesTable,
+                          TemplateLensRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TemplatesTableReferences
+                              ._templateLensRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TemplatesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).templateLensRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.templateId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (tasksRefs)
-                    await $_getPrefetchedData<
-                      TemplateRow,
-                      $TemplatesTable,
-                      TaskRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TemplatesTableReferences
-                          ._tasksRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$TemplatesTableReferences(db, table, p0).tasksRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.templateId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4573,7 +5012,11 @@ typedef $$TemplatesTableProcessedTableManager =
       $$TemplatesTableUpdateCompanionBuilder,
       (TemplateRow, $$TemplatesTableReferences),
       TemplateRow,
-      PrefetchHooks Function({bool defaultLensId, bool tasksRefs})
+      PrefetchHooks Function({
+        bool defaultLensId,
+        bool tasksRefs,
+        bool templateLensRefs,
+      })
     >;
 typedef $$TasksTableCreateCompanionBuilder =
     TasksCompanion Function({
@@ -6158,6 +6601,352 @@ typedef $$ViewLensTableProcessedTableManager =
       ViewLensRow,
       PrefetchHooks Function({bool viewId, bool lensId})
     >;
+typedef $$TemplateLensTableCreateCompanionBuilder =
+    TemplateLensCompanion Function({
+      required int templateId,
+      required int lensId,
+      Value<int> rowid,
+    });
+typedef $$TemplateLensTableUpdateCompanionBuilder =
+    TemplateLensCompanion Function({
+      Value<int> templateId,
+      Value<int> lensId,
+      Value<int> rowid,
+    });
+
+final class $$TemplateLensTableReferences
+    extends BaseReferences<_$AppDatabase, $TemplateLensTable, TemplateLensRow> {
+  $$TemplateLensTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TemplatesTable _templateIdTable(_$AppDatabase db) =>
+      db.templates.createAlias('template_lens__template_id__templates__id');
+
+  $$TemplatesTableProcessedTableManager get templateId {
+    final $_column = $_itemColumn<int>('template_id')!;
+
+    final manager = $$TemplatesTableTableManager(
+      $_db,
+      $_db.templates,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_templateIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LensesTable _lensIdTable(_$AppDatabase db) =>
+      db.lenses.createAlias('template_lens__lens_id__lenses__id');
+
+  $$LensesTableProcessedTableManager get lensId {
+    final $_column = $_itemColumn<int>('lens_id')!;
+
+    final manager = $$LensesTableTableManager(
+      $_db,
+      $_db.lenses,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_lensIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TemplateLensTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplateLensTable> {
+  $$TemplateLensTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$TemplatesTableFilterComposer get templateId {
+    final $$TemplatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableFilterComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LensesTableFilterComposer get lensId {
+    final $$LensesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lensId,
+      referencedTable: $db.lenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LensesTableFilterComposer(
+            $db: $db,
+            $table: $db.lenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateLensTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplateLensTable> {
+  $$TemplateLensTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$TemplatesTableOrderingComposer get templateId {
+    final $$TemplatesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableOrderingComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LensesTableOrderingComposer get lensId {
+    final $$LensesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lensId,
+      referencedTable: $db.lenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LensesTableOrderingComposer(
+            $db: $db,
+            $table: $db.lenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateLensTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplateLensTable> {
+  $$TemplateLensTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$TemplatesTableAnnotationComposer get templateId {
+    final $$TemplatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LensesTableAnnotationComposer get lensId {
+    final $$LensesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lensId,
+      referencedTable: $db.lenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LensesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.lenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateLensTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplateLensTable,
+          TemplateLensRow,
+          $$TemplateLensTableFilterComposer,
+          $$TemplateLensTableOrderingComposer,
+          $$TemplateLensTableAnnotationComposer,
+          $$TemplateLensTableCreateCompanionBuilder,
+          $$TemplateLensTableUpdateCompanionBuilder,
+          (TemplateLensRow, $$TemplateLensTableReferences),
+          TemplateLensRow,
+          PrefetchHooks Function({bool templateId, bool lensId})
+        > {
+  $$TemplateLensTableTableManager(_$AppDatabase db, $TemplateLensTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplateLensTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplateLensTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplateLensTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> templateId = const Value.absent(),
+                Value<int> lensId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateLensCompanion(
+                templateId: templateId,
+                lensId: lensId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int templateId,
+                required int lensId,
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateLensCompanion.insert(
+                templateId: templateId,
+                lensId: lensId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TemplateLensTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({templateId = false, lensId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (templateId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.templateId,
+                                referencedTable: $$TemplateLensTableReferences
+                                    ._templateIdTable(db),
+                                referencedColumn: $$TemplateLensTableReferences
+                                    ._templateIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (lensId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.lensId,
+                                referencedTable: $$TemplateLensTableReferences
+                                    ._lensIdTable(db),
+                                referencedColumn: $$TemplateLensTableReferences
+                                    ._lensIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TemplateLensTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplateLensTable,
+      TemplateLensRow,
+      $$TemplateLensTableFilterComposer,
+      $$TemplateLensTableOrderingComposer,
+      $$TemplateLensTableAnnotationComposer,
+      $$TemplateLensTableCreateCompanionBuilder,
+      $$TemplateLensTableUpdateCompanionBuilder,
+      (TemplateLensRow, $$TemplateLensTableReferences),
+      TemplateLensRow,
+      PrefetchHooks Function({bool templateId, bool lensId})
+    >;
 typedef $$VacationsTableCreateCompanionBuilder =
     VacationsCompanion Function({
       Value<int> id,
@@ -6541,6 +7330,8 @@ class $AppDatabaseManager {
       $$TaskLensTableTableManager(_db, _db.taskLens);
   $$ViewLensTableTableManager get viewLens =>
       $$ViewLensTableTableManager(_db, _db.viewLens);
+  $$TemplateLensTableTableManager get templateLens =>
+      $$TemplateLensTableTableManager(_db, _db.templateLens);
   $$VacationsTableTableManager get vacations =>
       $$VacationsTableTableManager(_db, _db.vacations);
   $$AppSettingsTableTableManager get appSettings =>

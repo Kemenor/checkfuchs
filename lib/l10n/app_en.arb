@@ -111,6 +111,10 @@
   "@windowAnytime": {
     "description": "Active-window chip: no time bound."
   },
+  "windowNight": "Night",
+  "@windowNight": {
+    "description": "Active-window chip: 00:00–06:00"
+  },
   "windowMorning": "Morning",
   "@windowMorning": {
     "description": "Active-window chip: morning slice."
@@ -619,6 +623,54 @@
   "onboardingStart": "Start",
   "@onboardingStart": {
     "description": "Filled button that creates the first daily habit."
+  },
+  "introTaskEyebrow": "Task",
+  "@introTaskEyebrow": {
+    "description": "Intro page 1 eyebrow"
+  },
+  "introTaskTitle": "A task is anything you do.",
+  "@introTaskTitle": {
+    "description": "Intro page 1 title"
+  },
+  "introTaskBody": "A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat, and tap the ring when it's done.",
+  "@introTaskBody": {
+    "description": "Intro page 1 body"
+  },
+  "introLensEyebrow": "Lens",
+  "@introLensEyebrow": {
+    "description": "Intro page 2 eyebrow"
+  },
+  "introLensTitle": "A lens picks a slice of your tasks.",
+  "@introLensTitle": {
+    "description": "Intro page 2 title"
+  },
+  "introLensBody": "All your daily habits. One chore a week to chip at. The next few due dates. A lens filters and orders; it never changes a task.",
+  "@introLensBody": {
+    "description": "Intro page 2 body"
+  },
+  "introViewEyebrow": "View",
+  "@introViewEyebrow": {
+    "description": "Intro page 3 eyebrow"
+  },
+  "introViewTitle": "A view arranges lenses into a screen.",
+  "@introViewTitle": {
+    "description": "Intro page 3 title"
+  },
+  "introViewBody": "Home is a calm glance. Habits tracks the day. Long-term holds the backlog. Each is a tab you shape yourself — not a category we chose for you.",
+  "@introViewBody": {
+    "description": "Intro page 3 body"
+  },
+  "introSkip": "Skip",
+  "@introSkip": {
+    "description": "Intro pager: dismiss"
+  },
+  "introNext": "Next",
+  "@introNext": {
+    "description": "Intro pager: next page"
+  },
+  "introStart": "Set up my first habit",
+  "@introStart": {
+    "description": "Intro pager: last button, leads to the carrier-habit sheet"
   },
   "dataSection": "Data & backup",
   "@dataSection": {

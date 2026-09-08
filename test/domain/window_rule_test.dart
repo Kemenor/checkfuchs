@@ -21,7 +21,7 @@ void main() {
 
     test('morning ends at 12:00 wall clock on the same day', () {
       final w = Slice.morning.resolve(d(2026, 10, 25), d(2026, 10, 26));
-      expect(w.start, d(2026, 10, 25));
+      expect(w.start, d(2026, 10, 25, 6));
       expect(w.end.day, 25);
       expect(w.end.hour, 12);
       expect(w.end.minute, 0);

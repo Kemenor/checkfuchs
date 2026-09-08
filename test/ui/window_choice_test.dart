@@ -41,6 +41,11 @@ void main() {
         WindowChoice.morning.datedWindow(now, null, DateTime(2026, 7, 29)).$2,
         DateTime(2026, 7, 29, 12),
       );
+      // Night on a bare due date ends at 06:00 that day.
+      expect(
+        WindowChoice.night.datedWindow(now, null, DateTime(2026, 7, 29)).$2,
+        DateTime(2026, 7, 29, 6),
+      );
       // Evening start on the 10th opens at 18:00.
       expect(
         WindowChoice.evening.datedWindow(now, DateTime(2026, 7, 10), null).$1,

@@ -33,7 +33,9 @@ sealed class WindowRule {
   Window resolve(DateTime occurrence, DateTime nextOccurrence);
 }
 
-/// A band on the occurrence day — e.g. *morning* = 00:00–12:00. [from]/[to] are
+/// A band on the occurrence day — e.g. *morning* = 06:00–12:00. The four
+/// presets tile the day: night 00–06, morning 06–12, afternoon 12–18,
+/// evening 18–24. [from]/[to] are
 /// wall-clock offsets from the occurrence's midnight, resolved civilly so the
 /// band keeps its clock times across DST transitions.
 class Slice extends WindowRule {
@@ -43,7 +45,11 @@ class Slice extends WindowRule {
   final Duration to;
 
   static const allDay = Slice(from: Duration.zero, to: Duration(hours: 24));
-  static const morning = Slice(from: Duration.zero, to: Duration(hours: 12));
+  static const night = Slice(from: Duration.zero, to: Duration(hours: 6));
+  static const morning = Slice(
+    from: Duration(hours: 6),
+    to: Duration(hours: 12),
+  );
   static const afternoon = Slice(
     from: Duration(hours: 12),
     to: Duration(hours: 18),

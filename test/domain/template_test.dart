@@ -11,10 +11,17 @@ void main() {
   final next = d(2026, 6, 28);
 
   group('window rules', () {
-    test('morning slice → 00:00–12:00', () {
+    test('morning slice → 06:00–12:00', () {
       expect(Slice.morning.resolve(occ, next), (
-        start: d(2026, 6, 27, 0),
+        start: d(2026, 6, 27, 6),
         end: d(2026, 6, 27, 12),
+      ));
+    });
+
+    test('night slice → 00:00–06:00', () {
+      expect(Slice.night.resolve(occ, next), (
+        start: d(2026, 6, 27, 0),
+        end: d(2026, 6, 27, 6),
       ));
     });
 
@@ -54,7 +61,7 @@ void main() {
       expect(t.templateId, 1);
       expect(t.name, 'Brush teeth');
       expect(t.status, TaskStatus.open);
-      expect(t.start, d(2026, 6, 27, 0));
+      expect(t.start, d(2026, 6, 27, 6));
       expect(t.end, d(2026, 6, 27, 12));
       expect(t.occurrence, d(2026, 6, 27));
       expect(t.createdAt, d(2026, 6, 27, 6));

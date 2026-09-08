@@ -199,12 +199,11 @@ class AllLensesScreen extends ConsumerWidget {
                           }}',
                         ),
                         trailing: const Icon(Symbols.chevron_right_rounded),
+                        // The lens's own editor (dials, rename, delete); its
+                        // task list is one row further in.
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => LensTasksScreen(
-                              lensId: lens.id,
-                              name: lens.name,
-                            ),
+                            builder: (_) => LensEditScreen(lensId: lens.id),
                           ),
                         ),
                       ),

@@ -40,7 +40,7 @@ void main() {
       expect(tasks.single.name, 'Brush teeth');
       expect(
         tasks.single.start,
-        d(2026, 6, 27, 0),
+        d(2026, 6, 27, 6),
       ); // morning slice survived JSON
       expect(tasks.single.end, d(2026, 6, 27, 12));
     },
@@ -193,6 +193,78 @@ void main() {
     expect(await repo.taskLensId(next.id!), backlog);
   });
 
+  test('a task and a series can live in several lenses at once', () async {
+    Future<int> lens(String name) => db
+        .into(db.lenses)
+        .insert(
+          LensesCompanion.insert(
+            name: name,
+            ordering: LensOrdering.automatic,
+            selection: LensSelection.top,
+          ),
+        );
+    final habits = await lens('Habits');
+    final fitness = await lens('Fitness');
+    final backlog = await lens('Backlog');
+
+    // One-off in two lenses; setTaskLenses replaces the whole set.
+    final taskId = await repo.createTask(
+      Task(name: 'Stretch once', createdAt: d(2026, 6, 27)),
+      lensIds: {habits, fitness},
+    );
+    expect(await repo.taskLensIds(taskId), {habits, fitness});
+    await repo.setTaskLenses(taskId, {backlog});
+    expect(await repo.taskLensIds(taskId), {backlog});
+
+    // Series: template_lens drives generation — every instance joins all of
+    // the series' lenses; the legacy default_lens_id mirrors the first.
+    final templateId = await repo.createTemplate(
+      Template(
+        name: 'Stretch',
+        recurrence: Recurrence.daily(d(2026, 6, 27)),
+        windowRule: Slice.morning,
+        createdAt: d(2026, 6, 27),
+      ),
+      lensIds: {fitness, habits},
+    );
+    expect(await repo.templateLensIds(templateId), {habits, fitness});
+    expect(
+      (await db.select(db.templates).getSingle()).defaultLensId,
+      habits, // lowest id
+    );
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    final instance = (await repo.allTasks()).firstWhere(
+      (t) => t.templateId == templateId,
+    );
+    expect(await repo.taskLensIds(instance.id!), {habits, fitness});
+
+    // Dropping a lens from the series drops it from existing instances too,
+    // and the next generated instance follows the new set.
+    await repo.setTemplateLenses(templateId, {fitness});
+    expect(await repo.taskLensIds(instance.id!), {fitness});
+    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    final next = (await repo.allTasks()).firstWhere(
+      (t) => t.templateId == templateId && t.isOpen,
+    );
+    expect(await repo.taskLensIds(next.id!), {fitness});
+
+    // turnIntoSeries carries every membership across.
+    final oneOff = await repo.createTask(
+      Task(name: 'Plank', createdAt: d(2026, 6, 27)),
+      lensIds: {habits, backlog},
+    );
+    await repo.turnIntoSeries(
+      (await repo.taskById(oneOff))!,
+      Recurrence.daily(d(2026, 6, 27)),
+      Slice.morning,
+      d(2026, 6, 27, 8),
+    );
+    final plank = (await db.select(db.templates).get()).firstWhere(
+      (t) => t.name == 'Plank',
+    );
+    expect(await repo.templateLensIds(plank.id), {habits, backlog});
+  });
+
   test('setTaskWindow edits the edges, null clears a side', () async {
     final id = await repo.createTask(
       Task(name: 'Call dentist', createdAt: d(2026, 6, 27)),
@@ -336,7 +408,8 @@ void main() {
       final byOcc = {for (final t in await repo.allTasks()) t.occurrence: t};
       final swallowed = byOcc[d(2026, 6, 28)]!;
       expect(swallowed.status, TaskStatus.skipped); // not Missed
-      expect(swallowed.resolvedAt, d(2026, 6, 28)); // the vacation start
+      // The vacation start, clamped to the window opening (06:00 morning).
+      expect(swallowed.resolvedAt, d(2026, 6, 28, 6));
       expect(byOcc[d(2026, 6, 29)], isNull); // gated days leave no trace
       expect(byOcc[d(2026, 6, 30)], isNull);
       expect(byOcc[d(2026, 7, 1)], isNull);

@@ -49,9 +49,17 @@ class TaskRepository {
 
   // --- writes ----------------------------------------------------------------
 
-  Future<int> createTemplate(domain.Template t, {int? defaultLensId}) async {
-    final lensId = defaultLensId ?? await _defaultLensId();
-    return db
+  /// Create a series. Its instances join [lensIds] (or the single
+  /// [defaultLensId], or the app default lens when neither is given).
+  /// `templates.default_lens_id` is mirrored with the first lens for the
+  /// legacy column's sake; `template_lens` is what generation reads.
+  Future<int> createTemplate(
+    domain.Template t, {
+    int? defaultLensId,
+    Set<int>? lensIds,
+  }) => db.transaction(() async {
+    final ids = await _resolveLensIds(lensIds, defaultLensId);
+    final id = await db
         .into(db.templates)
         .insert(
           TemplatesCompanion.insert(
@@ -62,19 +70,46 @@ class TaskRepository {
             paused: Value(t.paused),
             resumeOn: Value(t.resumeOn),
             createdAt: t.createdAt,
-            defaultLensId: Value(lensId),
+            defaultLensId: Value(ids.firstOrNull),
             notifications: Value(t.notifications),
           ),
         );
-  }
+    for (final lid in ids) {
+      await _addTemplateMembership(id, lid);
+    }
+    return id;
+  });
 
-  Future<int> createTask(domain.Task t, {int? lensId}) =>
+  Future<int> createTask(domain.Task t, {int? lensId, Set<int>? lensIds}) =>
       db.transaction(() async {
         final id = await db.into(db.tasks).insert(_toCompanion(t));
-        final lid = lensId ?? await _defaultLensId();
-        if (lid != null) await addMembership(id, lid);
+        for (final lid in await _resolveLensIds(lensIds, lensId)) {
+          await addMembership(id, lid);
+        }
         return id;
       });
+
+  /// Explicit set wins; a single id next; the app default last.
+  Future<List<int>> _resolveLensIds(Set<int>? ids, int? single) async {
+    if (ids != null && ids.isNotEmpty) return ids.toList()..sort();
+    final lid = single ?? await _defaultLensId();
+    return [?lid];
+  }
+
+  Future<void> _addTemplateMembership(int templateId, int lensId) => db
+      .into(db.templateLens)
+      .insert(
+        TemplateLensCompanion.insert(templateId: templateId, lensId: lensId),
+        mode: InsertMode.insertOrIgnore,
+      );
+
+  /// The lenses a series' new instances join.
+  Future<Set<int>> templateLensIds(int templateId) async => {
+    for (final r in await (db.select(
+      db.templateLens,
+    )..where((m) => m.templateId.equals(templateId))).get())
+      r.lensId,
+  };
 
   /// The default lens new tasks join when none is specified — the first lens.
   Future<int?> _defaultLensId() async =>
@@ -94,38 +129,66 @@ class TaskRepository {
         mode: InsertMode.insertOrIgnore,
       );
 
-  /// The lens a task currently lives in (the v1 UI treats membership as one
-  /// bucket per task, though the schema allows many).
-  Future<int?> taskLensId(int taskId) async =>
-      (await (db.select(db.taskLens)
-                ..where((m) => m.taskId.equals(taskId))
-                ..limit(1))
-              .getSingleOrNull())
-          ?.lensId;
+  /// The lenses a task currently lives in.
+  Future<Set<int>> taskLensIds(int taskId) async => {
+    for (final r in await (db.select(
+      db.taskLens,
+    )..where((m) => m.taskId.equals(taskId))).get())
+      r.lensId,
+  };
 
-  /// Move a one-off into a lens: replace its memberships.
-  Future<void> setTaskLens(int taskId, int lensId) => db.transaction(() async {
-    await (db.delete(db.taskLens)..where((m) => m.taskId.equals(taskId))).go();
-    await addMembership(taskId, lensId);
-  });
+  /// The first lens a task lives in (lowest id) — convenience for callers
+  /// that only need *a* bucket.
+  Future<int?> taskLensId(int taskId) async {
+    final ids = await taskLensIds(taskId);
+    return ids.isEmpty ? null : (ids.toList()..sort()).first;
+  }
 
-  /// Move a whole series into a lens: future instances follow via
-  /// `defaultLensId`, and every existing instance's membership moves too so
-  /// the lens pools (and their history drill-ins) stay coherent.
-  Future<void> setTemplateLens(int templateId, int lensId) =>
+  /// Replace a one-off's memberships with [lensIds].
+  Future<void> setTaskLenses(int taskId, Set<int> lensIds) =>
       db.transaction(() async {
-        await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
-            .write(TemplatesCompanion(defaultLensId: Value(lensId)));
-        final rows = await (db.select(
-          db.tasks,
-        )..where((t) => t.templateId.equals(templateId))).get();
-        for (final r in rows) {
-          await (db.delete(
-            db.taskLens,
-          )..where((m) => m.taskId.equals(r.id))).go();
-          await addMembership(r.id, lensId);
+        await (db.delete(
+          db.taskLens,
+        )..where((m) => m.taskId.equals(taskId))).go();
+        for (final lid in lensIds) {
+          await addMembership(taskId, lid);
         }
       });
+
+  /// Move a one-off into a single lens.
+  Future<void> setTaskLens(int taskId, int lensId) =>
+      setTaskLenses(taskId, {lensId});
+
+  /// Replace a whole series' lenses: future instances follow via
+  /// `template_lens`, and every existing instance's memberships are replaced
+  /// too so the lens pools (and their history drill-ins) stay coherent.
+  Future<void> setTemplateLenses(
+    int templateId,
+    Set<int> lensIds,
+  ) => db.transaction(() async {
+    final sorted = lensIds.toList()..sort();
+    await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+        .write(TemplatesCompanion(defaultLensId: Value(sorted.firstOrNull)));
+    await (db.delete(
+      db.templateLens,
+    )..where((m) => m.templateId.equals(templateId))).go();
+    for (final lid in sorted) {
+      await _addTemplateMembership(templateId, lid);
+    }
+    final rows = await (db.select(
+      db.tasks,
+    )..where((t) => t.templateId.equals(templateId))).get();
+    for (final r in rows) {
+      await (db.delete(db.taskLens)..where((m) => m.taskId.equals(r.id))).go();
+      for (final lid in sorted) {
+        await addMembership(r.id, lid);
+      }
+    }
+  });
+
+  /// Move a whole series into a single lens.
+  Future<void> setTemplateLens(int templateId, int lensId) =>
+      setTemplateLenses(templateId, {lensId});
 
   /// Pass (§4.4) — "not this one now, show me another this period". Purely
   /// presentational: recorded on the membership, never touches task status.
@@ -217,15 +280,7 @@ class TaskRepository {
     WindowRule windowRule,
     DateTime now,
   ) => db.transaction(() async {
-    int? lensId;
-    if (task.id != null) {
-      final membership =
-          await (db.select(db.taskLens)
-                ..where((m) => m.taskId.equals(task.id!))
-                ..limit(1))
-              .getSingleOrNull();
-      lensId = membership?.lensId;
-    }
+    final lensIds = task.id == null ? <int>{} : await taskLensIds(task.id!);
     await createTemplate(
       domain.Template(
         name: task.name,
@@ -236,7 +291,7 @@ class TaskRepository {
         // The one-off's reminders become the series defaults.
         notifications: task.notifications,
       ),
-      defaultLensId: lensId,
+      lensIds: lensIds,
     );
     if (task.id != null) await deleteTask(task.id!);
     await reconcileAll(now);
@@ -346,11 +401,12 @@ class TaskRepository {
         now,
         vacations: vacations,
       );
+      final lensIds = await templateLensIds(row.id);
       for (final task in result.changed) {
         if (task.id == null) {
           final newId = await db.into(db.tasks).insert(_toCompanion(task));
-          if (row.defaultLensId != null) {
-            await addMembership(newId, row.defaultLensId!);
+          for (final lid in lensIds) {
+            await addMembership(newId, lid);
           }
         } else {
           await _writeStatus(task.id!, task.status, task.resolvedAt);

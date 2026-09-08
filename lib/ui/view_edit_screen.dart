@@ -9,6 +9,7 @@ import '../data/repositories/view_repository.dart';
 import '../domain/lens.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'library_screens.dart';
 import 'name_prompt_dialog.dart';
 import 'recurrence_editor.dart';
 import 'recurrence_summary_l10n.dart';
@@ -105,25 +106,49 @@ class ViewEditScreen extends ConsumerWidget {
   }
 }
 
-/// One lens's dials standalone — pushed right after "New lens here" so
-/// creating a lens flows straight into shaping it (name → dials, no detour
-/// through the View editor). Pops itself if the lens is deleted.
-class LensEditScreen extends ConsumerWidget {
-  const LensEditScreen({super.key, required this.viewId, required this.lensId});
+final _allLensesProvider = StreamProvider.autoDispose<List<LensRow>>(
+  (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
+);
 
-  final int viewId;
+/// One lens's dials standalone — pushed right after "New lens here" (with a
+/// [viewId], so the View↔Lens statusFilter chips are offered too) and from
+/// Settings → Library → All lenses (no view: the lens's own dials only).
+/// Pops itself if the lens is deleted.
+class LensEditScreen extends ConsumerWidget {
+  const LensEditScreen({super.key, this.viewId, required this.lensId});
+
+  final int? viewId;
   final int lensId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(_viewLensesProvider(viewId), (_, next) {
-      final entries = next.asData?.value;
-      if (entries != null && entries.every((e) => e.lens.id != lensId)) {
-        Navigator.of(context).maybePop();
-      }
-    });
-    final entries = ref.watch(_viewLensesProvider(viewId)).asData?.value;
-    final entry = entries?.where((e) => e.lens.id == lensId).firstOrNull;
+    final l10n = AppLocalizations.of(context);
+    final viewId = this.viewId;
+    final ViewLensEntry? entry;
+    if (viewId != null) {
+      ref.listen(_viewLensesProvider(viewId), (_, next) {
+        final entries = next.asData?.value;
+        if (entries != null && entries.every((e) => e.lens.id != lensId)) {
+          Navigator.of(context).maybePop();
+        }
+      });
+      final entries = ref.watch(_viewLensesProvider(viewId)).asData?.value;
+      entry = entries?.where((e) => e.lens.id == lensId).firstOrNull;
+    } else {
+      ref.listen(_allLensesProvider, (_, next) {
+        final lenses = next.asData?.value;
+        if (lenses != null && lenses.every((l) => l.id != lensId)) {
+          Navigator.of(context).maybePop();
+        }
+      });
+      final lens = ref
+          .watch(_allLensesProvider)
+          .asData
+          ?.value
+          .where((l) => l.id == lensId)
+          .firstOrNull;
+      entry = lens == null ? null : ViewLensEntry(lens: lens, statusFilter: 0);
+    }
     return Scaffold(
       appBar: AppBar(title: Text(entry?.lens.name ?? '')),
       body: entry == null
@@ -131,6 +156,25 @@ class LensEditScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.only(top: 12, bottom: 24),
               children: [
+                if (viewId == null)
+                  FuchsbauSettingsCard(
+                    children: [
+                      ListTile(
+                        contentPadding: fuchsbauCardRowPadding,
+                        leading: const Icon(Symbols.checklist_rounded),
+                        title: Text(l10n.allTasksTitle),
+                        trailing: const Icon(Symbols.chevron_right_rounded),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => LensTasksScreen(
+                              lensId: lensId,
+                              name: entry!.lens.name,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 _LensDialsCard(
                   key: ValueKey(entry.lens.id),
                   viewId: viewId,
@@ -143,11 +187,12 @@ class LensEditScreen extends ConsumerWidget {
 }
 
 /// One lens's full dial set as a settings card: name header (tap = rename),
-/// the pickers, the period editor, the statusFilter chips, and delete.
+/// the pickers, the period editor, the statusFilter chips (only when opened
+/// for a specific view — the filter is a View↔Lens property), and delete.
 class _LensDialsCard extends ConsumerWidget {
   const _LensDialsCard({super.key, required this.viewId, required this.entry});
 
-  final int viewId;
+  final int? viewId;
   final ViewLensEntry entry;
 
   @override
@@ -155,6 +200,7 @@ class _LensDialsCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final lens = entry.lens;
     final repo = ref.read(viewRepositoryProvider);
+    final viewId = this.viewId;
 
     // Offer -1 (all) and 1..5 — plus the stored value if it's ever outside
     // that range, so the picker never lies about the current state.
@@ -231,11 +277,12 @@ class _LensDialsCard extends ConsumerWidget {
               dormantAfter: Value(v == 0 ? null : v),
             ),
           ),
-        _StatusFilterRow(
-          key: ValueKey('status-filter-${lens.id}'),
-          filter: entry.statusFilter,
-          onChanged: (f) => repo.setStatusFilter(viewId, lens.id, f),
-        ),
+        if (viewId != null)
+          _StatusFilterRow(
+            key: ValueKey('status-filter-${lens.id}'),
+            filter: entry.statusFilter,
+            onChanged: (f) => repo.setStatusFilter(viewId, lens.id, f),
+          ),
         _DeleteTile(
           key: ValueKey('delete-lens-${lens.id}'),
           title: l10n.deleteLens,

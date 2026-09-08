@@ -166,6 +166,25 @@ class ViewRepository {
     }
     await (db.update(db.templates)..where((t) => t.defaultLensId.isNull()))
         .write(TemplatesCompanion(defaultLensId: Value(lensId)));
+    // Series without any lens join the default too (template_lens is what
+    // generation reads; default_lens_id is only a legacy mirror).
+    final orphans = await db
+        .customSelect(
+          'SELECT id FROM templates WHERE id NOT IN '
+          '(SELECT template_id FROM template_lens)',
+        )
+        .get();
+    for (final r in orphans) {
+      await db
+          .into(db.templateLens)
+          .insert(
+            TemplateLensCompanion.insert(
+              templateId: r.read<int>('id'),
+              lensId: lensId,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
     return lensId;
   });
 
@@ -229,8 +248,9 @@ class ViewRepository {
     db.lenses,
   )..where((l) => l.id.equals(id))).write(LensesCompanion(name: Value(name)));
 
-  /// Delete a Lens. The FK cascades clean its `task_lens` / `view_lens` rows,
-  /// and `templates.defaultLensId` is set null — tasks themselves stay.
+  /// Delete a Lens. The FK cascades clean its `task_lens` / `view_lens` /
+  /// `template_lens` rows, and `templates.defaultLensId` is set null — tasks
+  /// themselves stay.
   Future<void> deleteLens(int id) =>
       (db.delete(db.lenses)..where((l) => l.id.equals(id))).go();
 

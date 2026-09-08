@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -105,7 +106,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   bool _paused = false;
   HabitStats? _stats;
   List<LensRow> _lenses = const [];
-  int? _lensId;
+  Set<int> _lensIds = const {};
 
   Future<void> _setReminders(Set<ReminderPreset> presets) async {
     setState(() => _reminders = presets);
@@ -133,47 +134,37 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
         .read(viewRepositoryProvider)
         .watchAllLenses()
         .first;
-    final lensId = _task.id == null
-        ? null
-        : await ref.read(taskRepositoryProvider).taskLensId(_task.id!);
+    final lensIds = _task.id == null
+        ? const <int>{}
+        : await ref.read(taskRepositoryProvider).taskLensIds(_task.id!);
     if (!mounted) return;
     setState(() {
       _lenses = lenses;
-      _lensId = lensId;
+      _lensIds = lensIds;
     });
   }
 
-  /// Move this task (or its whole series — membership is a series property,
-  /// not a per-occurrence one) into another lens.
-  Future<void> _pickLens() async {
+  /// Choose the lenses this task (or its whole series — membership is a
+  /// series property, not a per-occurrence one) lives in. Multi-select; the
+  /// last lens can't be unticked because a task in no lens is invisible.
+  Future<void> _pickLenses() async {
     final l10n = AppLocalizations.of(context);
-    final picked = await showDialog<int>(
+    final picked = await showDialog<Set<int>>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(l10n.lensSection),
-        children: [
-          RadioGroup<int>(
-            groupValue: _lensId,
-            onChanged: (v) => Navigator.pop(ctx, v),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final lens in _lenses)
-                  RadioListTile<int>(value: lens.id, title: Text(lens.name)),
-              ],
-            ),
-          ),
-        ],
+      builder: (ctx) => _LensPickerDialog(
+        title: l10n.lensSection,
+        lenses: _lenses,
+        initial: _lensIds,
       ),
     );
-    if (picked == null || picked == _lensId) return;
+    if (picked == null || setEquals(picked, _lensIds)) return;
     final repo = ref.read(taskRepositoryProvider);
     if (_task.templateId != null) {
-      await repo.setTemplateLens(_task.templateId!, picked);
+      await repo.setTemplateLenses(_task.templateId!, picked);
     } else if (_task.id != null) {
-      await repo.setTaskLens(_task.id!, picked);
+      await repo.setTaskLenses(_task.id!, picked);
     }
-    if (mounted) setState(() => _lensId = picked);
+    if (mounted) setState(() => _lensIds = picked);
   }
 
   /// Edit one window edge of an open one-off. The date picker chooses the
@@ -352,12 +343,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Symbols.filter_alt_rounded),
                 title: Text(l10n.lensSection),
-                subtitle: switch (_lenses.where((l) => l.id == _lensId)) {
+                subtitle: switch (_lenses.where(
+                  (l) => _lensIds.contains(l.id),
+                )) {
                   Iterable(isEmpty: true) => null,
-                  final match => Text(match.first.name),
+                  final match => Text(match.map((l) => l.name).join(', ')),
                 },
                 trailing: const Icon(Symbols.chevron_right_rounded),
-                onTap: _pickLens,
+                onTap: _pickLenses,
               ),
             // Window edges are editable on open one-offs only — a series'
             // window comes from its recurrence + slice rule.
@@ -423,6 +416,65 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Checkbox list over all lenses; OK returns the selection. The last ticked
+/// lens is locked on — a task must live somewhere.
+class _LensPickerDialog extends StatefulWidget {
+  const _LensPickerDialog({
+    required this.title,
+    required this.lenses,
+    required this.initial,
+  });
+
+  final String title;
+  final List<LensRow> lenses;
+  final Set<int> initial;
+
+  @override
+  State<_LensPickerDialog> createState() => _LensPickerDialogState();
+}
+
+class _LensPickerDialogState extends State<_LensPickerDialog> {
+  late Set<int> _selected = {...widget.initial};
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      contentPadding: const EdgeInsets.only(top: 12),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final lens in widget.lenses)
+              CheckboxListTile(
+                value: _selected.contains(lens.id),
+                title: Text(lens.name),
+                onChanged: (on) => setState(() {
+                  if (on == true) {
+                    _selected = {..._selected, lens.id};
+                  } else if (_selected.length > 1) {
+                    _selected = {..._selected}..remove(lens.id);
+                  }
+                }),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _selected),
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
     );
   }
 }

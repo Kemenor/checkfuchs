@@ -37,6 +37,22 @@ class Templates extends Table {
   )();
 }
 
+/// Template ↔ Lens: the lenses a series' generated instances join (§4.2
+/// stamping). Many-to-many, like [TaskLens] — a habit can live in "Daily
+/// habits" and "Fitness" at once. Supersedes `templates.default_lens_id`,
+/// which stays as a nullable legacy column (dropping an FK column in SQLite is
+/// not worth the risk) and is no longer read.
+@DataClassName('TemplateLensRow')
+class TemplateLens extends Table {
+  IntColumn get templateId =>
+      integer().references(Templates, #id, onDelete: KeyAction.cascade)();
+  IntColumn get lensId =>
+      integer().references(Lenses, #id, onDelete: KeyAction.cascade)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {templateId, lensId};
+}
+
 /// The Task — the only object with a completion status (§2). `windowStart`/`End`
 /// map to the domain's `start`/`end` (avoids the SQL keywords).
 @DataClassName('TaskRow')
@@ -155,6 +171,7 @@ class AppSettings extends Table {
     Views,
     TaskLens,
     ViewLens,
+    TemplateLens,
     Vacations,
     AppSettings,
   ],
@@ -166,7 +183,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -238,6 +255,17 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         // First-run onboarding offered flag.
         await _addColumnIfMissing(m, appSettings, appSettings.onboardingDone);
+      }
+      if (from < 10) {
+        // Multi-lens series: template_lens join replaces the single
+        // default_lens_id. Seed it from the legacy column so existing habits
+        // keep their bucket.
+        await m.createTable(templateLens);
+        await customStatement(
+          'INSERT OR IGNORE INTO template_lens (template_id, lens_id) '
+          'SELECT id, default_lens_id FROM templates '
+          'WHERE default_lens_id IS NOT NULL',
+        );
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

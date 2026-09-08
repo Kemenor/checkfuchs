@@ -204,7 +204,7 @@ void main() {
       expect(template.name, 'Brush teeth');
       expect(template.defaultLensId, ids.lensId);
       final slice = template.windowRule as Slice;
-      expect(slice.from, Duration.zero);
+      expect(slice.from, const Duration(hours: 6));
       expect(slice.to, const Duration(hours: 12));
 
       final link = await dest.select(dest.taskLens).getSingle();
