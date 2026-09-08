@@ -24,6 +24,11 @@ stays on your phone.
 - 🔁 **Habits and to-dos are one object.** A one-off becomes a series in two taps;
   "every other Saturday" and "the 25th of each month" are easy; editing *this* occurrence
   vs. *the whole series* works like a calendar — no surprises behind your back.
+- 🕗 **Windows and reminders that fit real days.** A habit can be "morning *or* evening"
+  (done once in either), with custom bands on top; reminders are the presets plus your
+  own "2 days before at 18:00".
+- 📊 **Stats you compose.** A Stats tab built from tiles you switch on and reorder —
+  completion, this week, streaks, by window, habit grid, misses by weekday, one insight.
 - 🎨 **Calm by design.** No ads, no subscription, no dark patterns. Dark + light, four
   languages, and a typeface picker that includes dyslexia- and low-vision-friendly fonts.
 
@@ -34,19 +39,20 @@ reminder is computed locally from your tasks — nothing ever leaves the phone.
 
 ## Stack
 
-Flutter · drift (SQLite) · Riverpod · Material 3 · `flutter_local_notifications`
-(planned) · local-first, serverless. Four languages: English, German, French, Italian. Part of the
+Flutter · drift (SQLite) · Riverpod · Material 3 · `flutter_local_notifications` +
+`workmanager` · local-first, serverless. Four languages: English, German, French, Italian. Part of the
 **[Fuchsbau](https://github.com/Kemenor/fuchsbau)** family — the shared ethos, design
 system, and base stack behind the fox apps.
 
 ## Status
 
-**Dogfoodable — the whole vertical works.** Create (recurring or one-off) →
-complete/skip → edit or convert a series → Views & Lenses → pause & vacation →
-streaks: Phases 0–4, 6 and 7 are done. Reminders (Phase 5) are logic-complete and
-tested but await the on-device notification runtime; polish & i18n (Phase 8) is
-partial — new UI strings are English-only pending the translation pass; release
-(Phase 9) is still ahead. The model lives in
+**Dogfoodable — the whole vertical works, plus a second design pass.** Phases 0–8 are
+done: create (recurring or one-off) → complete/skip → edit or convert a series → Views &
+Lenses → pause & vacation → streaks → reminders (device-verified, with a ~12 h
+background refresh) → backup/restore → onboarding, all in four languages. The September
+2026 pass added multi-lens tasks, the Night band, multi-band windows, custom reminders, a
+customizable Stats tab, the lens editor in the library, an intro pager, and the adaptive
+fox icon. Release (Phase 9: signing, fastlane) is still ahead. The model lives in
 [`design-concept.md`](./design-concept.md), the look in
 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) (with HTML mockups in
 [`examples/ui/`](./examples/ui/)), and the stack + phased roadmap in

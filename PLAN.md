@@ -143,6 +143,9 @@ resolved_at`.
 (dueDate|manual|automatic), selection (top|random), period (none | recurrence json),
 dormant_after, created_at`.
 
+**`template_lens`** — which lenses a series' generated instances join (many-to-many,
+v10; `templates.default_lens_id` remains as a legacy mirror and is no longer read).
+
 **`task_lens`** — the membership join (many-to-many): `task_id, lens_id, order,
 surfaced_at, passed_at`. Dormancy is **derived** from `surfaced_at` + the lens
 period (count rollovers to `now`), never a ticking counter; a Pass is likewise a raw
@@ -197,7 +200,8 @@ visibility tiers are now Lens configurations, not code paths.
 > | 6 · Pause & Vacation | ✅ **done** — vacation gating in reconcile + pause toggle + vacation screen · gate-aware resume (no retroactive Misses) · vacation-start auto-Skip (open question 3 resolved) |
 > | 7 · Analytics & avoidance | ✅ **done** — streak / completion-rate on recurring tasks · avoidance surfacing (soft-amber marker past the consecutive-miss threshold) |
 > | 8 · Polish & i18n | ✅ **done** — text-breakdown header · Settings (pickers, language override, reminder disclosure, About + debug menu) · full DE/FR/IT microcopy · ZIP backup/restore (device-verified round-trip) · onboarding (seeds the carrier habit) · Material Symbols Rounded |
-> | 9 · Release | ⬜ todo — fox icon, fastlane, signing |
+> | 9 · Release | 🟡 in progress — adaptive fox icon ✅ · fastlane, signing ⬜ |
+> | 10 · Second pass (Sep 2026) | ✅ **done** — multi-lens tasks & series (`template_lens`, v10) · Night band + 06/12/18 day cut · multi-band windows (`MultiSlice`, `tasks.window_bands`, v11: "morning *or* evening", gaps read as pending) · custom reminders (`day` anchor: N days before at HH:MM) · customizable Stats tab (tiles + Edit tiles + Settings toggle, `stats_tab`/`stats_tiles`) · lens editor from All lenses · first-launch intro pager (Task → Lens → View) · backup carries `template_lens`. Mockups: examples/ui/07–09 |
 >
 > **State:** **159 tests green · CI green · feature-complete against the concept.** The
 > whole vertical works: onboarding seeds the carrier → create (recurring/one-off, with
