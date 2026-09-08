@@ -51,7 +51,13 @@ class NotificationScheduler {
       await _plugin.initialize(
         settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          iOS: DarwinInitializationSettings(),
+          // No permission prompt at init on iOS either — asked in context
+          // via [requestPermission] the first time a reminder is chosen.
+          iOS: DarwinInitializationSettings(
+            requestAlertPermission: false,
+            requestBadgePermission: false,
+            requestSoundPermission: false,
+          ),
         ),
       );
 
