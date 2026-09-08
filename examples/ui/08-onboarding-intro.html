@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — onboarding intro pager</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;--field:#f3eee9;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;--missed:#a8988c;--amber:#e0a33b;
+    --sh:0 12px 30px -24px rgba(0,0,0,.4);}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;--field:#2a2420;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;--missed:#b6a79b;--amber:#edb45a;
+    --sh:0 12px 30px -22px rgba(0,0,0,.7);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:24px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:1.3rem;margin:0;letter-spacing:-.02em}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit}
+  .ms{font-family:'Material Symbols Rounded';font-size:22px;line-height:1;font-variation-settings:'opsz' 24,'wght' 400,'GRAD' 0,'FILL' 0;flex:none}
+  .ms.fill{font-variation-settings:'FILL' 1}
+  .stage{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px}
+  @media(max-width:1100px){.stage{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.stage{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+  .cap{font-weight:700;margin:0 0 8px;font-size:.92rem}.cap small{color:var(--muted);font-weight:500}
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;min-height:640px;box-shadow:var(--sh);display:flex;flex-direction:column}
+
+  .pager{flex:1;display:flex;flex-direction:column;padding:18px 20px 20px}
+  .skip{align-self:flex-end;font-weight:700;font-size:.86rem;color:var(--muted);padding:6px 4px}
+  .art{flex:1;display:grid;place-items:center;padding:8px 0 4px}
+  .art svg{width:100%;max-width:230px;height:auto;overflow:visible}
+  .step{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--indigo);margin:0 0 4px}
+  h2{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 8px;line-height:1.15;text-wrap:balance}
+  .copy{color:var(--muted);margin:0;font-size:.95rem;min-height:4.4em}
+  .foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+  .dots{display:flex;gap:6px}
+  .dots i{width:6px;height:6px;border-radius:99px;background:var(--line);display:block}
+  .dots i.on{width:18px;background:var(--orange)}
+  .next{background:var(--orange);color:#fff;border:none;border-radius:999px;padding:12px 20px;font-weight:700;font-family:inherit;font-size:.95rem;display:flex;align-items:center;gap:6px}
+  body.dark .next{color:#1a1411}
+  .next .ms{font-size:18px;color:inherit}
+
+  /* svg tokens */
+  .s-card{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+  .s-line{stroke:var(--line);stroke-width:1.5}
+  .s-txt{fill:var(--ink);font-family:'Figtree',sans-serif;font-weight:600;font-size:11px}
+  .s-mut{fill:var(--muted);font-family:'Figtree',sans-serif;font-weight:700;font-size:7.5px;letter-spacing:.06em}
+  .s-hint{fill:var(--muted);font-family:'Figtree',sans-serif;font-weight:500;font-size:8px}
+  .s-ring{fill:none;stroke:var(--orange);stroke-width:2}
+  .s-done{fill:var(--emerald)}
+  .s-pend{fill:none;stroke:var(--muted);stroke-width:1.5}
+  .s-pill{fill:color-mix(in srgb,var(--orange) 15%,transparent)}
+  .s-pillt{fill:var(--orange);font-family:'Figtree',sans-serif;font-weight:700;font-size:6.5px;letter-spacing:.04em}
+  .s-lens{fill:none;stroke:var(--indigo);stroke-width:2;stroke-dasharray:4 3}
+  .s-ind{fill:var(--indigo)}
+  .s-tab{fill:var(--field)}
+  .s-tabon{fill:color-mix(in srgb,var(--indigo) 18%,transparent)}
+  .s-bg{fill:var(--bg)}
+
+  /* final form (existing sheet, condensed) */
+  .sheet{background:var(--card);border-radius:28px 28px 0 0;margin-top:auto;padding:8px 16px 16px;box-shadow:0 -10px 40px -20px rgba(0,0,0,.5)}
+  .handle{width:36px;height:4px;border-radius:999px;background:var(--line);margin:6px auto 10px}
+  .fox{font-size:44px;text-align:center;line-height:1}
+  .sheet h3{text-align:center;font-size:1.25rem;letter-spacing:-.02em;margin:8px 0 4px}
+  .sheet p{color:var(--muted);text-align:center;font-size:.86rem;margin:0 0 12px}
+  .field{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--muted);margin-bottom:12px}
+  .lhead{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:4px 0 8px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:.8rem;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--field);color:var(--ink)}
+  .chip.on{background:color-mix(in srgb,var(--indigo) 16%,transparent);color:var(--indigo)}
+  .start{width:100%;background:var(--field);color:var(--muted);font-weight:700;border:none;border-radius:999px;padding:14px;font-family:inherit;font-size:.98rem;margin-top:4px}
+  .dim{padding:18px 20px 0;opacity:.35}
+  .dim .ttl{font-size:1.3rem;font-weight:800;text-align:center;margin:0 0 10px}
+  .dim .lcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 14px;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .note{color:var(--muted);font-size:.82rem;margin-top:14px;max-width:72ch}
+  .note b{color:var(--ink)}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 First launch — three ideas, then your first habit</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="stage">
+
+    <!-- PAGE 1: a task -->
+    <div>
+      <p class="cap">Page 1 <small>· Task</small></p>
+      <div class="phone"><div class="pager">
+        <span class="skip">Skip</span>
+        <div class="art">
+          <svg viewBox="0 0 230 190" aria-label="Two task rows, one a habit and one a to-do, drawn identically">
+            <rect class="s-card" x="8" y="30" width="214" height="128" rx="18"/>
+            <text class="s-mut" x="24" y="52">TODAY</text>
+            <!-- row 1: habit -->
+            <circle class="s-ring" cx="34" cy="80" r="8"/>
+            <text class="s-txt" x="52" y="84">Brush teeth</text>
+            <rect class="s-pill" x="160" y="72" width="46" height="16" rx="8"/><text class="s-pillt" x="170" y="83">EVERY DAY</text>
+            <line class="s-line" x1="24" y1="104" x2="206" y2="104"/>
+            <!-- row 2: to-do -->
+            <circle class="s-ring" cx="34" cy="128" r="8"/>
+            <text class="s-txt" x="52" y="132">Call the dentist</text>
+            <rect class="s-pill" x="176" y="120" width="30" height="16" rx="8"/><text class="s-pillt" x="186" y="131">THU</text>
+            <!-- brace: same object -->
+            <path d="M226 76 q8 0 8 8 v14 q0 8 8 8 q-8 0 -8 8 v14 q0 8 -8 8" fill="none" stroke="var(--indigo)" stroke-width="1.5"/>
+            <text class="s-hint" x="212" y="172" fill="var(--indigo)">same thing</text>
+          </svg>
+        </div>
+        <p class="step">1 of 3 · Task</p>
+        <h2>A task is anything you do.</h2>
+        <p class="copy">A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat, and tap the ring when it's done.</p>
+        <div class="foot"><div class="dots"><i class="on"></i><i></i><i></i></div><button class="next">Next<span class="ms">arrow_forward</span></button></div>
+      </div></div>
+    </div>
+
+    <!-- PAGE 2: a lens -->
+    <div>
+      <p class="cap">Page 2 <small>· Lens</small></p>
+      <div class="phone"><div class="pager">
+        <span class="skip">Skip</span>
+        <div class="art">
+          <svg viewBox="0 0 230 190" aria-label="A scattered pile of tasks with a lens selecting and ordering three of them">
+            <!-- the pile -->
+            <g opacity=".55">
+              <circle class="s-pend" cx="26" cy="22" r="6"/><rect x="38" y="18" width="52" height="7" rx="3.5" fill="var(--line)"/>
+              <circle class="s-pend" cx="120" cy="14" r="6"/><rect x="132" y="10" width="40" height="7" rx="3.5" fill="var(--line)"/>
+              <circle class="s-pend" cx="190" cy="30" r="6"/><rect x="202" y="26" width="24" height="7" rx="3.5" fill="var(--line)"/>
+              <circle class="s-pend" cx="60" cy="44" r="6"/><rect x="72" y="40" width="36" height="7" rx="3.5" fill="var(--line)"/>
+              <circle class="s-pend" cx="150" cy="46" r="6"/><rect x="162" y="42" width="48" height="7" rx="3.5" fill="var(--line)"/>
+            </g>
+            <!-- funnel / lens -->
+            <path d="M40 60 h150 l-56 40 v26 l-38 0 v-26 z" class="s-lens" stroke-linejoin="round"/>
+            <text class="s-mut" x="88" y="82" fill="var(--indigo)">DAILY HABITS</text>
+            <!-- resulting card -->
+            <rect class="s-card" x="8" y="118" width="214" height="66" rx="16"/>
+            <circle class="s-ring" cx="30" cy="136" r="6"/><text class="s-txt" x="44" y="140">Brush teeth</text>
+            <circle class="s-ring" cx="30" cy="154" r="6"/><text class="s-txt" x="44" y="158">Journal</text>
+            <circle class="s-done" cx="30" cy="172" r="6"/><path d="M27 172 l2 2 l4 -4" fill="none" stroke="var(--card)" stroke-width="1.5"/><text class="s-txt" x="44" y="176" fill="var(--muted)">Stretch</text>
+            <text class="s-hint" x="150" y="140">2 left · 1 done</text>
+          </svg>
+        </div>
+        <p class="step">2 of 3 · Lens</p>
+        <h2>A lens picks a slice of your tasks.</h2>
+        <p class="copy">All your daily habits. One chore a week to chip at. The next few due dates. A lens filters and orders; it never changes a task.</p>
+        <div class="foot"><div class="dots"><i></i><i class="on"></i><i></i></div><button class="next">Next<span class="ms">arrow_forward</span></button></div>
+      </div></div>
+    </div>
+
+    <!-- PAGE 3: a view -->
+    <div>
+      <p class="cap">Page 3 <small>· View</small></p>
+      <div class="phone"><div class="pager">
+        <span class="skip">Skip</span>
+        <div class="art">
+          <svg viewBox="0 0 230 190" aria-label="A phone screen with three tabs; the active tab stacks two lens cards">
+            <rect class="s-bg" x="30" y="6" width="170" height="178" rx="18" stroke="var(--line)" stroke-width="1.5"/>
+            <!-- two lens cards inside -->
+            <rect class="s-card" x="42" y="22" width="146" height="58" rx="12" stroke="var(--indigo)" stroke-dasharray="4 3"/>
+            <text class="s-mut" x="52" y="36">DAILY HABITS</text>
+            <circle class="s-ring" cx="56" cy="52" r="5"/><rect x="66" y="49" width="44" height="6" rx="3" fill="var(--line)"/>
+            <circle class="s-ring" cx="56" cy="68" r="5"/><rect x="66" y="65" width="60" height="6" rx="3" fill="var(--line)"/>
+            <rect class="s-card" x="42" y="88" width="146" height="44" rx="12" stroke="var(--indigo)" stroke-dasharray="4 3"/>
+            <text class="s-mut" x="52" y="102">TO-DOS</text>
+            <circle class="s-ring" cx="56" cy="118" r="5"/><rect x="66" y="115" width="52" height="6" rx="3" fill="var(--line)"/>
+            <!-- bottom nav -->
+            <line class="s-line" x1="30" y1="150" x2="200" y2="150"/>
+            <rect class="s-tabon" x="46" y="156" width="36" height="18" rx="9"/>
+            <text class="s-hint" x="55" y="168" fill="var(--indigo)" font-weight="700">Home</text>
+            <text class="s-hint" x="98" y="168">Habits</text>
+            <text class="s-hint" x="140" y="168">Long-term</text>
+            <!-- pointer: lenses arranged into a view -->
+            <path d="M14 60 q-10 40 10 60" fill="none" stroke="var(--indigo)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <text class="s-hint" x="2" y="52" fill="var(--indigo)">2 lenses</text>
+            <text class="s-hint" x="4" y="132" fill="var(--indigo)">1 view</text>
+          </svg>
+        </div>
+        <p class="step">3 of 3 · View</p>
+        <h2>A view arranges lenses into a screen.</h2>
+        <p class="copy">Home is a calm glance. Habits tracks the day. Long-term holds the backlog. Each is a tab you shape yourself — not a category we chose for you.</p>
+        <div class="foot"><div class="dots"><i></i><i></i><i class="on"></i></div><button class="next">Set up my first habit<span class="ms">arrow_forward</span></button></div>
+      </div></div>
+    </div>
+
+    <!-- PAGE 4: existing carrier-habit form -->
+    <div>
+      <p class="cap">Then <small>· the existing carrier-habit sheet (unchanged)</small></p>
+      <div class="phone">
+        <div class="dim"><p class="ttl">Checkfuchs</p><div class="lcard">All tasks</div></div>
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="fox">🦊</div>
+          <h3>Welcome to Checkfuchs</h3>
+          <p>One small daily habit brings you back every day — pick one you already do, and everything else rides along.</p>
+          <div class="field">Name</div>
+          <div class="lhead">Active window</div>
+          <div class="chips"><span class="chip on">✓ Anytime</span><span class="chip">Morning</span><span class="chip">Afternoon</span><span class="chip">Evening</span></div>
+          <div class="lhead">Reminders</div>
+          <div class="chips"><span class="chip">When it opens</span><span class="chip">2 hours before due</span><span class="chip">When it's due</span></div>
+          <button class="start">Start</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note"><b>Why a pager first.</b> The current sheet asks for a habit before the user knows what a lens or a view is, so the words on Home (“Daily habits”, the view tabs, “New lens here”) land cold. Three pages, one idea each, drawn from the app's own shapes — the task row with its ring, the dashed lens outline, the tabbed screen — so the illustration is the UI they're about to see. Copy stays under two lines; <b>Skip</b> is always available; the last page's button leads straight into the unchanged carrier-habit form. Indigo (the lens-focus colour) is the pager's accent so the intro reads as “about the model”, and the orange primary button stays for the one action that matters.</p>
+</div></body></html>

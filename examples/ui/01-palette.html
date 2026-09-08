@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — locked palette (E-anchored)</title>
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;
+    --skipped:#8c857e;--missed:#a8988c;--amber:#e0a33b;}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;
+    --skipped:#9a938c;--missed:#b6a79b;--amber:#edb45a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto;padding:26px 20px 60px}
+  header{display:flex;align-items:center;justify-content:space-between}
+  h1{font-size:1.35rem;margin:0;letter-spacing:-.02em}
+  h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:30px 0 12px;font-weight:700}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+  .triad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .sw{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+  .chip{height:78px;display:flex;align-items:flex-end;padding:10px 12px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  body.dark .chip{color:#1a1411}
+  .meta{padding:9px 12px}.meta b{display:block}.meta small{color:var(--muted)}
+  .rows{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+  .row{display:flex;align-items:center;gap:13px;padding:13px 16px}.row+.row{border-top:1px solid var(--line)}
+  .mark{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+  .mark.ring{background:transparent;border:2.5px solid var(--orange);color:var(--orange)}
+  .name{flex:1;font-weight:600}.hint{font-size:.8rem;color:var(--muted)}
+  .pill{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:999px}
+  .missed .name{color:var(--missed);text-decoration:line-through}.skipped .name{color:var(--skipped)}.pending .name{color:var(--muted)}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 Locked palette — E-anchored triad</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <h2>Triad (26° · 146° · 266°)</h2>
+  <div class="triad">
+    <div class="sw"><div class="chip" style="background:var(--orange)">Fox Orange · #EA7A24</div><div class="meta"><b>primary</b><small>actions · active</small></div></div>
+    <div class="sw"><div class="chip" style="background:var(--indigo)">Indigo · #8559D0</div><div class="meta"><b>secondary</b><small>structure · focus</small></div></div>
+    <div class="sw"><div class="chip" style="background:var(--emerald)">Emerald · #1FA85D</div><div class="meta"><b>tertiary</b><small>positive · done</small></div></div>
+  </div>
+
+  <h2>Status in context — no alarm red</h2>
+  <div class="rows">
+    <div class="row"><span class="mark ring">○</span><span class="name">Brush teeth</span><span class="pill" style="color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,transparent)">ACTIVE</span></div>
+    <div class="row"><span class="mark" style="background:var(--emerald)">✓</span><span class="name">Weigh yourself</span><span class="hint">done 07:42</span></div>
+    <div class="row skipped"><span class="mark" style="background:var(--skipped)">↷</span><span class="name">Floss</span><span class="hint">skipped</span></div>
+    <div class="row missed"><span class="mark" style="background:var(--missed)">·</span><span class="name">Water plants</span><span class="hint">missed yesterday</span></div>
+    <div class="row pending"><span class="mark" style="background:var(--muted)">◷</span><span class="name">Call dentist</span><span class="hint">starts Mon</span></div>
+    <div class="row"><span class="mark" style="background:var(--amber)">!</span><span class="name">Sort the garage</span><span class="pill" style="color:var(--amber);background:color-mix(in srgb,var(--amber) 18%,transparent)">PUSHED 4×</span></div>
+    <div class="row"><span class="mark" style="background:var(--indigo)">3</span><span class="name">Week pool · empty PET bin</span><span class="pill" style="color:var(--indigo);background:color-mix(in srgb,var(--indigo) 16%,transparent)">FOCUS</span></div>
+  </div>
+</div></body></html>
