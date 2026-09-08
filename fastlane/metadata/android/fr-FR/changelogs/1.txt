@@ -1,0 +1,1 @@
+Première version. Habitudes et tâches sur une seule surface, lentilles et vues, créneaux et rappels adaptés aux vraies journées, un onglet Stats à composer, mode vacances, sauvegarde et restauration.
