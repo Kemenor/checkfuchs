@@ -4,7 +4,7 @@ import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/task.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-DateTime d(int y, int m, int day) => DateTime(y, m, day);
+DateTime d(int y, int m, int day, [int h = 0]) => DateTime(y, m, day, h);
 
 Task task(
   int id, {
@@ -57,6 +57,33 @@ void main() {
       mem(task(3), order: 1),
     ];
     expect(ids(projectLens(lens, members, now)), [2, 3, 1]);
+  });
+
+  test('only the nearest pending instance of a series is shown', () {
+    // Today's active instance + two pre-skipped-then-reopened future ones.
+    Task inst(int id, int day) => Task(
+      id: id,
+      templateId: 9,
+      name: 'Brush teeth',
+      start: d(2026, 6, day),
+      end: d(2026, 6, day + 1),
+      occurrence: d(2026, 6, day),
+      createdAt: d(2026, 6, 1),
+    );
+    final lens = Lens(
+      id: 1,
+      name: 'daily',
+      showCount: Lens.showAll,
+      ordering: LensOrdering.automatic,
+      selection: LensSelection.top,
+    );
+    final shown = projectLens(lens, [
+      mem(inst(1, 27)), // active (now = 27 June)
+      mem(inst(3, 29)), // pending, later
+      mem(inst(2, 28)), // pending, nearest
+      mem(task(4)), // an unrelated one-off stays
+    ], d(2026, 6, 27, 8));
+    expect(ids(shown), unorderedEquals([1, 2, 4]));
   });
 
   test('terminal tasks are excluded', () {

@@ -78,6 +78,27 @@ List<Task> projectLens(
       )
       .toList();
 
+  // One upcoming instance per series: pre-skipping (and undoing it) can
+  // leave several *pending* occurrences of the same habit materialised. The
+  // surface shows only the nearest one — the rest stay in History.
+  final firstPending = <int, LensMember>{};
+  for (final m in candidates) {
+    final tid = m.task.templateId;
+    if (tid == null || phaseOf(m.task, now) != TaskPhase.pending) continue;
+    final cur = firstPending[tid];
+    final key = m.task.start ?? m.task.occurrence ?? m.task.createdAt;
+    final curKey =
+        cur?.task.start ?? cur?.task.occurrence ?? cur?.task.createdAt;
+    if (cur == null || key.isBefore(curKey!)) firstPending[tid] = m;
+  }
+  candidates = [
+    for (final m in candidates)
+      if (m.task.templateId == null ||
+          phaseOf(m.task, now) != TaskPhase.pending ||
+          identical(firstPending[m.task.templateId], m))
+        m,
+  ];
+
   if (lens.selection == LensSelection.random) {
     final seed = randomSeed ?? _epochDay(ps ?? now);
     candidates.shuffle(Random(seed)); // deterministic given a seed
