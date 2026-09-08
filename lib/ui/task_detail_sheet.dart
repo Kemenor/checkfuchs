@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,8 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
 import 'reminder_editor.dart';
+import 'window_choice.dart';
+import 'window_editor.dart';
 
 /// Tap a task → this sheet: rename, delete this occurrence, or delete the whole
 /// series (recurring only). Delete is the one sanctioned use of `error` red
@@ -196,6 +199,39 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     return DateTime(day.year, day.month, day.day, old.hour, old.minute);
   }
 
+  /// Re-shape an open one-off's hours: the chips pick the bands, the
+  /// existing Starts/Due days stay; start/end become the new envelope.
+  Future<void> _editWindowBands() async {
+    final picked = await showModalBottomSheet<WindowSelection>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _WindowSheet(
+        initial: WindowSelection.fromEdges(_task.start, _task.end, _task.bands),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final now = ref.read(clockProvider).now();
+    DateTime? day(DateTime? d) =>
+        d == null ? null : DateTime(d.year, d.month, d.day);
+    // A midnight end means "end of the previous day" for the date picker.
+    final dueDay = _task.end == null
+        ? null
+        : (_task.end!.hour == 0 && _task.end!.minute == 0
+              ? day(_task.end!.subtract(const Duration(minutes: 1)))
+              : day(_task.end));
+    final (start, end) = picked.datedWindow(now, day(_task.start), dueDay);
+    final bands = picked.hasGaps ? picked.bands : null;
+    await ref
+        .read(taskRepositoryProvider)
+        .setTaskWindow(_task.id!, start, end, bands: Value(bands));
+    if (mounted) {
+      setState(
+        () => _task = _task.copyWith(start: start, end: end, bands: bands),
+      );
+    }
+  }
+
   Future<void> _writeWindow(DateTime? value, {required bool isEnd}) async {
     final start = isEnd ? _task.start : value;
     final end = isEnd ? value : _task.end;
@@ -377,6 +413,25 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             // Window edges are editable on open one-offs only — a series'
             // window comes from its recurrence + slice rule.
             if (!recurring && _task.isOpen) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Symbols.schedule_rounded),
+                title: Text(l10n.activeWindowSection),
+                subtitle: Builder(
+                  builder: (ctx) {
+                    final sel = WindowSelection.fromEdges(
+                      _task.start,
+                      _task.end,
+                      _task.bands,
+                    );
+                    return Text(
+                      sel.isAnytime ? l10n.windowAnytime : sel.describe(ctx),
+                    );
+                  },
+                ),
+                trailing: const Icon(Symbols.chevron_right_rounded),
+                onTap: _editWindowBands,
+              ),
               _WindowDateTile(
                 icon: Symbols.today_rounded,
                 label: l10n.starts,
@@ -497,6 +552,57 @@ class _LensPickerDialogState extends State<_LensPickerDialog> {
           child: Text(MaterialLocalizations.of(context).okButtonLabel),
         ),
       ],
+    );
+  }
+}
+
+/// The active-window picker as a sheet: chips + custom bands, Save returns
+/// the selection.
+class _WindowSheet extends StatefulWidget {
+  const _WindowSheet({required this.initial});
+  final WindowSelection initial;
+
+  @override
+  State<_WindowSheet> createState() => _WindowSheetState();
+}
+
+class _WindowSheetState extends State<_WindowSheet> {
+  late WindowSelection _sel = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 4, 16, viewInsets + 16),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.activeWindowSection,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              WindowEditor(
+                value: _sel,
+                onChanged: (w) => setState(() => _sel = w),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(_sel),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(l10n.save),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

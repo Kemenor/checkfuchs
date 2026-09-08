@@ -239,10 +239,20 @@ class TaskRepository {
   )..where((t) => t.id.equals(id))).write(TasksCompanion(name: Value(name)));
 
   /// Edit a one-off's window edges (null = unbounded on that side).
-  Future<void> setTaskWindow(int id, DateTime? start, DateTime? end) =>
-      (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
-        TasksCompanion(windowStart: Value(start), windowEnd: Value(end)),
-      );
+  Future<void> setTaskWindow(
+    int id,
+    DateTime? start,
+    DateTime? end, {
+    Value<List<Band>?> bands = const Value.absent(),
+  }) => (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+    TasksCompanion(
+      windowStart: Value(start),
+      windowEnd: Value(end),
+      windowBands: bands.present
+          ? Value(bandsToSql(bands.value))
+          : const Value.absent(),
+    ),
+  );
 
   /// Edit this instance's reminders (§2.4).
   Future<void> setTaskNotifications(int id, List<TaskNotification> n) =>

@@ -76,4 +76,49 @@ void main() {
       expect(end, DateTime(2026, 7, 13));
     });
   });
+
+  group('fromRule / fromEdges', () {
+    test('round-trips the chip-representable rules', () {
+      expect(
+        WindowSelection.fromRule(const UntilNextOccurrence())!.isAnytime,
+        isTrue,
+      );
+      expect(WindowSelection.fromRule(Slice.morning)!.presets, {
+        WindowChoice.morning,
+      });
+      final multi = MultiSlice([
+        Slice.evening.asBand,
+        Band(from: h * 13, to: h * 14),
+      ]);
+      final sel = WindowSelection.fromRule(multi)!;
+      expect(sel.presets, {WindowChoice.evening});
+      expect(sel.custom, [Band(from: h * 13, to: h * 14)]);
+      expect(sel.toRule(), multi);
+      expect(
+        WindowSelection.fromRule(const FixedDuration(Duration(days: 7))),
+        isNull,
+      );
+    });
+
+    test('fromEdges: bands win, same-day span is one band, else anytime', () {
+      expect(
+        WindowSelection.fromEdges(null, null, [Slice.night.asBand]).presets,
+        {WindowChoice.night},
+      );
+      final s = WindowSelection.fromEdges(
+        DateTime(2026, 7, 6, 6),
+        DateTime(2026, 7, 6, 12),
+        null,
+      );
+      expect(s.presets, {WindowChoice.morning});
+      expect(
+        WindowSelection.fromEdges(
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 31),
+          null,
+        ).isAnytime,
+        isTrue,
+      );
+    });
+  });
 }

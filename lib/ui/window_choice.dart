@@ -91,6 +91,48 @@ class WindowSelection {
 
   static const anytime = WindowSelection();
 
+  /// Rebuild the picker state from a stored rule — bands that match a preset
+  /// become that chip, the rest custom rows. Null when the rule has no chip
+  /// form (a [FixedDuration]); callers then keep the rule untouched.
+  static WindowSelection? fromRule(WindowRule rule) => switch (rule) {
+    UntilNextOccurrence() => anytime,
+    Slice(:final from, :final to) => fromBands([Band(from: from, to: to)]),
+    MultiSlice(:final bands) => fromBands(bands),
+    FixedDuration() => null,
+  };
+
+  /// The picker state for a one-off from its stored edges: explicit bands
+  /// win; a same-day start…end pair is one band; anything else is Anytime.
+  static WindowSelection fromEdges(
+    DateTime? start,
+    DateTime? end,
+    List<Band>? bands,
+  ) {
+    if (bands != null && bands.isNotEmpty) return fromBands(bands);
+    if (start == null || end == null) return anytime;
+    final span = end.difference(start);
+    if (span <= Duration.zero || span >= const Duration(hours: 24)) {
+      return anytime;
+    }
+    final from = Duration(hours: start.hour, minutes: start.minute);
+    return fromBands([Band(from: from, to: from + span)]);
+  }
+
+  static WindowSelection fromBands(List<Band> bands) {
+    final presets = <WindowChoice>{};
+    final custom = <Band>[];
+    for (final b in bands) {
+      final match = WindowChoice.values.where(
+        (c) =>
+            c != WindowChoice.anytime &&
+            Duration(hours: c._hours.$1) == b.from &&
+            Duration(hours: c._hours.$2) == b.to,
+      );
+      match.isEmpty ? custom.add(b) : presets.add(match.first);
+    }
+    return WindowSelection(presets: presets, custom: custom);
+  }
+
   /// Preset bands (never [WindowChoice.anytime]).
   final Set<WindowChoice> presets;
 
