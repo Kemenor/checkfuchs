@@ -119,7 +119,11 @@ class NotificationScheduler {
       if (!t.isOpen || t.id == null) continue;
       final count = t.notifications.length.clamp(0, _slots);
       for (var i = 0; i < count; i++) {
-        final fireAt = t.notifications[i].fireTime(start: t.start, end: t.end);
+        final fireAt = t.notifications[i].fireTime(
+          start: t.start,
+          end: t.end,
+          day: t.occurrence,
+        );
         if (fireAt == null) continue;
         final id = t.id! * _slots + i;
         titles[id] = t.name;

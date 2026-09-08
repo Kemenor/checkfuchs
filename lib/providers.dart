@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
@@ -144,6 +145,8 @@ class Settings {
     this.debugMenu = false,
     this.localeCode = 'system',
     this.onboardingDone = false,
+    this.statsTab = true,
+    this.statsTiles,
   });
   final ThemeMode themeMode;
   final FuchsbauFont font;
@@ -157,6 +160,21 @@ class Settings {
   /// First-run onboarding already offered (stamped on showing — never re-nag).
   final bool onboardingDone;
 
+  /// Stats tab in the bottom bar (default on; off only hides the tab).
+  final bool statsTab;
+
+  /// Enabled Stats tiles in display order; null = [defaultStatsTiles].
+  final List<String>? statsTiles;
+
+  static const defaultStatsTiles = [
+    'completion',
+    'week',
+    'streaks',
+    'byWindow',
+  ];
+
+  List<String> get effectiveStatsTiles => statsTiles ?? defaultStatsTiles;
+
   /// What MaterialApp.locale wants: null = system.
   Locale? get locale => localeCode == 'system' ? null : Locale(localeCode);
 
@@ -166,12 +184,16 @@ class Settings {
     bool? debugMenu,
     String? localeCode,
     bool? onboardingDone,
+    bool? statsTab,
+    List<String>? statsTiles,
   }) => Settings(
     themeMode: themeMode ?? this.themeMode,
     font: font ?? this.font,
     debugMenu: debugMenu ?? this.debugMenu,
     localeCode: localeCode ?? this.localeCode,
     onboardingDone: onboardingDone ?? this.onboardingDone,
+    statsTab: statsTab ?? this.statsTab,
+    statsTiles: statsTiles ?? this.statsTiles,
   );
 }
 
@@ -200,8 +222,31 @@ class SettingsController extends Notifier<Settings> {
         debugMenu: row.debugMenu,
         localeCode: row.localeCode,
         onboardingDone: row.onboardingDone,
+        statsTab: row.statsTab,
+        statsTiles: _decodeTiles(row.statsTiles),
       );
     }
+  }
+
+  static List<String>? _decodeTiles(String? json) {
+    if (json == null) return null;
+    try {
+      return [for (final e in jsonDecode(json) as List) e as String];
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Future<void> setStatsTab(bool on) async {
+    _touched = true;
+    state = state.copyWith(statsTab: on);
+    await _persist();
+  }
+
+  Future<void> setStatsTiles(List<String> tiles) async {
+    _touched = true;
+    state = state.copyWith(statsTiles: List.unmodifiable(tiles));
+    await _persist();
   }
 
   Future<void> setLocaleCode(String code) async {
@@ -251,6 +296,10 @@ class SettingsController extends Notifier<Settings> {
             debugMenu: Value(state.debugMenu),
             localeCode: Value(state.localeCode),
             onboardingDone: Value(state.onboardingDone),
+            statsTab: Value(state.statsTab),
+            statsTiles: Value(
+              state.statsTiles == null ? null : jsonEncode(state.statsTiles),
+            ),
           ),
         );
   }

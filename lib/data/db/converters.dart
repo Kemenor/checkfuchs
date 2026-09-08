@@ -82,6 +82,7 @@ class WindowRuleConverter extends TypeConverter<WindowRule, String> {
       ),
       'duration' => FixedDuration(Duration(microseconds: m['length'] as int)),
       'untilNext' => const UntilNextOccurrence(),
+      'multi' => MultiSlice(decodeBands(m['bands'])!),
       // Fail loudly: silently mapping an unknown kind to a default would mask
       // data corruption (or a forgotten migration) as a behaviour change.
       final kind => throw FormatException('Unknown WindowRule kind: $kind'),
@@ -100,5 +101,34 @@ class WindowRuleConverter extends TypeConverter<WindowRule, String> {
       'length': length.inMicroseconds,
     }),
     UntilNextOccurrence() => jsonEncode({'kind': 'untilNext'}),
+    MultiSlice(:final bands) => jsonEncode({
+      'kind': 'multi',
+      'bands': encodeBands(bands),
+    }),
   };
 }
+
+/// Bands as a JSON list of `[fromMicros, toMicros]` pairs (the shape shared
+/// by the `multi` window rule and `tasks.window_bands`).
+List<List<int>>? encodeBands(List<Band>? bands) => bands == null
+    ? null
+    : [
+        for (final b in bands) [b.from.inMicroseconds, b.to.inMicroseconds],
+      ];
+
+List<Band>? decodeBands(Object? json) => json == null
+    ? null
+    : [
+        for (final pair in (json as List).cast<List>())
+          Band(
+            from: Duration(microseconds: pair[0] as int),
+            to: Duration(microseconds: pair[1] as int),
+          ),
+      ];
+
+/// `tasks.window_bands` text ⇄ [Band] list.
+String? bandsToSql(List<Band>? bands) =>
+    bands == null ? null : jsonEncode(encodeBands(bands));
+
+List<Band>? bandsFromSql(String? text) =>
+    text == null ? null : decodeBands(jsonDecode(text));

@@ -4,14 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
+import '../domain/notification.dart';
 import '../domain/recurrence.dart';
 import '../domain/task.dart';
 import '../domain/template.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'recurrence_editor.dart';
-import 'reminder_presets.dart';
+import 'reminder_editor.dart';
 import 'window_choice.dart';
+import 'window_editor.dart';
 
 final _lensesProvider = StreamProvider.autoDispose<List<LensRow>>(
   (ref) => ref.watch(viewRepositoryProvider).watchAllLenses(),
@@ -57,8 +59,8 @@ class _CreateTaskSheet extends ConsumerStatefulWidget {
 class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
   Recurrence? _recurrence;
-  WindowChoice _window = WindowChoice.anytime;
-  Set<ReminderPreset> _reminders = const {};
+  WindowSelection _window = WindowSelection.anytime;
+  List<TaskNotification> _notifications = const [];
   late Set<int> _lensIds = {if (widget.lensId != null) widget.lensId!};
   DateTime? _startDate;
   DateTime? _dueDate;
@@ -92,7 +94,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     final repo = ref.read(taskRepositoryProvider);
     final now = ref.read(clockProvider).now();
 
-    final notifications = ReminderPreset.toNotifications(_reminders);
+    final notifications = _notifications;
     if (_recurrence != null) {
       await repo.createTemplate(
         Template(
@@ -113,6 +115,8 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           end: end,
           createdAt: now,
           notifications: notifications,
+          // Only a window with gaps needs bands; the envelope covers the rest.
+          bands: _window.hasGaps ? _window.bands : null,
         ),
         lensIds: _lensIds,
       );
@@ -188,16 +192,9 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 20),
               _SectionLabel(l10n.activeWindowSection),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final w in WindowChoice.values)
-                    ChoiceChip(
-                      label: Text(w.label(l10n)),
-                      selected: _window == w,
-                      onSelected: (_) => setState(() => _window = w),
-                    ),
-                ],
+              WindowEditor(
+                value: _window,
+                onChanged: (w) => setState(() => _window = w),
               ),
               // Date-pinned windows (one-offs only — a habit's window comes
               // from its slice rule): the slice shapes the hours, these pick
@@ -226,9 +223,15 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 20),
               _SectionLabel(l10n.remindersSection),
               const SizedBox(height: 8),
-              ReminderPresetChips(
-                selected: _reminders,
-                onChanged: (s) => setState(() => _reminders = s),
+              ReminderEditor(
+                value: _notifications,
+                // A series always has an occurrence day; a one-off needs a
+                // due (or start) date for day-based reminders.
+                hasDay:
+                    _recurrence != null ||
+                    _dueDate != null ||
+                    _startDate != null,
+                onChanged: (n) => setState(() => _notifications = n),
               ),
               const SizedBox(height: 20),
               _SectionLabel(l10n.repeatSection),

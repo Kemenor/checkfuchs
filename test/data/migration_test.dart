@@ -15,7 +15,7 @@ void main() {
 
   test('a fresh database opens at the current schemaVersion', () async {
     await db.select(db.tasks).get(); // force the lazy open
-    expect(db.schemaVersion, 10);
+    expect(db.schemaVersion, 11);
   });
 
   test('PRAGMA foreign_keys is ON after open (beforeOpen ran)', () async {
@@ -74,7 +74,7 @@ void main() {
       expect(rows, hasLength(1));
       expect((rows.single.templateId, rows.single.lensId), (3, 7));
       final v = await v10.customSelect('PRAGMA user_version').getSingle();
-      expect(v.data.values.single, 10);
+      expect(v.data.values.single, 11);
     },
   );
 

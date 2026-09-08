@@ -6,6 +6,7 @@ import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
 import '../../domain/template.dart' as domain;
 import '../../domain/window_rule.dart';
+import '../db/converters.dart';
 import '../db/database.dart';
 
 /// Bridges the drift database and the pure domain engine: maps rows ⇄ domain
@@ -463,6 +464,7 @@ class TaskRepository {
     createdAt: r.createdAt,
     resolvedAt: r.resolvedAt,
     notifications: r.notifications,
+    bands: bandsFromSql(r.windowBands),
   );
 
   TasksCompanion _toCompanion(domain.Task t) => TasksCompanion(
@@ -477,5 +479,6 @@ class TaskRepository {
     createdAt: Value(t.createdAt),
     resolvedAt: Value(t.resolvedAt),
     notifications: Value(t.notifications),
+    windowBands: Value(bandsToSql(t.bands)),
   );
 }

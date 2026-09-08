@@ -56,6 +56,11 @@ Future<({int lensId, int viewId, int templateId, int taskId})> seed(
       .into(db.viewLens)
       .insert(ViewLensCompanion.insert(viewId: viewId, lensId: lensId));
   await db
+      .into(db.templateLens)
+      .insert(
+        TemplateLensCompanion.insert(templateId: templateId, lensId: lensId),
+      );
+  await db
       .into(db.vacations)
       .insert(
         VacationsCompanion.insert(
@@ -203,6 +208,11 @@ void main() {
       final template = await dest.select(dest.templates).getSingle();
       expect(template.name, 'Brush teeth');
       expect(template.defaultLensId, ids.lensId);
+      final templateLens = await dest.select(dest.templateLens).getSingle();
+      expect(
+        (templateLens.templateId, templateLens.lensId),
+        (template.id, ids.lensId),
+      );
       final slice = template.windowRule as Slice;
       expect(slice.from, const Duration(hours: 6));
       expect(slice.to, const Duration(hours: 12));

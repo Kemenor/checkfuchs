@@ -179,6 +179,7 @@ Future<void> restoreBackupZipBytes(AppDatabase db, List<int> zipBytes) async {
     final List<ViewRow> views;
     final List<TaskLensRow> taskLens;
     final List<ViewLensRow> viewLens;
+    final List<TemplateLensRow> templateLens;
     final List<VacationRow> vacations;
     final List<AppSettingsRow> appSettings;
     try {
@@ -188,6 +189,9 @@ Future<void> restoreBackupZipBytes(AppDatabase db, List<int> zipBytes) async {
       views = await src.select(src.views).get();
       taskLens = await src.select(src.taskLens).get();
       viewLens = await src.select(src.viewLens).get();
+      // Opening the backup as an AppDatabase migrated it, so a pre-v10 file
+      // has template_lens seeded from its default_lens_id.
+      templateLens = await src.select(src.templateLens).get();
       vacations = await src.select(src.vacations).get();
       appSettings = await src.select(src.appSettings).get();
     } finally {
@@ -198,6 +202,7 @@ Future<void> restoreBackupZipBytes(AppDatabase db, List<int> zipBytes) async {
       // Children before parents (foreign keys are enforced).
       await db.delete(db.taskLens).go();
       await db.delete(db.viewLens).go();
+      await db.delete(db.templateLens).go();
       await db.delete(db.tasks).go();
       await db.delete(db.templates).go();
       await db.delete(db.lenses).go();
@@ -217,6 +222,9 @@ Future<void> restoreBackupZipBytes(AppDatabase db, List<int> zipBytes) async {
         ]);
         b.insertAll(db.viewLens, [
           for (final r in viewLens) r.toCompanion(false),
+        ]);
+        b.insertAll(db.templateLens, [
+          for (final r in templateLens) r.toCompanion(false),
         ]);
         b.insertAll(db.vacations, [
           for (final r in vacations) r.toCompanion(false),

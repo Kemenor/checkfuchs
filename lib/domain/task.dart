@@ -4,6 +4,7 @@
 library;
 
 import 'notification.dart';
+import 'window_rule.dart';
 
 /// The four live-or-terminal states (§2.2). Only `open` is non-terminal.
 enum TaskStatus { open, done, skipped, missed }
@@ -33,6 +34,7 @@ class Task {
     required this.createdAt,
     this.resolvedAt,
     this.notifications = const [],
+    this.bands,
   });
 
   final int? id;
@@ -63,6 +65,11 @@ class Task {
   /// pings by construction.
   final List<TaskNotification> notifications;
 
+  /// Active bands *within* `start`…`end`, repeating each civil day of the
+  /// window ("morning or evening"). Null = the whole span is active. Only the
+  /// phase reads this; `start`/`end` stay the envelope everything else uses.
+  final List<Band>? bands;
+
   bool get isOpen => status == TaskStatus.open;
   bool get isTerminal => !isOpen;
 
@@ -83,6 +90,7 @@ class Task {
     DateTime? createdAt,
     Object? resolvedAt = _unset,
     List<TaskNotification>? notifications,
+    Object? bands = _unset,
   }) {
     return Task(
       id: id ?? this.id,
@@ -102,6 +110,7 @@ class Task {
           ? this.resolvedAt
           : resolvedAt as DateTime?,
       notifications: notifications ?? this.notifications,
+      bands: identical(bands, _unset) ? this.bands : bands as List<Band>?,
     );
   }
 
@@ -130,7 +139,17 @@ class Task {
       other.occurrence == occurrence &&
       other.createdAt == createdAt &&
       other.resolvedAt == resolvedAt &&
-      _sameNotifications(other.notifications, notifications);
+      _sameNotifications(other.notifications, notifications) &&
+      _sameBands(other.bands, bands);
+
+  static bool _sameBands(List<Band>? a, List<Band>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null || a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 
   @override
   int get hashCode => Object.hash(
@@ -145,6 +164,7 @@ class Task {
     createdAt,
     resolvedAt,
     Object.hashAll(notifications),
+    bands == null ? null : Object.hashAll(bands!),
   );
 
   @override
@@ -157,9 +177,15 @@ class Task {
 
 /// Where `now` sits in the task's window. Independent of [TaskStatus]; it only
 /// describes time. (`start` null ⇒ never pending; `end` null ⇒ never expired.)
+/// With [Task.bands], the gaps between bands read as `pending` — the window
+/// hasn't expired, but the task isn't actionable right now.
 TaskPhase phaseOf(Task t, DateTime now) {
   if (t.start != null && now.isBefore(t.start!)) return TaskPhase.pending;
   if (t.end != null && now.isAfter(t.end!)) return TaskPhase.expired;
+  final bands = t.bands;
+  if (bands != null && bands.isNotEmpty && !bands.any((b) => b.contains(now))) {
+    return TaskPhase.pending;
+  }
   return TaskPhase.active;
 }
 

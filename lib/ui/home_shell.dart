@@ -12,6 +12,7 @@ import 'name_prompt_dialog.dart';
 import 'onboarding_intro.dart';
 import 'onboarding_sheet.dart';
 import 'settings_screen.dart';
+import 'stats_screen.dart';
 import 'task_tile.dart';
 import 'view_edit_screen.dart';
 import 'view_icons.dart';
@@ -31,6 +32,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   int _selectedView = 0;
   bool _onSettings = false;
+
+  /// The Stats tab (Settings → Stats tab, default on) is selected.
+  bool _onStats = false;
 
   /// First-run onboarding considered this session (also on resume-startups),
   /// so the check runs at most once per app run.
@@ -120,25 +124,37 @@ class _HomeShellState extends ConsumerState<HomeShell>
   /// The bar: the user's Views (up to 4; beyond that the fourth slot becomes
   /// "More", a sheet with the rest) plus the fixed **Settings** destination —
   /// the knabberfuchs family layout (DESIGN_SYSTEM §3.3).
-  Widget? _navBar(List<ViewRow> vs, AppLocalizations l10n) {
+  Widget? _navBar(List<ViewRow> vs, AppLocalizations l10n, bool statsTab) {
     if (vs.isEmpty) return null; // still seeding
     const maxViewSlots = 4;
     final overflow = vs.length > maxViewSlots;
     final shown = overflow ? vs.sublist(0, maxViewSlots - 1) : vs;
-    final settingsIndex = shown.length + (overflow ? 1 : 0);
+    final statsIndex = shown.length + (overflow ? 1 : 0);
+    final settingsIndex = statsIndex + (statsTab ? 1 : 0);
     final idx = _selectedView.clamp(0, vs.length - 1);
     return NavigationBar(
       selectedIndex: _onSettings
           ? settingsIndex
+          : (statsTab && _onStats)
+          ? statsIndex
           : (idx >= shown.length ? shown.length : idx),
       onDestinationSelected: (i) {
         if (i == settingsIndex) {
-          setState(() => _onSettings = true);
+          setState(() {
+            _onSettings = true;
+            _onStats = false;
+          });
+        } else if (statsTab && i == statsIndex) {
+          setState(() {
+            _onStats = true;
+            _onSettings = false;
+          });
         } else if (overflow && i == shown.length) {
           _showMoreViews(vs.sublist(shown.length), shown.length);
         } else {
           setState(() {
             _onSettings = false;
+            _onStats = false;
             _selectedView = i;
           });
         }
@@ -154,6 +170,12 @@ class _HomeShellState extends ConsumerState<HomeShell>
           NavigationDestination(
             icon: const Icon(Symbols.more_horiz_rounded),
             label: l10n.moreLabel,
+          ),
+        if (statsTab)
+          NavigationDestination(
+            icon: const Icon(Symbols.insights_rounded),
+            selectedIcon: const Icon(Symbols.insights_rounded, fill: 1),
+            label: l10n.statsTitle,
           ),
         NavigationDestination(
           icon: const Icon(Symbols.settings_rounded),
@@ -267,10 +289,13 @@ class _HomeShellState extends ConsumerState<HomeShell>
     // Activate the reminder sync (Phase 5): the provider listens to the task
     // stream and re-fills the OS schedule on every change.
     ref.watch(notificationSyncProvider);
+    final statsTab = ref.watch(settingsProvider.select((s) => s.statsTab));
 
     return Scaffold(
       body: _onSettings
           ? const SettingsScreen()
+          : (statsTab && _onStats)
+          ? const StatsScreen()
           : views.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text(l10n.somethingWentWrong)),
@@ -284,7 +309,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
               },
             ),
       bottomNavigationBar: views.maybeWhen(
-        data: (vs) => _navBar(vs, l10n),
+        data: (vs) => _navBar(vs, l10n, statsTab),
         orElse: () => null,
       ),
     );

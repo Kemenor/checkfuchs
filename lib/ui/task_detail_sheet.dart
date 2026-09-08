@@ -6,11 +6,12 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
 import '../domain/analytics.dart';
+import '../domain/notification.dart';
 import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
-import 'reminder_presets.dart';
+import 'reminder_editor.dart';
 
 /// Tap a task → this sheet: rename, delete this occurrence, or delete the whole
 /// series (recurring only). Delete is the one sanctioned use of `error` red
@@ -100,17 +101,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   /// The live task — re-read after nested sheets mutate it (turn-into-series /
   /// stop-repeating change `templateId`, which drives most of this sheet).
   late Task _task = widget.task;
-  late Set<ReminderPreset> _reminders = ReminderPreset.fromNotifications(
-    _task.notifications,
-  );
+  late List<TaskNotification> _notifications = _task.notifications;
   bool _paused = false;
   HabitStats? _stats;
   List<LensRow> _lenses = const [];
   Set<int> _lensIds = const {};
 
-  Future<void> _setReminders(Set<ReminderPreset> presets) async {
-    setState(() => _reminders = presets);
-    final n = ReminderPreset.toNotifications(presets);
+  Future<void> _setReminders(List<TaskNotification> n) async {
+    setState(() => _notifications = n);
     final repo = ref.read(taskRepositoryProvider);
     // A series edit updates the defaults AND the open instances; a one-off
     // edit touches just this task.
@@ -236,7 +234,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     }
     setState(() {
       _task = fresh;
-      _reminders = ReminderPreset.fromNotifications(fresh.notifications);
+      _notifications = fresh.notifications;
     });
     _loadSeriesInfo();
   }
@@ -336,7 +334,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
               ],
             ),
             const SizedBox(height: 8),
-            ReminderPresetChips(selected: _reminders, onChanged: _setReminders),
+            ReminderEditor(
+              value: _notifications,
+              hasDay:
+                  _task.occurrence != null ||
+                  _task.end != null ||
+                  _task.start != null,
+              onChanged: _setReminders,
+            ),
             const SizedBox(height: 4),
             if (_lenses.length > 1)
               ListTile(

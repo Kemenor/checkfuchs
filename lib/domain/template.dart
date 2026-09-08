@@ -66,6 +66,7 @@ class Template {
       occurrence: DateTime(occurrence.year, occurrence.month, occurrence.day),
       createdAt: now,
       notifications: notifications,
+      bands: windowRule.bands,
     );
   }
 }

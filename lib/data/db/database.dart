@@ -65,6 +65,11 @@ class Tasks extends Table {
   IntColumn get status => intEnum<TaskStatus>()();
   DateTimeColumn get windowStart => dateTime().nullable()();
   DateTimeColumn get windowEnd => dateTime().nullable()();
+
+  /// Optional active bands *within* start…end (a "morning or evening" task):
+  /// JSON list of [fromMinutes, toMinutes] pairs relative to the start day's
+  /// midnight. Null = the whole start…end span is active.
+  TextColumn get windowBands => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get resolvedAt => dateTime().nullable()();
 
@@ -151,6 +156,13 @@ class AppSettings extends Table {
   /// Hidden developer section (unlocked by long-pressing the About title).
   BoolColumn get debugMenu => boolean().withDefault(const Constant(false))();
 
+  /// Stats tab in the bottom bar (default on).
+  BoolColumn get statsTab => boolean().withDefault(const Constant(true))();
+
+  /// Enabled Stats tiles in display order, JSON list of tile ids. Null =
+  /// the default set.
+  TextColumn get statsTiles => text().nullable()();
+
   /// App-language override ('system' = follow the OS locale).
   TextColumn get localeCode => text().withDefault(const Constant('system'))();
 
@@ -183,7 +195,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -266,6 +278,12 @@ class AppDatabase extends _$AppDatabase {
           'SELECT id, default_lens_id FROM templates '
           'WHERE default_lens_id IS NOT NULL',
         );
+      }
+      if (from < 11) {
+        // Multi-band windows on tasks; Stats tab + tile settings.
+        await _addColumnIfMissing(m, tasks, tasks.windowBands);
+        await _addColumnIfMissing(m, appSettings, appSettings.statsTab);
+        await _addColumnIfMissing(m, appSettings, appSettings.statsTiles);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

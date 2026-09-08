@@ -435,6 +435,45 @@
   "@remindAtDue": {
     "description": "Reminder preset: ping at the window end"
   },
+  "windowCustom": "Custom…",
+  "@windowCustom": {
+    "description": "Chip that adds a custom time band"
+  },
+  "windowBandsSummary": "Open {bands}",
+  "@windowBandsSummary": {
+    "description": "Summary line under the window chips, single band. {bands} = e.g. 06:00\u201312:00",
+    "placeholders": {"bands": {"type": "String"}}
+  },
+  "windowBandsSummaryMulti": "Open {bands} · done once in any of them",
+  "@windowBandsSummaryMulti": {
+    "description": "Summary line, several bands: the task is done once in any of them",
+    "placeholders": {"bands": {"type": "String"}}
+  },
+  "remindAtTime": "At a time…",
+  "@remindAtTime": {
+    "description": "Button that adds a custom day-offset reminder row"
+  },
+  "remindOnTheDay": "On the day",
+  "@remindOnTheDay": {
+    "description": "Custom reminder: zero days before"
+  },
+  "remindDaysBefore": "{n, plural, =1{1 day before} other{{n} days before}}",
+  "@remindDaysBefore": {
+    "description": "Custom reminder: N days before the task day",
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "remindDaysBeforeMore": "One more day before",
+  "@remindDaysBeforeMore": {
+    "description": "Tooltip: increase days-before"
+  },
+  "remindDaysBeforeFewer": "One day less before",
+  "@remindDaysBeforeFewer": {
+    "description": "Tooltip: decrease days-before"
+  },
+  "remindNeedsDueDate": "Set a due date so day-based reminders know which day.",
+  "@remindNeedsDueDate": {
+    "description": "Hint under custom reminders on a one-off without any date"
+  },
   "moreLabel": "More",
   "@moreLabel": {
     "description": "Overflow destination in the bottom navigation bar"
@@ -904,5 +943,169 @@
   },
   "@noDueDate": {
     "description": "Create sheet: due-date row placeholder — no deadline"
+  },
+  "statsTitle": "Stats",
+  "@statsTitle": {
+    "description": "Stats: statsTitle"
+  },
+  "statsEditTiles": "Edit tiles",
+  "@statsEditTiles": {
+    "description": "Stats: statsEditTiles"
+  },
+  "statsEditTilesHint": "Tiles you switch on appear on Stats in this order. Drag the handle to reorder.",
+  "@statsEditTilesHint": {
+    "description": "Stats: statsEditTilesHint"
+  },
+  "statsTabSetting": "Stats tab",
+  "@statsTabSetting": {
+    "description": "Stats: statsTabSetting"
+  },
+  "statsTabSettingSubtitle": "Show Stats in the bottom bar",
+  "@statsTabSettingSubtitle": {
+    "description": "Stats: statsTabSettingSubtitle"
+  },
+  "statsNoHabits": "No habits yet. Stats fill in as your days go by.",
+  "@statsNoHabits": {
+    "description": "Stats: statsNoHabits"
+  },
+  "tileCompletion": "Completion",
+  "@tileCompletion": {
+    "description": "Stats: tileCompletion"
+  },
+  "tileCompletionSub": "7-day and 30-day done rate",
+  "@tileCompletionSub": {
+    "description": "Stats: tileCompletionSub"
+  },
+  "tileWeek": "This week",
+  "@tileWeek": {
+    "description": "Stats: tileWeek"
+  },
+  "tileWeekSub": "One dot per day, per habit",
+  "@tileWeekSub": {
+    "description": "Stats: tileWeekSub"
+  },
+  "tileStreaks": "Streaks",
+  "@tileStreaks": {
+    "description": "Stats: tileStreaks"
+  },
+  "tileStreaksSub": "Current and best, per habit",
+  "@tileStreaksSub": {
+    "description": "Stats: tileStreaksSub"
+  },
+  "tileInsight": "Insight",
+  "@tileInsight": {
+    "description": "Stats: tileInsight"
+  },
+  "tileInsightSub": "One sentence about your pattern",
+  "@tileInsightSub": {
+    "description": "Stats: tileInsightSub"
+  },
+  "tileHeatmap": "Habit grid",
+  "@tileHeatmap": {
+    "description": "Stats: tileHeatmap"
+  },
+  "tileHeatmapSub": "30-day grid per habit",
+  "@tileHeatmapSub": {
+    "description": "Stats: tileHeatmapSub"
+  },
+  "tileByWindow": "By window",
+  "@tileByWindow": {
+    "description": "Stats: tileByWindow"
+  },
+  "tileByWindowSub": "Done rate for night, morning, afternoon, evening",
+  "@tileByWindowSub": {
+    "description": "Stats: tileByWindowSub"
+  },
+  "tileMissesByWeekday": "Misses by weekday",
+  "@tileMissesByWeekday": {
+    "description": "Stats: tileMissesByWeekday"
+  },
+  "tileMissesByWeekdaySub": "Which days slip, last 30 days",
+  "@tileMissesByWeekdaySub": {
+    "description": "Stats: tileMissesByWeekdaySub"
+  },
+  "statsLast7Days": "Last 7 days",
+  "@statsLast7Days": {
+    "description": "Stats: statsLast7Days"
+  },
+  "statsLast30Days": "Last 30 days",
+  "@statsLast30Days": {
+    "description": "Stats: statsLast30Days"
+  },
+  "statsDoneRate30": "Done rate · 30 days",
+  "@statsDoneRate30": {
+    "description": "Stats: statsDoneRate30"
+  },
+  "statsWeekBreakdown": "{done} done · {skipped} skipped · {missed} missed of {total} windows this week",
+  "@statsWeekBreakdown": {
+    "description": "Stats: statsWeekBreakdown",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      },
+      "missed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "statsStreakDays": "days · best {best}",
+  "@statsStreakDays": {
+    "description": "Stats: statsStreakDays",
+    "placeholders": {
+      "best": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLegendDone": "Done",
+  "@statsLegendDone": {
+    "description": "Stats: statsLegendDone"
+  },
+  "statsLegendSkipped": "Skipped",
+  "@statsLegendSkipped": {
+    "description": "Stats: statsLegendSkipped"
+  },
+  "statsLegendMissed": "Missed",
+  "@statsLegendMissed": {
+    "description": "Stats: statsLegendMissed"
+  },
+  "statsLegendOpen": "Open",
+  "@statsLegendOpen": {
+    "description": "Stats: statsLegendOpen"
+  },
+  "statsLegendNoWindow": "No window",
+  "@statsLegendNoWindow": {
+    "description": "Stats: statsLegendNoWindow"
+  },
+  "statsInsightWeakWindow": "{window} is your weak spot — {rate} done.",
+  "@statsInsightWeakWindow": {
+    "description": "Stats: statsInsightWeakWindow",
+    "placeholders": {
+      "window": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "statsInsightBestWeekday": "Best day: {day}.",
+  "@statsInsightBestWeekday": {
+    "description": "Stats: statsInsightBestWeekday",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "statsInsightNone": "Not enough days yet — the pattern shows up as you go.",
+  "@statsInsightNone": {
+    "description": "Stats: statsInsightNone"
   }
 }

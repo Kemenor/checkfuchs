@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 
@@ -78,4 +80,139 @@ enum WindowChoice {
     WindowChoice.afternoon => (12, 18),
     WindowChoice.evening => (18, 24),
   };
+}
+
+/// The multi-band active-window picker state (examples/ui/07): any set of
+/// the preset bands plus custom bands. Empty = Anytime. "Morning + Evening"
+/// means *one* task, done once in either band (the gap is honoured by
+/// `phaseOf`); people who want it twice make two tasks.
+class WindowSelection {
+  const WindowSelection({this.presets = const {}, this.custom = const []});
+
+  static const anytime = WindowSelection();
+
+  /// Preset bands (never [WindowChoice.anytime]).
+  final Set<WindowChoice> presets;
+
+  /// Extra bands added via "Custom…", in insertion order.
+  final List<Band> custom;
+
+  bool get isAnytime => presets.isEmpty && custom.isEmpty;
+
+  /// All bands, merged and sorted.
+  List<Band> get bands => Band.normalize([
+    for (final p in presets)
+      Band(
+        from: Duration(hours: p._hours.$1),
+        to: Duration(hours: p._hours.$2),
+      ),
+    ...custom,
+  ]);
+
+  /// Whether the merged bands leave a gap (needs `Task.bands`).
+  bool get hasGaps => bands.length > 1;
+
+  WindowSelection toggle(WindowChoice c) => c == WindowChoice.anytime
+      ? anytime
+      : WindowSelection(
+          presets: presets.contains(c)
+              ? ({...presets}..remove(c))
+              : {...presets, c},
+          custom: custom,
+        );
+
+  WindowSelection addCustom(Band b) =>
+      WindowSelection(presets: presets, custom: [...custom, b]);
+
+  WindowSelection replaceCustom(int i, Band b) => WindowSelection(
+    presets: presets,
+    custom: [for (var k = 0; k < custom.length; k++) k == i ? b : custom[k]],
+  );
+
+  WindowSelection removeCustom(int i) => WindowSelection(
+    presets: presets,
+    custom: [
+      for (var k = 0; k < custom.length; k++)
+        if (k != i) custom[k],
+    ],
+  );
+
+  /// The series rule: Anytime → until-next; one band → [Slice]; several →
+  /// [MultiSlice].
+  WindowRule toRule() {
+    final b = bands;
+    if (b.isEmpty) return const UntilNextOccurrence();
+    if (b.length == 1) return Slice(from: b.first.from, to: b.first.to);
+    return MultiSlice(b);
+  }
+
+  /// (start, end) for a one-off created at [now] — the envelope; see
+  /// [WindowChoice.oneOffWindow] for the roll-to-tomorrow rule.
+  (DateTime?, DateTime?) oneOffWindow(DateTime now) {
+    final b = bands;
+    if (b.isEmpty) return (null, null);
+    DateTime at(DateTime day, Duration o) => DateTime(
+      day.year,
+      day.month,
+      day.day + o.inDays,
+      (o - Duration(days: o.inDays)).inHours,
+      o.inMinutes % 60,
+    );
+    var day = DateTime(now.year, now.month, now.day);
+    var end = at(day, b.last.to);
+    if (!end.isAfter(now)) {
+      day = DateTime(day.year, day.month, day.day + 1);
+      end = at(day, b.last.to);
+    }
+    return (at(day, b.first.from), end);
+  }
+
+  /// Date-pinned one-off window (see [WindowChoice.datedWindow]).
+  (DateTime?, DateTime?) datedWindow(
+    DateTime now,
+    DateTime? startDate,
+    DateTime? dueDate,
+  ) {
+    final b = bands;
+    final (from, to) = b.isEmpty
+        ? (Duration.zero, const Duration(hours: 24))
+        : (b.first.from, b.last.to);
+    DateTime at(DateTime day, Duration o) => DateTime(
+      day.year,
+      day.month,
+      day.day + o.inDays,
+      (o - Duration(days: o.inDays)).inHours,
+      o.inMinutes % 60,
+    );
+    final (defaultStart, defaultEnd) = b.isEmpty
+        ? WindowChoice.anytime.datedWindow(now, null, null)
+        : oneOffWindow(now);
+    return (
+      startDate == null ? defaultStart : at(startDate, from),
+      dueDate == null ? defaultEnd : at(dueDate, to),
+    );
+  }
+
+  /// "06:00–12:00, 18:00–24:00" in the locale's 24h/12h style.
+  String describe(BuildContext context) {
+    final loc = MaterialLocalizations.of(context);
+    final always24 = MediaQuery.alwaysUse24HourFormatOf(context);
+    String f(Duration o) {
+      final h = o.inHours, m = o.inMinutes % 60;
+      if (h == 24) {
+        return always24
+            ? '24:00'
+            : loc.formatTimeOfDay(
+                const TimeOfDay(hour: 0, minute: 0),
+                alwaysUse24HourFormat: always24,
+              );
+      }
+      return loc.formatTimeOfDay(
+        TimeOfDay(hour: h, minute: m),
+        alwaysUse24HourFormat: always24,
+      );
+    }
+
+    return bands.map((b) => '${f(b.from)}–${f(b.to)}').join(', ');
+  }
 }

@@ -1229,6 +1229,17 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _windowBandsMeta = const VerificationMeta(
+    'windowBands',
+  );
+  @override
+  late final GeneratedColumn<String> windowBands = GeneratedColumn<String>(
+    'window_bands',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1271,6 +1282,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     status,
     windowStart,
     windowEnd,
+    windowBands,
     createdAt,
     resolvedAt,
     notifications,
@@ -1331,6 +1343,15 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
         windowEnd.isAcceptableOrUnknown(data['window_end']!, _windowEndMeta),
       );
     }
+    if (data.containsKey('window_bands')) {
+      context.handle(
+        _windowBandsMeta,
+        windowBands.isAcceptableOrUnknown(
+          data['window_bands']!,
+          _windowBandsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1388,6 +1409,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}window_end'],
       ),
+      windowBands: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}window_bands'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1425,6 +1450,11 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
   final TaskStatus status;
   final DateTime? windowStart;
   final DateTime? windowEnd;
+
+  /// Optional active bands *within* start…end (a "morning or evening" task):
+  /// JSON list of [fromMinutes, toMinutes] pairs relative to the start day's
+  /// midnight. Null = the whole start…end span is active.
+  final String? windowBands;
   final DateTime createdAt;
   final DateTime? resolvedAt;
 
@@ -1439,6 +1469,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     required this.status,
     this.windowStart,
     this.windowEnd,
+    this.windowBands,
     required this.createdAt,
     this.resolvedAt,
     required this.notifications,
@@ -1465,6 +1496,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     }
     if (!nullToAbsent || windowEnd != null) {
       map['window_end'] = Variable<DateTime>(windowEnd);
+    }
+    if (!nullToAbsent || windowBands != null) {
+      map['window_bands'] = Variable<String>(windowBands);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || resolvedAt != null) {
@@ -1496,6 +1530,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       windowEnd: windowEnd == null && nullToAbsent
           ? const Value.absent()
           : Value(windowEnd),
+      windowBands: windowBands == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windowBands),
       createdAt: Value(createdAt),
       resolvedAt: resolvedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1520,6 +1557,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       ),
       windowStart: serializer.fromJson<DateTime?>(json['windowStart']),
       windowEnd: serializer.fromJson<DateTime?>(json['windowEnd']),
+      windowBands: serializer.fromJson<String?>(json['windowBands']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       resolvedAt: serializer.fromJson<DateTime?>(json['resolvedAt']),
       notifications: serializer.fromJson<List<TaskNotification>>(
@@ -1541,6 +1579,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       ),
       'windowStart': serializer.toJson<DateTime?>(windowStart),
       'windowEnd': serializer.toJson<DateTime?>(windowEnd),
+      'windowBands': serializer.toJson<String?>(windowBands),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'resolvedAt': serializer.toJson<DateTime?>(resolvedAt),
       'notifications': serializer.toJson<List<TaskNotification>>(notifications),
@@ -1556,6 +1595,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     TaskStatus? status,
     Value<DateTime?> windowStart = const Value.absent(),
     Value<DateTime?> windowEnd = const Value.absent(),
+    Value<String?> windowBands = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> resolvedAt = const Value.absent(),
     List<TaskNotification>? notifications,
@@ -1568,6 +1608,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     status: status ?? this.status,
     windowStart: windowStart.present ? windowStart.value : this.windowStart,
     windowEnd: windowEnd.present ? windowEnd.value : this.windowEnd,
+    windowBands: windowBands.present ? windowBands.value : this.windowBands,
     createdAt: createdAt ?? this.createdAt,
     resolvedAt: resolvedAt.present ? resolvedAt.value : this.resolvedAt,
     notifications: notifications ?? this.notifications,
@@ -1588,6 +1629,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ? data.windowStart.value
           : this.windowStart,
       windowEnd: data.windowEnd.present ? data.windowEnd.value : this.windowEnd,
+      windowBands: data.windowBands.present
+          ? data.windowBands.value
+          : this.windowBands,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       resolvedAt: data.resolvedAt.present
           ? data.resolvedAt.value
@@ -1609,6 +1653,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ..write('status: $status, ')
           ..write('windowStart: $windowStart, ')
           ..write('windowEnd: $windowEnd, ')
+          ..write('windowBands: $windowBands, ')
           ..write('createdAt: $createdAt, ')
           ..write('resolvedAt: $resolvedAt, ')
           ..write('notifications: $notifications')
@@ -1626,6 +1671,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     status,
     windowStart,
     windowEnd,
+    windowBands,
     createdAt,
     resolvedAt,
     notifications,
@@ -1642,6 +1688,7 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           other.status == this.status &&
           other.windowStart == this.windowStart &&
           other.windowEnd == this.windowEnd &&
+          other.windowBands == this.windowBands &&
           other.createdAt == this.createdAt &&
           other.resolvedAt == this.resolvedAt &&
           other.notifications == this.notifications);
@@ -1656,6 +1703,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
   final Value<TaskStatus> status;
   final Value<DateTime?> windowStart;
   final Value<DateTime?> windowEnd;
+  final Value<String?> windowBands;
   final Value<DateTime> createdAt;
   final Value<DateTime?> resolvedAt;
   final Value<List<TaskNotification>> notifications;
@@ -1668,6 +1716,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     this.status = const Value.absent(),
     this.windowStart = const Value.absent(),
     this.windowEnd = const Value.absent(),
+    this.windowBands = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.resolvedAt = const Value.absent(),
     this.notifications = const Value.absent(),
@@ -1681,6 +1730,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     required TaskStatus status,
     this.windowStart = const Value.absent(),
     this.windowEnd = const Value.absent(),
+    this.windowBands = const Value.absent(),
     required DateTime createdAt,
     this.resolvedAt = const Value.absent(),
     this.notifications = const Value.absent(),
@@ -1696,6 +1746,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Expression<int>? status,
     Expression<DateTime>? windowStart,
     Expression<DateTime>? windowEnd,
+    Expression<String>? windowBands,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? resolvedAt,
     Expression<String>? notifications,
@@ -1709,6 +1760,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       if (status != null) 'status': status,
       if (windowStart != null) 'window_start': windowStart,
       if (windowEnd != null) 'window_end': windowEnd,
+      if (windowBands != null) 'window_bands': windowBands,
       if (createdAt != null) 'created_at': createdAt,
       if (resolvedAt != null) 'resolved_at': resolvedAt,
       if (notifications != null) 'notifications': notifications,
@@ -1724,6 +1776,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Value<TaskStatus>? status,
     Value<DateTime?>? windowStart,
     Value<DateTime?>? windowEnd,
+    Value<String?>? windowBands,
     Value<DateTime>? createdAt,
     Value<DateTime?>? resolvedAt,
     Value<List<TaskNotification>>? notifications,
@@ -1737,6 +1790,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       status: status ?? this.status,
       windowStart: windowStart ?? this.windowStart,
       windowEnd: windowEnd ?? this.windowEnd,
+      windowBands: windowBands ?? this.windowBands,
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
       notifications: notifications ?? this.notifications,
@@ -1772,6 +1826,9 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     if (windowEnd.present) {
       map['window_end'] = Variable<DateTime>(windowEnd.value);
     }
+    if (windowBands.present) {
+      map['window_bands'] = Variable<String>(windowBands.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1797,6 +1854,7 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
           ..write('status: $status, ')
           ..write('windowStart: $windowStart, ')
           ..write('windowEnd: $windowEnd, ')
+          ..write('windowBands: $windowBands, ')
           ..write('createdAt: $createdAt, ')
           ..write('resolvedAt: $resolvedAt, ')
           ..write('notifications: $notifications')
@@ -3308,6 +3366,32 @@ class $AppSettingsTable extends AppSettings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _statsTabMeta = const VerificationMeta(
+    'statsTab',
+  );
+  @override
+  late final GeneratedColumn<bool> statsTab = GeneratedColumn<bool>(
+    'stats_tab',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("stats_tab" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _statsTilesMeta = const VerificationMeta(
+    'statsTiles',
+  );
+  @override
+  late final GeneratedColumn<String> statsTiles = GeneratedColumn<String>(
+    'stats_tiles',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _localeCodeMeta = const VerificationMeta(
     'localeCode',
   );
@@ -3341,6 +3425,8 @@ class $AppSettingsTable extends AppSettings
     themeModeIndex,
     fontIndex,
     debugMenu,
+    statsTab,
+    statsTiles,
     localeCode,
     onboardingDone,
   ];
@@ -3378,6 +3464,18 @@ class $AppSettingsTable extends AppSettings
       context.handle(
         _debugMenuMeta,
         debugMenu.isAcceptableOrUnknown(data['debug_menu']!, _debugMenuMeta),
+      );
+    }
+    if (data.containsKey('stats_tab')) {
+      context.handle(
+        _statsTabMeta,
+        statsTab.isAcceptableOrUnknown(data['stats_tab']!, _statsTabMeta),
+      );
+    }
+    if (data.containsKey('stats_tiles')) {
+      context.handle(
+        _statsTilesMeta,
+        statsTiles.isAcceptableOrUnknown(data['stats_tiles']!, _statsTilesMeta),
       );
     }
     if (data.containsKey('locale_code')) {
@@ -3420,6 +3518,14 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}debug_menu'],
       )!,
+      statsTab: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}stats_tab'],
+      )!,
+      statsTiles: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stats_tiles'],
+      ),
       localeCode: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}locale_code'],
@@ -3445,6 +3551,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Hidden developer section (unlocked by long-pressing the About title).
   final bool debugMenu;
 
+  /// Stats tab in the bottom bar (default on).
+  final bool statsTab;
+
+  /// Enabled Stats tiles in display order, JSON list of tile ids. Null =
+  /// the default set.
+  final String? statsTiles;
+
   /// App-language override ('system' = follow the OS locale).
   final String localeCode;
 
@@ -3456,6 +3569,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.themeModeIndex,
     required this.fontIndex,
     required this.debugMenu,
+    required this.statsTab,
+    this.statsTiles,
     required this.localeCode,
     required this.onboardingDone,
   });
@@ -3466,6 +3581,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['theme_mode_index'] = Variable<int>(themeModeIndex);
     map['font_index'] = Variable<int>(fontIndex);
     map['debug_menu'] = Variable<bool>(debugMenu);
+    map['stats_tab'] = Variable<bool>(statsTab);
+    if (!nullToAbsent || statsTiles != null) {
+      map['stats_tiles'] = Variable<String>(statsTiles);
+    }
     map['locale_code'] = Variable<String>(localeCode);
     map['onboarding_done'] = Variable<bool>(onboardingDone);
     return map;
@@ -3477,6 +3596,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       themeModeIndex: Value(themeModeIndex),
       fontIndex: Value(fontIndex),
       debugMenu: Value(debugMenu),
+      statsTab: Value(statsTab),
+      statsTiles: statsTiles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(statsTiles),
       localeCode: Value(localeCode),
       onboardingDone: Value(onboardingDone),
     );
@@ -3492,6 +3615,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       themeModeIndex: serializer.fromJson<int>(json['themeModeIndex']),
       fontIndex: serializer.fromJson<int>(json['fontIndex']),
       debugMenu: serializer.fromJson<bool>(json['debugMenu']),
+      statsTab: serializer.fromJson<bool>(json['statsTab']),
+      statsTiles: serializer.fromJson<String?>(json['statsTiles']),
       localeCode: serializer.fromJson<String>(json['localeCode']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
     );
@@ -3504,6 +3629,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'themeModeIndex': serializer.toJson<int>(themeModeIndex),
       'fontIndex': serializer.toJson<int>(fontIndex),
       'debugMenu': serializer.toJson<bool>(debugMenu),
+      'statsTab': serializer.toJson<bool>(statsTab),
+      'statsTiles': serializer.toJson<String?>(statsTiles),
       'localeCode': serializer.toJson<String>(localeCode),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
     };
@@ -3514,6 +3641,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? themeModeIndex,
     int? fontIndex,
     bool? debugMenu,
+    bool? statsTab,
+    Value<String?> statsTiles = const Value.absent(),
     String? localeCode,
     bool? onboardingDone,
   }) => AppSettingsRow(
@@ -3521,6 +3650,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     themeModeIndex: themeModeIndex ?? this.themeModeIndex,
     fontIndex: fontIndex ?? this.fontIndex,
     debugMenu: debugMenu ?? this.debugMenu,
+    statsTab: statsTab ?? this.statsTab,
+    statsTiles: statsTiles.present ? statsTiles.value : this.statsTiles,
     localeCode: localeCode ?? this.localeCode,
     onboardingDone: onboardingDone ?? this.onboardingDone,
   );
@@ -3532,6 +3663,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           : this.themeModeIndex,
       fontIndex: data.fontIndex.present ? data.fontIndex.value : this.fontIndex,
       debugMenu: data.debugMenu.present ? data.debugMenu.value : this.debugMenu,
+      statsTab: data.statsTab.present ? data.statsTab.value : this.statsTab,
+      statsTiles: data.statsTiles.present
+          ? data.statsTiles.value
+          : this.statsTiles,
       localeCode: data.localeCode.present
           ? data.localeCode.value
           : this.localeCode,
@@ -3548,6 +3683,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
           ..write('debugMenu: $debugMenu, ')
+          ..write('statsTab: $statsTab, ')
+          ..write('statsTiles: $statsTiles, ')
           ..write('localeCode: $localeCode, ')
           ..write('onboardingDone: $onboardingDone')
           ..write(')'))
@@ -3560,6 +3697,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     themeModeIndex,
     fontIndex,
     debugMenu,
+    statsTab,
+    statsTiles,
     localeCode,
     onboardingDone,
   );
@@ -3571,6 +3710,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.themeModeIndex == this.themeModeIndex &&
           other.fontIndex == this.fontIndex &&
           other.debugMenu == this.debugMenu &&
+          other.statsTab == this.statsTab &&
+          other.statsTiles == this.statsTiles &&
           other.localeCode == this.localeCode &&
           other.onboardingDone == this.onboardingDone);
 }
@@ -3580,6 +3721,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> themeModeIndex;
   final Value<int> fontIndex;
   final Value<bool> debugMenu;
+  final Value<bool> statsTab;
+  final Value<String?> statsTiles;
   final Value<String> localeCode;
   final Value<bool> onboardingDone;
   const AppSettingsCompanion({
@@ -3587,6 +3730,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
+    this.statsTab = const Value.absent(),
+    this.statsTiles = const Value.absent(),
     this.localeCode = const Value.absent(),
     this.onboardingDone = const Value.absent(),
   });
@@ -3595,6 +3740,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.themeModeIndex = const Value.absent(),
     this.fontIndex = const Value.absent(),
     this.debugMenu = const Value.absent(),
+    this.statsTab = const Value.absent(),
+    this.statsTiles = const Value.absent(),
     this.localeCode = const Value.absent(),
     this.onboardingDone = const Value.absent(),
   });
@@ -3603,6 +3750,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? themeModeIndex,
     Expression<int>? fontIndex,
     Expression<bool>? debugMenu,
+    Expression<bool>? statsTab,
+    Expression<String>? statsTiles,
     Expression<String>? localeCode,
     Expression<bool>? onboardingDone,
   }) {
@@ -3611,6 +3760,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       if (themeModeIndex != null) 'theme_mode_index': themeModeIndex,
       if (fontIndex != null) 'font_index': fontIndex,
       if (debugMenu != null) 'debug_menu': debugMenu,
+      if (statsTab != null) 'stats_tab': statsTab,
+      if (statsTiles != null) 'stats_tiles': statsTiles,
       if (localeCode != null) 'locale_code': localeCode,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
     });
@@ -3621,6 +3772,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? themeModeIndex,
     Value<int>? fontIndex,
     Value<bool>? debugMenu,
+    Value<bool>? statsTab,
+    Value<String?>? statsTiles,
     Value<String>? localeCode,
     Value<bool>? onboardingDone,
   }) {
@@ -3629,6 +3782,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       themeModeIndex: themeModeIndex ?? this.themeModeIndex,
       fontIndex: fontIndex ?? this.fontIndex,
       debugMenu: debugMenu ?? this.debugMenu,
+      statsTab: statsTab ?? this.statsTab,
+      statsTiles: statsTiles ?? this.statsTiles,
       localeCode: localeCode ?? this.localeCode,
       onboardingDone: onboardingDone ?? this.onboardingDone,
     );
@@ -3649,6 +3804,12 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (debugMenu.present) {
       map['debug_menu'] = Variable<bool>(debugMenu.value);
     }
+    if (statsTab.present) {
+      map['stats_tab'] = Variable<bool>(statsTab.value);
+    }
+    if (statsTiles.present) {
+      map['stats_tiles'] = Variable<String>(statsTiles.value);
+    }
     if (localeCode.present) {
       map['locale_code'] = Variable<String>(localeCode.value);
     }
@@ -3665,6 +3826,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('themeModeIndex: $themeModeIndex, ')
           ..write('fontIndex: $fontIndex, ')
           ..write('debugMenu: $debugMenu, ')
+          ..write('statsTab: $statsTab, ')
+          ..write('statsTiles: $statsTiles, ')
           ..write('localeCode: $localeCode, ')
           ..write('onboardingDone: $onboardingDone')
           ..write(')'))
@@ -5028,6 +5191,7 @@ typedef $$TasksTableCreateCompanionBuilder =
       required TaskStatus status,
       Value<DateTime?> windowStart,
       Value<DateTime?> windowEnd,
+      Value<String?> windowBands,
       required DateTime createdAt,
       Value<DateTime?> resolvedAt,
       Value<List<TaskNotification>> notifications,
@@ -5042,6 +5206,7 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<TaskStatus> status,
       Value<DateTime?> windowStart,
       Value<DateTime?> windowEnd,
+      Value<String?> windowBands,
       Value<DateTime> createdAt,
       Value<DateTime?> resolvedAt,
       Value<List<TaskNotification>> notifications,
@@ -5128,6 +5293,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<DateTime> get windowEnd => $composableBuilder(
     column: $table.windowEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get windowBands => $composableBuilder(
+    column: $table.windowBands,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5244,6 +5414,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get windowBands => $composableBuilder(
+    column: $table.windowBands,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5316,6 +5491,11 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get windowEnd =>
       $composableBuilder(column: $table.windowEnd, builder: (column) => column);
+
+  GeneratedColumn<String> get windowBands => $composableBuilder(
+    column: $table.windowBands,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5416,6 +5596,7 @@ class $$TasksTableTableManager
                 Value<TaskStatus> status = const Value.absent(),
                 Value<DateTime?> windowStart = const Value.absent(),
                 Value<DateTime?> windowEnd = const Value.absent(),
+                Value<String?> windowBands = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> resolvedAt = const Value.absent(),
                 Value<List<TaskNotification>> notifications =
@@ -5429,6 +5610,7 @@ class $$TasksTableTableManager
                 status: status,
                 windowStart: windowStart,
                 windowEnd: windowEnd,
+                windowBands: windowBands,
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
                 notifications: notifications,
@@ -5443,6 +5625,7 @@ class $$TasksTableTableManager
                 required TaskStatus status,
                 Value<DateTime?> windowStart = const Value.absent(),
                 Value<DateTime?> windowEnd = const Value.absent(),
+                Value<String?> windowBands = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> resolvedAt = const Value.absent(),
                 Value<List<TaskNotification>> notifications =
@@ -5456,6 +5639,7 @@ class $$TasksTableTableManager
                 status: status,
                 windowStart: windowStart,
                 windowEnd: windowEnd,
+                windowBands: windowBands,
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
                 notifications: notifications,
@@ -7101,6 +7285,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> themeModeIndex,
       Value<int> fontIndex,
       Value<bool> debugMenu,
+      Value<bool> statsTab,
+      Value<String?> statsTiles,
       Value<String> localeCode,
       Value<bool> onboardingDone,
     });
@@ -7110,6 +7296,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<int> themeModeIndex,
       Value<int> fontIndex,
       Value<bool> debugMenu,
+      Value<bool> statsTab,
+      Value<String?> statsTiles,
       Value<String> localeCode,
       Value<bool> onboardingDone,
     });
@@ -7140,6 +7328,16 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get debugMenu => $composableBuilder(
     column: $table.debugMenu,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get statsTab => $composableBuilder(
+    column: $table.statsTab,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get statsTiles => $composableBuilder(
+    column: $table.statsTiles,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7183,6 +7381,16 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get statsTab => $composableBuilder(
+    column: $table.statsTab,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get statsTiles => $composableBuilder(
+    column: $table.statsTiles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get localeCode => $composableBuilder(
     column: $table.localeCode,
     builder: (column) => ColumnOrderings(column),
@@ -7216,6 +7424,14 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get debugMenu =>
       $composableBuilder(column: $table.debugMenu, builder: (column) => column);
+
+  GeneratedColumn<bool> get statsTab =>
+      $composableBuilder(column: $table.statsTab, builder: (column) => column);
+
+  GeneratedColumn<String> get statsTiles => $composableBuilder(
+    column: $table.statsTiles,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get localeCode => $composableBuilder(
     column: $table.localeCode,
@@ -7263,6 +7479,8 @@ class $$AppSettingsTableTableManager
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
+                Value<bool> statsTab = const Value.absent(),
+                Value<String?> statsTiles = const Value.absent(),
                 Value<String> localeCode = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
               }) => AppSettingsCompanion(
@@ -7270,6 +7488,8 @@ class $$AppSettingsTableTableManager
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
+                statsTab: statsTab,
+                statsTiles: statsTiles,
                 localeCode: localeCode,
                 onboardingDone: onboardingDone,
               ),
@@ -7279,6 +7499,8 @@ class $$AppSettingsTableTableManager
                 Value<int> themeModeIndex = const Value.absent(),
                 Value<int> fontIndex = const Value.absent(),
                 Value<bool> debugMenu = const Value.absent(),
+                Value<bool> statsTab = const Value.absent(),
+                Value<String?> statsTiles = const Value.absent(),
                 Value<String> localeCode = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
               }) => AppSettingsCompanion.insert(
@@ -7286,6 +7508,8 @@ class $$AppSettingsTableTableManager
                 themeModeIndex: themeModeIndex,
                 fontIndex: fontIndex,
                 debugMenu: debugMenu,
+                statsTab: statsTab,
+                statsTiles: statsTiles,
                 localeCode: localeCode,
                 onboardingDone: onboardingDone,
               ),
