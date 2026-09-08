@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/notification.dart';
 import '../domain/recurrence.dart';
 import '../domain/template.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
-import 'reminder_presets.dart';
+import 'reminder_editor.dart';
 import 'window_choice.dart';
+import 'window_editor.dart';
 
 /// First-run onboarding (PLAN Phase 8): its only job is to seed the **carrier**
 /// — the one unavoidable daily habit that gets the app opened every day. No
@@ -30,8 +32,8 @@ class _OnboardingSheet extends ConsumerStatefulWidget {
 
 class _OnboardingSheetState extends ConsumerState<_OnboardingSheet> {
   final _controller = TextEditingController();
-  WindowChoice _window = WindowChoice.anytime;
-  Set<ReminderPreset> _reminders = const {};
+  WindowSelection _window = WindowSelection.anytime;
+  List<TaskNotification> _reminders = const [];
 
   @override
   void dispose() {
@@ -53,7 +55,7 @@ class _OnboardingSheetState extends ConsumerState<_OnboardingSheet> {
         recurrence: Recurrence.daily(DateTime(now.year, now.month, now.day)),
         windowRule: _window.toRule(),
         createdAt: now,
-        notifications: ReminderPreset.toNotifications(_reminders),
+        notifications: _reminders,
       ),
     );
     await repo.reconcileAll(now);
@@ -109,23 +111,16 @@ class _OnboardingSheetState extends ConsumerState<_OnboardingSheet> {
               const SizedBox(height: 20),
               _SectionLabel(l10n.activeWindowSection),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final w in WindowChoice.values)
-                    ChoiceChip(
-                      label: Text(w.label(l10n)),
-                      selected: _window == w,
-                      onSelected: (_) => setState(() => _window = w),
-                    ),
-                ],
+              WindowEditor(
+                value: _window,
+                onChanged: (w) => setState(() => _window = w),
               ),
               const SizedBox(height: 20),
               _SectionLabel(l10n.remindersSection),
               const SizedBox(height: 8),
-              ReminderPresetChips(
-                selected: _reminders,
-                onChanged: (s) => setState(() => _reminders = s),
+              ReminderEditor(
+                value: _reminders,
+                onChanged: (n) => setState(() => _reminders = n),
               ),
               const SizedBox(height: 20),
               FilledButton(

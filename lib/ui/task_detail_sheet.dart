@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +7,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../data/db/database.dart';
 import '../domain/analytics.dart';
 import '../domain/notification.dart';
+import '../domain/recurrence.dart';
 import '../domain/task.dart';
+import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
@@ -107,6 +108,10 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   late List<TaskNotification> _notifications = _task.notifications;
   bool _paused = false;
   HabitStats? _stats;
+
+  /// The series' recurrence + window rule (null until loaded / for one-offs).
+  Recurrence? _templateRecurrence;
+  WindowRule? _templateRule;
   List<LensRow> _lenses = const [];
   Set<int> _lensIds = const {};
 
@@ -199,39 +204,6 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     return DateTime(day.year, day.month, day.day, old.hour, old.minute);
   }
 
-  /// Re-shape an open one-off's hours: the chips pick the bands, the
-  /// existing Starts/Due days stay; start/end become the new envelope.
-  Future<void> _editWindowBands() async {
-    final picked = await showModalBottomSheet<WindowSelection>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _WindowSheet(
-        initial: WindowSelection.fromEdges(_task.start, _task.end, _task.bands),
-      ),
-    );
-    if (picked == null || !mounted) return;
-    final now = ref.read(clockProvider).now();
-    DateTime? day(DateTime? d) =>
-        d == null ? null : DateTime(d.year, d.month, d.day);
-    // A midnight end means "end of the previous day" for the date picker.
-    final dueDay = _task.end == null
-        ? null
-        : (_task.end!.hour == 0 && _task.end!.minute == 0
-              ? day(_task.end!.subtract(const Duration(minutes: 1)))
-              : day(_task.end));
-    final (start, end) = picked.datedWindow(now, day(_task.start), dueDay);
-    final bands = picked.hasGaps ? picked.bands : null;
-    await ref
-        .read(taskRepositoryProvider)
-        .setTaskWindow(_task.id!, start, end, bands: Value(bands));
-    if (mounted) {
-      setState(
-        () => _task = _task.copyWith(start: start, end: end, bands: bands),
-      );
-    }
-  }
-
   Future<void> _writeWindow(DateTime? value, {required bool isEnd}) async {
     final start = isEnd ? _task.start : value;
     final end = isEnd ? value : _task.end;
@@ -257,6 +229,43 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     repo.tasksForTemplate(tid).then((tasks) {
       if (mounted) setState(() => _stats = computeStats(tasks));
     });
+    repo.templateConfig(tid).then((cfg) {
+      if (mounted) {
+        setState(() {
+          _templateRecurrence = cfg?.recurrence;
+          _templateRule = cfg?.windowRule;
+        });
+      }
+    });
+  }
+
+  /// The series' active window (§3.3): chips + custom bands, applied
+  /// prospectively like any series edit — the running instance keeps its
+  /// window, the next one gets the new rule.
+  Future<void> _editSeriesWindow() async {
+    final rule = _templateRule;
+    final recurrence = _templateRecurrence;
+    if (rule == null || recurrence == null) return;
+    final initial = WindowSelection.fromRule(rule);
+    if (initial == null) return;
+    final picked = await showModalBottomSheet<WindowSelection>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _WindowSheet(initial: initial),
+    );
+    if (picked == null || !mounted) return;
+    final newRule = picked.toRule();
+    if (newRule == rule) return;
+    await ref
+        .read(taskRepositoryProvider)
+        .updateTemplateConfig(
+          _task.templateId!,
+          recurrence,
+          newRule,
+          ref.read(clockProvider).now(),
+        );
+    if (mounted) setState(() => _templateRule = newRule);
   }
 
   Future<void> _editRepeat() async {
@@ -413,25 +422,6 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             // Window edges are editable on open one-offs only — a series'
             // window comes from its recurrence + slice rule.
             if (!recurring && _task.isOpen) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Symbols.schedule_rounded),
-                title: Text(l10n.activeWindowSection),
-                subtitle: Builder(
-                  builder: (ctx) {
-                    final sel = WindowSelection.fromEdges(
-                      _task.start,
-                      _task.end,
-                      _task.bands,
-                    );
-                    return Text(
-                      sel.isAnytime ? l10n.windowAnytime : sel.describe(ctx),
-                    );
-                  },
-                ),
-                trailing: const Icon(Symbols.chevron_right_rounded),
-                onTap: _editWindowBands,
-              ),
               _WindowDateTile(
                 icon: Symbols.today_rounded,
                 label: l10n.starts,
@@ -451,6 +441,22 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 onClear: () => _writeWindow(null, isEnd: true),
               ),
             ],
+            // A habit's active window sits next to its reminders — it's a
+            // property of the series, not of the repeat rule.
+            if (recurring && _templateRule != null)
+              switch (WindowSelection.fromRule(_templateRule!)) {
+                null => const SizedBox.shrink(),
+                final sel => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.schedule_rounded),
+                  title: Text(l10n.activeWindowSection),
+                  subtitle: Text(
+                    sel.isAnytime ? l10n.windowAnytime : sel.describe(context),
+                  ),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: _editSeriesWindow,
+                ),
+              },
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Symbols.event_repeat_rounded),

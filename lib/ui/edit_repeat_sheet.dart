@@ -8,7 +8,6 @@ import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'recurrence_editor.dart';
 import 'window_choice.dart';
-import 'window_editor.dart';
 
 /// Edit a task's repeat rule (design-concept §3.6, §5.2):
 /// - one-off + a rule  → **turn into a series**
@@ -41,10 +40,6 @@ class _EditRepeatSheetState extends ConsumerState<_EditRepeatSheet> {
   Recurrence? _recurrence;
   WindowRule _windowRule = const UntilNextOccurrence();
 
-  /// The chip form of [_windowRule]; null when the stored rule has none (then
-  /// the editor is hidden and the rule passes through untouched).
-  WindowSelection? _window = WindowSelection.anytime;
-
   bool get _wasSeries => widget.task.templateId != null;
 
   @override
@@ -66,7 +61,6 @@ class _EditRepeatSheetState extends ConsumerState<_EditRepeatSheet> {
       _initial = cfg?.recurrence;
       _recurrence = cfg?.recurrence;
       _windowRule = cfg?.windowRule ?? const UntilNextOccurrence();
-      _window = WindowSelection.fromRule(_windowRule);
       _loading = false;
     });
   }
@@ -75,7 +69,16 @@ class _EditRepeatSheetState extends ConsumerState<_EditRepeatSheet> {
     final repo = ref.read(taskRepositoryProvider);
     final now = ref.read(clockProvider).now();
     final r = _recurrence;
-    final rule = _window?.toRule() ?? _windowRule;
+    // A series keeps its window (edited from the detail sheet); a one-off
+    // turning into a series carries its own hours over ("morning" stays
+    // "morning").
+    final rule = _wasSeries
+        ? _windowRule
+        : WindowSelection.fromEdges(
+            widget.task.start,
+            widget.task.end,
+            widget.task.bands,
+          ).toRule();
 
     if (_wasSeries) {
       if (r != null) {
@@ -120,25 +123,6 @@ class _EditRepeatSheetState extends ConsumerState<_EditRepeatSheet> {
                       initial: _initial,
                       onChanged: (r) => setState(() => _recurrence = r),
                     ),
-                    // The series' active window (§3.3) — shown whenever the
-                    // result is a series, i.e. not for "stop repeating".
-                    if (_recurrence != null && _window != null) ...[
-                      const SizedBox(height: 20),
-                      Text(
-                        l10n.activeWindowSection.toUpperCase(),
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: .6,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      WindowEditor(
-                        value: _window!,
-                        onChanged: (w) => setState(() => _window = w),
-                      ),
-                    ],
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _save,
