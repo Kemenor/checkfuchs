@@ -861,6 +861,10 @@
   "@reorderHint": {
     "description": "Lens drill-in, manual order: hint above the Open list"
   },
+  "openLensEditor": "Tasks shown, order, period — edit the lens",
+  "@openLensEditor": {
+    "description": "View editor: subtitle of a lens row linking to the lens editor"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",
