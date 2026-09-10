@@ -32,11 +32,6 @@ final _lensMembersProvider = StreamProvider.autoDispose
           ref.watch(viewRepositoryProvider).watchLensMembers(lensId),
     );
 
-final _lensTasksProvider = StreamProvider.autoDispose
-    .family<List<domain.Task>, int>(
-      (ref, lensId) => ref.watch(viewRepositoryProvider).watchLensTasks(lensId),
-    );
-
 class AllTasksScreen extends ConsumerWidget {
   const AllTasksScreen({super.key});
 
