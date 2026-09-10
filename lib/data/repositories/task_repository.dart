@@ -330,14 +330,38 @@ class TaskRepository {
     WindowRule windowRule,
     DateTime now,
   ) async {
-    await (db.update(
-      db.templates,
-    )..where((t) => t.id.equals(templateId))).write(
-      TemplatesCompanion(
-        recurrence: Value(recurrence),
-        windowRule: Value(windowRule),
-      ),
-    );
+    await db.transaction(() async {
+      await (db.update(
+        db.templates,
+      )..where((t) => t.id.equals(templateId))).write(
+        TemplatesCompanion(
+          recurrence: Value(recurrence),
+          windowRule: Value(windowRule),
+        ),
+      );
+      // The running (open) instances take the new window too — editing
+      // "morning" to "evening" should change today's row, not only
+      // tomorrow's. Their occurrence day stays; only the hours move.
+      final open =
+          await (db.select(db.tasks)..where(
+                (t) =>
+                    t.templateId.equals(templateId) &
+                    t.status.equals(domain.TaskStatus.open.index),
+              ))
+              .get();
+      for (final r in open) {
+        final occ = r.occurrence;
+        if (occ == null) continue;
+        final w = windowRule.resolve(occ, occurrenceAfter(recurrence, occ));
+        await (db.update(db.tasks)..where((t) => t.id.equals(r.id))).write(
+          TasksCompanion(
+            windowStart: Value(w.start),
+            windowEnd: Value(w.end),
+            windowBands: Value(bandsToSql(windowRule.bands)),
+          ),
+        );
+      }
+    });
     await reconcileAll(now);
   }
 

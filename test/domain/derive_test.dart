@@ -106,6 +106,36 @@ void main() {
     expect(ids(projectLens(lens, members, now)), [2, 1, 3]);
   });
 
+  test(
+    'automatic ordering: overdue, due-soonest active, open-ended, upcoming',
+    () {
+      final at = d(2026, 6, 27, 10);
+      Task w(int id, {DateTime? start, DateTime? end, DateTime? occ}) => Task(
+        id: id,
+        name: 't$id',
+        start: start,
+        end: end,
+        occurrence: occ,
+        createdAt: d(2026, 6, 1),
+      );
+      final lens = Lens(
+        id: 1,
+        name: 'auto',
+        showCount: Lens.showAll,
+        ordering: LensOrdering.automatic,
+        selection: LensSelection.top,
+      );
+      final shown = projectLens(lens, [
+        mem(w(1, start: d(2026, 6, 28), occ: d(2026, 6, 28))), // upcoming
+        mem(w(2, occ: d(2026, 6, 20))), // open-ended, old
+        mem(w(3, start: d(2026, 6, 27), end: d(2026, 6, 27, 18))), // due 18:00
+        mem(w(4, start: d(2026, 6, 26), end: d(2026, 6, 27, 9))), // overdue
+        mem(w(5, start: d(2026, 6, 27), end: d(2026, 6, 27, 12))), // due 12:00
+      ], at);
+      expect(ids(shown), [4, 5, 3, 2, 1]);
+    },
+  );
+
   test('automatic ordering is FIFO by occurrence', () {
     const lens = Lens(name: 'w', ordering: LensOrdering.automatic);
     final members = [

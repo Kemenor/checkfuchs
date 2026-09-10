@@ -84,7 +84,9 @@ class NotificationScheduler {
 
       await _plugin.initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          // A flat white glyph: Android tints small icons, so the colour
+          // launcher icon rendered as a blob.
+          android: AndroidInitializationSettings('@drawable/ic_notification'),
           // No permission prompt at init on iOS either — asked in context
           // via [requestPermission] the first time a reminder is chosen.
           iOS: DarwinInitializationSettings(
@@ -111,6 +113,30 @@ class NotificationScheduler {
       // platforms) — reminders are simply off, everything else works.
       debugPrint('NotificationScheduler unavailable: $e');
       _unavailable = true;
+      return false;
+    }
+  }
+
+  static const _debugPingId = 999999;
+
+  /// Debug menu: a notification [delay] from now, to see the icon/channel
+  /// and prove the runtime works without waiting for a real reminder.
+  Future<bool> debugPing({Duration delay = const Duration(seconds: 10)}) async {
+    if (!await _ensureReady()) return false;
+    try {
+      await _plugin.zonedSchedule(
+        id: _debugPingId,
+        title: 'Checkfuchs test ping',
+        body: 'Scheduled ${delay.inSeconds}s ago — the runtime works.',
+        scheduledDate: tz.TZDateTime.now(tz.local).add(delay),
+        notificationDetails: _details,
+        androidScheduleMode: _exact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('debugPing failed: $e');
       return false;
     }
   }
@@ -236,6 +262,7 @@ class NotificationScheduler {
       // Cancel only what is still *pending*: cancelAll() would also wipe
       // reminders already sitting in the tray that the user hasn't acted on.
       for (final pending in await _plugin.pendingNotificationRequests()) {
+        if (pending.id == _debugPingId) continue;
         await _plugin.cancel(id: pending.id);
       }
       for (final s in selected) {

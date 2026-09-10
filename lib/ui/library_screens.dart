@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../domain/lens.dart';
 import '../domain/task.dart' as domain;
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
@@ -23,6 +24,12 @@ final _lensTaskCountsProvider = StreamProvider.autoDispose<Map<int, int>>(
 final _lensViewNamesProvider =
     StreamProvider.autoDispose<Map<int, List<String>>>(
       (ref) => ref.watch(viewRepositoryProvider).watchLensViewNames(),
+    );
+
+final _lensMembersProvider = StreamProvider.autoDispose
+    .family<List<LensMember>, int>(
+      (ref, lensId) =>
+          ref.watch(viewRepositoryProvider).watchLensMembers(lensId),
     );
 
 final _lensTasksProvider = StreamProvider.autoDispose
@@ -54,12 +61,27 @@ class LensTasksScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(_lensTasksProvider(lensId)).asData?.value;
+    final members = ref.watch(_lensMembersProvider(lensId)).asData?.value;
+    final lens = ref
+        .watch(allLensesProvider)
+        .asData
+        ?.value
+        .where((l) => l.id == lensId)
+        .firstOrNull;
     return Scaffold(
       appBar: AppBar(title: Text(name)),
-      body: tasks == null
+      body: members == null
           ? const Center(child: CircularProgressIndicator())
-          : _TaskSections(tasks: tasks),
+          : _TaskSections(
+              tasks: [for (final m in members) m.task],
+              orderOf: {
+                for (final m in members)
+                  if (m.task.id != null) m.task.id!: m.order,
+              },
+              manualLensId: lens?.ordering == LensOrdering.manual
+                  ? lensId
+                  : null,
+            ),
     );
   }
 }
@@ -71,10 +93,22 @@ class LensTasksScreen extends ConsumerWidget {
 /// its history belongs to the lens drill-in). Resolved defaults to the last
 /// 30 days with a load-all button, so the record doesn't scroll forever.
 class _TaskSections extends ConsumerStatefulWidget {
-  const _TaskSections({required this.tasks, this.splitKinds = false});
+  const _TaskSections({
+    required this.tasks,
+    this.splitKinds = false,
+    this.orderOf = const {},
+    this.manualLensId,
+  });
 
   final List<domain.Task> tasks;
   final bool splitKinds;
+
+  /// Membership order per task id (only meaningful for a manual lens).
+  final Map<int, int> orderOf;
+
+  /// When set, the Open block is a drag-to-reorder list writing this lens's
+  /// membership order.
+  final int? manualLensId;
 
   @override
   ConsumerState<_TaskSections> createState() => _TaskSectionsState();
@@ -93,7 +127,24 @@ class _TaskSectionsState extends ConsumerState<_TaskSections> {
     final far = DateTime(9999);
     int byEdge(domain.Task a, domain.Task b) =>
         (a.end ?? a.start ?? far).compareTo(b.end ?? b.start ?? far);
-    final open = tasks.where((t) => t.isOpen).toList()..sort(byEdge);
+    final now = ref.read(clockProvider).now();
+    final allOpen = tasks.where((t) => t.isOpen).toList();
+    final upcoming =
+        allOpen
+            .where((t) => domain.phaseOf(t, now) == domain.TaskPhase.pending)
+            .toList()
+          ..sort(byEdge);
+    final open =
+        allOpen
+            .where((t) => domain.phaseOf(t, now) != domain.TaskPhase.pending)
+            .toList()
+          ..sort(
+            widget.manualLensId != null
+                ? (a, b) => (widget.orderOf[a.id] ?? 0).compareTo(
+                    widget.orderOf[b.id] ?? 0,
+                  )
+                : byEdge,
+          );
 
     final allResolved =
         tasks
@@ -128,6 +179,56 @@ class _TaskSectionsState extends ConsumerState<_TaskSections> {
       ],
     );
 
+    // Manual lens: the Open block reorders by drag; the handle is the only
+    // drag start so the tile's own tap/swipe keep working.
+    Widget manualSection(String header, List<domain.Task> items) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FuchsbauSectionHeader(header),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: Text(
+            l10n.reorderHint,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+        ),
+        FuchsbauSettingsCard(
+          children: [
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: items.length,
+              onReorderItem: (from, to) {
+                final ids = [for (final t in items) t.id!];
+                final moved = ids.removeAt(from);
+                ids.insert(to, moved);
+                ref
+                    .read(viewRepositoryProvider)
+                    .setMemberOrder(widget.manualLensId!, ids);
+              },
+              itemBuilder: (context, i) => Row(
+                key: ValueKey('manual-${items[i].id}'),
+                children: [
+                  Expanded(child: TaskTile(task: items[i])),
+                  ReorderableDragStartListener(
+                    index: i,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: Icon(Symbols.drag_indicator_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
     final openBlocks = widget.splitKinds
         ? [
             (l10n.todosSection, open.where((t) => t.templateId == null)),
@@ -141,7 +242,11 @@ class _TaskSectionsState extends ConsumerState<_TaskSections> {
       ),
       children: [
         for (final (header, items) in openBlocks)
-          if (items.isNotEmpty) section(header, items.toList()),
+          if (items.isNotEmpty)
+            widget.manualLensId != null
+                ? manualSection(header, items.toList())
+                : section(header, items.toList()),
+        if (upcoming.isNotEmpty) section(l10n.upcomingSection, upcoming),
         if (resolved.isNotEmpty) section(l10n.resolvedSection, resolved),
         if (olderCount > 0) ...[
           if (resolved.isEmpty) FuchsbauSectionHeader(l10n.resolvedSection),

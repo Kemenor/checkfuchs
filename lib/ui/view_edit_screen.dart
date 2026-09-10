@@ -16,7 +16,7 @@ import 'recurrence_summary_l10n.dart';
 import 'view_icons.dart';
 
 /// The statusFilter bitmask (view_lens.status_filter, concept §4.6).
-const _showDone = 1, _showSkipped = 2, _showMissed = 4;
+const _showDone = 1, _showSkipped = 2, _showMissed = 4, _hideUpcoming = 8;
 
 final _viewRowProvider = StreamProvider.autoDispose.family<ViewRow?, int>(
   (ref, viewId) => ref.watch(viewRepositoryProvider).watchView(viewId),
@@ -370,6 +370,12 @@ class _StatusFilterRow extends StatelessWidget {
       selected: filter & bit != 0,
       onSelected: (on) => onChanged(on ? filter | bit : filter & ~bit),
     );
+    // Upcoming is on by default; its bit means *hide*.
+    Widget invertedChip(String label, int bit) => FilterChip(
+      label: Text(label),
+      selected: filter & bit == 0,
+      onSelected: (on) => onChanged(on ? filter & ~bit : filter | bit),
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -391,6 +397,7 @@ class _StatusFilterRow extends StatelessWidget {
               chip(l10n.filterShowDone, _showDone),
               chip(l10n.filterShowSkipped, _showSkipped),
               chip(l10n.filterShowMissed, _showMissed),
+              invertedChip(l10n.filterShowUpcoming, _hideUpcoming),
             ],
           ),
         ],

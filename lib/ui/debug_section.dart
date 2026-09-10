@@ -55,6 +55,25 @@ class DebugSection extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: fuchsbauCardRowPadding,
+              leading: const Icon(Symbols.notification_add_rounded),
+              title: const Text('Test notification in 10 s'),
+              subtitle: const Text('Fires a ping — check icon, channel, sound'),
+              onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final ok = await ref
+                    .read(notificationSchedulerProvider)
+                    .debugPing();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      ok ? 'Ping scheduled — 10 s' : 'No notification runtime',
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: fuchsbauCardRowPadding,
               leading: const Icon(Symbols.notifications_active_rounded),
               title: const Text('Pending notifications'),
               subtitle: const Text('What the OS has scheduled'),

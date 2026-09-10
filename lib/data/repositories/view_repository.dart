@@ -64,6 +64,9 @@ class ViewState {
 
 const _showDone = 1, _showSkipped = 2, _showMissed = 4;
 
+/// Inverted bit: set = hide *upcoming* (pending) instances in this view.
+const _hideUpcoming = 8;
+
 /// One Lens as configured inside a View: the lens row plus the per-pair
 /// `statusFilter` (which lives on the View↔Lens join, concept §4.6).
 class ViewLensEntry {
@@ -300,6 +303,37 @@ class ViewRepository {
     db.views,
   )..where((v) => v.id.equals(viewId))).watchSingleOrNull();
 
+  /// A lens's members with their membership order (for the manual-order
+  /// drill-in).
+  Stream<List<LensMember>> watchLensMembers(int lensId) {
+    final tl = db.taskLens;
+    final t = db.tasks;
+    final q = db.select(tl).join([innerJoin(t, t.id.equalsExp(tl.taskId))])
+      ..where(tl.lensId.equals(lensId));
+    return q.watch().map(
+      (rows) => [
+        for (final r in rows)
+          LensMember(
+            task: _toTask(r.readTable(t)),
+            order: r.readTable(tl).sortOrder,
+            surfacedAt: r.readTable(tl).surfacedAt,
+            passedAt: r.readTable(tl).passedAt,
+          ),
+      ],
+    );
+  }
+
+  /// Persist a manual order: [taskIds] top to bottom.
+  Future<void> setMemberOrder(int lensId, List<int> taskIds) =>
+      db.transaction(() async {
+        for (var i = 0; i < taskIds.length; i++) {
+          await (db.update(db.taskLens)..where(
+                (m) => m.lensId.equals(lensId) & m.taskId.equals(taskIds[i]),
+              ))
+              .write(TaskLensCompanion(sortOrder: Value(i)));
+        }
+      });
+
   /// Watch the lenses of a View with their per-pair statusFilter — the
   /// view-edit screen's live source.
   Stream<List<ViewLensEntry>> watchViewLenses(int viewId) {
@@ -429,6 +463,13 @@ class ViewRepository {
 
       final projected = projectLens(lens, ms, now);
       final projectedIds = {for (final x in projected) x.id};
+      // Per-view "only what needs doing now": drop upcoming instances.
+      final visible = filter & _hideUpcoming != 0
+          ? [
+              for (final x in projected)
+                if (domain.phaseOf(x, now) != domain.TaskPhase.pending) x,
+            ]
+          : projected;
       final terminals = <domain.Task>[];
       final hiddenTerminals = <domain.Task>[];
       for (final m in ms) {
@@ -458,7 +499,7 @@ class ViewRepository {
         LensSection(
           lens: entry.value,
           domainLens: lens,
-          shown: [...projected, ...terminals],
+          shown: [...visible, ...terminals],
           hiddenTerminals: hiddenTerminals,
           doneCount: ms
               .where(

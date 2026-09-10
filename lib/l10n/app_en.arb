@@ -849,6 +849,18 @@
   "@themePickerTitle": {
     "description": "Settings: theme picker row title"
   },
+  "filterShowUpcoming": "Upcoming",
+  "@filterShowUpcoming": {
+    "description": "View\u2194lens chip: show upcoming (pending) instances (on by default)"
+  },
+  "upcomingSection": "Upcoming",
+  "@upcomingSection": {
+    "description": "Lens drill-in section header"
+  },
+  "reorderHint": "Drag the handles to set the order.",
+  "@reorderHint": {
+    "description": "Lens drill-in, manual order: hint above the Open list"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",

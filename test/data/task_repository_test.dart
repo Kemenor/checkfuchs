@@ -265,6 +265,23 @@ void main() {
     expect(await repo.templateLensIds(plank.id), {habits, backlog});
   });
 
+  test('editing a series window reshapes its open instance too', () async {
+    final templateId = await seedDailyHabit(); // morning
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    final before = (await repo.allTasks()).single;
+    expect(before.start, d(2026, 6, 27, 6));
+    await repo.updateTemplateConfig(
+      templateId,
+      Recurrence.daily(d(2026, 6, 27)),
+      Slice.evening,
+      d(2026, 6, 27, 8),
+    );
+    final after = (await repo.allTasks()).firstWhere((t) => t.id == before.id);
+    expect(after.start, d(2026, 6, 27, 18));
+    expect(after.end, d(2026, 6, 28));
+    expect(after.occurrence, d(2026, 6, 27));
+  });
+
   test('setTaskWindow edits the edges, null clears a side', () async {
     final id = await repo.createTask(
       Task(name: 'Call dentist', createdAt: d(2026, 6, 27)),

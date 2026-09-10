@@ -69,7 +69,7 @@ List<Task> projectLens(
   final held = [
     for (final m in members)
       if (heldThisPeriod(m)) m,
-  ]..sort(_comparatorFor(lens.ordering));
+  ]..sort(_comparatorFor(lens.ordering, now));
 
   var candidates = members
       .where(
@@ -103,7 +103,7 @@ List<Task> projectLens(
     final seed = randomSeed ?? _epochDay(ps ?? now);
     candidates.shuffle(Random(seed)); // deterministic given a seed
   } else {
-    candidates.sort(_comparatorFor(lens.ordering));
+    candidates.sort(_comparatorFor(lens.ordering, now));
   }
 
   final open = lens.showsAll
@@ -117,16 +117,32 @@ int _epochDay(DateTime d) =>
     DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
     Duration.millisecondsPerDay;
 
-Comparator<LensMember> _comparatorFor(LensOrdering ordering) =>
+Comparator<LensMember> _comparatorFor(LensOrdering ordering, DateTime now) =>
     switch (ordering) {
       LensOrdering.manual => (a, b) => a.order.compareTo(b.order),
-      LensOrdering.automatic => (a, b) => _fifoKey(
-        a.task,
-      ).compareTo(_fifoKey(b.task)),
+      // Automatic = what needs you first: overdue, then due-soonest actives,
+      // then open-ended actives (FIFO), then upcoming by when they open.
+      LensOrdering.automatic => (a, b) {
+        final ra = _autoRank(a.task, now), rb = _autoRank(b.task, now);
+        if (ra != rb) return ra.compareTo(rb);
+        return _autoKey(a.task, ra).compareTo(_autoKey(b.task, rb));
+      },
       LensOrdering.dueDate => (a, b) => _dueKey(
         a.task,
       ).compareTo(_dueKey(b.task)),
     };
+
+int _autoRank(Task t, DateTime now) => switch (phaseOf(t, now)) {
+  TaskPhase.expired => 0,
+  TaskPhase.active => t.end == null ? 2 : 1,
+  TaskPhase.pending => 3,
+};
+
+DateTime _autoKey(Task t, int rank) => switch (rank) {
+  0 || 1 => t.end ?? _fifoKey(t),
+  2 => _fifoKey(t),
+  _ => t.start ?? _fifoKey(t),
+};
 
 /// FIFO: the occurrence date if generated, else when it was created.
 DateTime _fifoKey(Task t) => t.occurrence ?? t.createdAt;

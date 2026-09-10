@@ -12,6 +12,7 @@ import 'name_prompt_dialog.dart';
 import 'first_launch.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
+import 'library_screens.dart';
 import 'task_tile.dart';
 import 'view_edit_screen.dart';
 import 'view_icons.dart';
@@ -394,15 +395,20 @@ class _LensCard extends StatefulWidget {
 }
 
 class _LensCardState extends State<_LensCard> {
-  bool _expanded = false;
-
   @override
   Widget build(BuildContext context) {
     final section = widget.section;
-    final hidden = section.hiddenTerminals;
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final rows = [...section.shown, if (_expanded) ...hidden];
+    final rows = section.shown;
+    // The header is the drill-in: everything in this lens — open, upcoming,
+    // recently resolved — on its own screen (and manual reordering there).
+    void open() => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            LensTasksScreen(lensId: section.lens.id, name: section.lens.name),
+      ),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -410,73 +416,47 @@ class _LensCardState extends State<_LensCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      section.lens.name.toUpperCase(),
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: .5,
-                        color: scheme.outline,
+            InkWell(
+              onTap: open,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        section.lens.name.toUpperCase(),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .5,
+                          color: scheme.outline,
+                        ),
                       ),
                     ),
-                  ),
-                  if (hidden.isEmpty)
                     _Breakdown(
                       done: section.doneCount,
                       missed: section.missedCount,
                       left: section.openCount,
-                    )
-                  else
-                    Tooltip(
-                      message: _expanded
-                          ? l10n.hideOutcomes
-                          : l10n.showOutcomes,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(99),
-                        onTap: () => setState(() => _expanded = !_expanded),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _Breakdown(
-                                done: section.doneCount,
-                                missed: section.missedCount,
-                                left: section.openCount,
-                              ),
-                              const SizedBox(width: 2),
-                              Icon(
-                                _expanded
-                                    ? Symbols.expand_less_rounded
-                                    : Symbols.expand_more_rounded,
-                                size: 16,
-                                color: scheme.outline,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    iconSize: 20,
-                    tooltip: l10n.addTask,
-                    icon: Icon(Symbols.add_rounded, color: scheme.outline),
-                    onPressed: widget.onAddTask,
-                  ),
-                ],
+                    const SizedBox(width: 2),
+                    Icon(
+                      Symbols.chevron_right_rounded,
+                      size: 16,
+                      color: scheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      iconSize: 20,
+                      tooltip: l10n.addTask,
+                      icon: Icon(Symbols.add_rounded, color: scheme.outline),
+                      onPressed: widget.onAddTask,
+                    ),
+                  ],
+                ),
               ),
             ),
             if (rows.isEmpty)

@@ -394,6 +394,21 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   ],
                 ),
               ],
+              if (recurring)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.history_rounded),
+                  title: Text(l10n.historyTitle),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => TaskHistoryScreen(
+                        templateId: _task.templateId!,
+                        name: _task.name,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -458,21 +473,6 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   onClear: () => _writeWindow(null, isEnd: true),
                 ),
               ],
-              if (recurring)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Symbols.history_rounded),
-                  title: Text(l10n.historyTitle),
-                  trailing: const Icon(Symbols.chevron_right_rounded),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => TaskHistoryScreen(
-                        templateId: _task.templateId!,
-                        name: _task.name,
-                      ),
-                    ),
-                  ),
-                ),
               // A habit's active window sits next to its reminders — it's a
               // property of the series, not of the repeat rule.
               if (recurring && _templateRule != null)
