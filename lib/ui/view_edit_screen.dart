@@ -78,14 +78,13 @@ class ViewEditScreen extends ConsumerWidget {
                   ],
                 ),
                 FuchsbauSectionHeader(l10n.lensesSection),
-                // Per view↔lens pair: only what belongs to the pair (which
-                // outcomes this view also shows). The lens's own dials live
-                // in the lens editor — one place per concept.
-                for (final entry in lenses)
-                  FuchsbauSettingsCard(
-                    key: ValueKey(entry.lens.id),
-                    children: [
+                // A view only decides which lenses it mounts; everything a
+                // lens shows (dials, outcomes) is edited on the lens.
+                FuchsbauSettingsCard(
+                  children: [
+                    for (final entry in lenses)
                       ListTile(
+                        key: ValueKey(entry.lens.id),
                         contentPadding: fuchsbauCardRowPadding,
                         leading: const Icon(Symbols.filter_alt_rounded),
                         title: Text(entry.lens.name),
@@ -100,15 +99,8 @@ class ViewEditScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      _StatusFilterRow(
-                        key: ValueKey('status-filter-${entry.lens.id}'),
-                        filter: entry.statusFilter,
-                        onChanged: (f) => ref
-                            .read(viewRepositoryProvider)
-                            .setStatusFilter(viewId, entry.lens.id, f),
-                      ),
-                    ],
-                  ),
+                  ],
+                ),
               ],
             ),
     );
@@ -170,7 +162,9 @@ class LensEditScreen extends ConsumerWidget {
           ?.value
           .where((l) => l.id == lensId)
           .firstOrNull;
-      entry = lens == null ? null : ViewLensEntry(lens: lens, statusFilter: 0);
+      entry = lens == null
+          ? null
+          : ViewLensEntry(lens: lens, statusFilter: lens.statusFilter);
     }
     return Scaffold(
       appBar: AppBar(title: Text(entry?.lens.name ?? '')),
@@ -209,8 +203,8 @@ class LensEditScreen extends ConsumerWidget {
 }
 
 /// One lens's full dial set as a settings card: name header (tap = rename),
-/// the pickers, the period editor, and delete. The View↔Lens "Also show"
-/// chips are NOT here — they belong to the view editor.
+/// the pickers, the period editor, the "Also show" outcome chips, and
+/// delete — everything a lens is, in one place.
 class _LensDialsCard extends ConsumerWidget {
   const _LensDialsCard({super.key, required this.entry});
 
@@ -297,6 +291,11 @@ class _LensDialsCard extends ConsumerWidget {
               dormantAfter: Value(v == 0 ? null : v),
             ),
           ),
+        _StatusFilterRow(
+          key: ValueKey('status-filter-${lens.id}'),
+          filter: lens.statusFilter,
+          onChanged: (f) => repo.setLensStatusFilter(lens.id, f),
+        ),
         _DeleteTile(
           key: ValueKey('delete-lens-${lens.id}'),
           title: l10n.deleteLens,

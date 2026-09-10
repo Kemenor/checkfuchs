@@ -65,6 +65,18 @@ Future<void> loadDemoData(
             sortIndex: const Value(0),
           ),
         );
+    // The Habits view's tracker: the same daily habits, with outcomes shown.
+    final dailyOutcomesLens = await db
+        .into(db.lenses)
+        .insert(
+          LensesCompanion.insert(
+            name: l10n.demoLensDailyOutcomes,
+            ordering: LensOrdering.automatic,
+            selection: LensSelection.top,
+            sortIndex: const Value(4),
+            statusFilter: const Value(5), // done(1) + missed(4)
+          ),
+        );
     final todosLens = await db
         .into(db.lenses)
         .insert(
@@ -99,20 +111,19 @@ Future<void> loadDemoData(
           ),
         );
 
-    // --- view ↔ lens (the same Daily lens reads differently per View) --------
-    Future<void> link(int v, int l, int sort, [int filter = 0]) => db
+    // --- view ↔ lens ------------------------------------------------------------
+    Future<void> link(int v, int l, int sort) => db
         .into(db.viewLens)
         .insert(
           ViewLensCompanion.insert(
             viewId: v,
             lensId: l,
             sortOrder: Value(sort),
-            statusFilter: Value(filter),
           ),
         );
     await link(homeView, dailyLens, 0);
     await link(homeView, todosLens, 1);
-    await link(habitsView, dailyLens, 0, 5); // + done(1) + missed(4): tracker
+    await link(habitsView, dailyOutcomesLens, 0);
     await link(habitsView, weeklyLens, 1);
     await link(longtermView, backlogLens, 0);
 
@@ -123,7 +134,7 @@ Future<void> loadDemoData(
       String name,
       Recurrence recurrence,
       WindowRule rule,
-      int lensId, {
+      Set<int> lensIds, {
       List<TaskNotification> notifications = const [],
     }) => repo.createTemplate(
       Template(
@@ -133,40 +144,40 @@ Future<void> loadDemoData(
         createdAt: now,
         notifications: notifications,
       ),
-      defaultLensId: lensId,
+      lensIds: lensIds,
     );
 
     final brush = await habit(
       l10n.demoBrushTeeth,
       Recurrence.daily(day(6)),
       Slice.evening,
-      dailyLens,
+      {dailyLens, dailyOutcomesLens},
       notifications: const [TaskNotification.atStart()],
     );
     final stretch = await habit(
       l10n.demoStretch,
       Recurrence.daily(day(4)),
       Slice.morning,
-      dailyLens,
+      {dailyLens, dailyOutcomesLens},
     );
     // Anytime window: the avoidance amber is visible the whole demo day.
     final journal = await habit(
       l10n.demoJournal,
       Recurrence.daily(day(3)),
       const UntilNextOccurrence(),
-      dailyLens,
+      {dailyLens, dailyOutcomesLens},
     );
     final plants = await habit(
       l10n.demoWaterPlants,
       Recurrence.weekly(lastSaturday, on: {Weekday.sat}),
       const UntilNextOccurrence(),
-      dailyLens,
+      {dailyLens, dailyOutcomesLens},
     );
     final vacuum = await habit(
       l10n.demoVacuum,
       Recurrence.weekly(day(7), on: {Weekday.mon}),
       const UntilNextOccurrence(),
-      weeklyLens,
+      {weeklyLens},
     );
 
     // --- fabricated history (drives streaks, breakdowns, avoidance) ----------
@@ -178,7 +189,7 @@ Future<void> loadDemoData(
       DateTime end,
       TaskStatus status,
       DateTime resolvedAt,
-      int lensId,
+      Set<int> lensIds,
     ) => repo.createTask(
       Task(
         templateId: templateId,
@@ -190,7 +201,7 @@ Future<void> loadDemoData(
         createdAt: occ,
         resolvedAt: resolvedAt,
       ),
-      lensId: lensId,
+      lensIds: lensIds,
     );
 
     DateTime at(DateTime d, int hour) => DateTime(d.year, d.month, d.day, hour);
@@ -207,7 +218,7 @@ Future<void> loadDemoData(
         nextDay(d),
         TaskStatus.done,
         at(d, 21),
-        dailyLens,
+        {dailyLens, dailyOutcomesLens},
       );
     }
     // Stretch (morning slice): mixed record ending done — including TODAY,
@@ -230,7 +241,7 @@ Future<void> loadDemoData(
         at(d, 12),
         s,
         s == TaskStatus.done ? at(d, 8) : at(d, 12),
-        dailyLens,
+        {dailyLens, dailyOutcomesLens},
       );
     }
     // Journal: three consecutive Misses → today renders in avoidance amber.
@@ -244,7 +255,7 @@ Future<void> loadDemoData(
         nextDay(d),
         TaskStatus.missed,
         nextDay(d),
-        dailyLens,
+        {dailyLens, dailyOutcomesLens},
       );
     }
     // Water plants: last Saturday done; this week's back-fills open.
@@ -256,7 +267,7 @@ Future<void> loadDemoData(
       DateTime(lastSaturday.year, lastSaturday.month, lastSaturday.day + 7),
       TaskStatus.done,
       at(lastSaturday, 10),
-      dailyLens,
+      {dailyLens, dailyOutcomesLens},
     );
     // Vacuum: last week done; this week's instance is the chip-away item.
     await instance(
@@ -267,7 +278,7 @@ Future<void> loadDemoData(
       monday,
       TaskStatus.done,
       at(day(5), 16),
-      weeklyLens,
+      {weeklyLens},
     );
 
     // --- one-offs -------------------------------------------------------------

@@ -91,6 +91,11 @@ class Lenses extends Table {
   TextColumn get period => text().map(const RecurrenceConverter()).nullable()();
   IntColumn get dormantAfter => integer().nullable()();
   IntColumn get sortIndex => integer().withDefault(const Constant(0))();
+
+  /// Which outcomes this lens shows besides its open tasks — bits done(1),
+  /// skipped(2), missed(4), and hide-upcoming(8). A property of the lens
+  /// since v12 (was per view↔lens pair; that column is now a dead legacy).
+  IntColumn get statusFilter => integer().withDefault(const Constant(0))();
 }
 
 /// A View — the screen layer (§4.6). `icon` is a stable slug into the curated
@@ -195,7 +200,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -284,6 +289,29 @@ class AppDatabase extends _$AppDatabase {
         await _addColumnIfMissing(m, tasks, tasks.windowBands);
         await _addColumnIfMissing(m, appSettings, appSettings.statsTab);
         await _addColumnIfMissing(m, appSettings, appSettings.statsTiles);
+      }
+      if (from < 12) {
+        // "Also show" moves from the view↔lens pair onto the lens: the union
+        // of the shown outcomes across a lens's mounts, and hide-upcoming
+        // only if every mount hid it.
+        await _addColumnIfMissing(m, lenses, lenses.statusFilter);
+        final rows = await customSelect(
+          'SELECT lens_id, status_filter FROM view_lens',
+        ).get();
+        final show = <int, int>{};
+        final hideAll = <int, bool>{};
+        for (final r in rows) {
+          final lid = r.read<int>('lens_id');
+          final f = r.read<int>('status_filter');
+          show[lid] = (show[lid] ?? 0) | (f & 7);
+          hideAll[lid] = (hideAll[lid] ?? true) && (f & 8 != 0);
+        }
+        for (final lid in show.keys) {
+          final v = show[lid]! | (hideAll[lid]! ? 8 : 0);
+          await customStatement(
+            'UPDATE lenses SET status_filter = $v WHERE id = $lid',
+          );
+        }
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

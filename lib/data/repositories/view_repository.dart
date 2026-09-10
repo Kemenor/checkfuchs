@@ -68,7 +68,7 @@ const _showDone = 1, _showSkipped = 2, _showMissed = 4;
 const _hideUpcoming = 8;
 
 /// One Lens as configured inside a View: the lens row plus the per-pair
-/// `statusFilter` (which lives on the View↔Lens join, concept §4.6).
+/// `statusFilter` (a lens property since v12; the pair no longer carries it).
 class ViewLensEntry {
   ViewLensEntry({required this.lens, required this.statusFilter});
 
@@ -293,10 +293,10 @@ class ViewRepository {
 
   /// Set which terminal states this View surfaces for [lensId] (bitmask:
   /// done=1, skipped=2, missed=4; 0 = open-only).
-  Future<void> setStatusFilter(int viewId, int lensId, int filter) =>
-      (db.update(db.viewLens)
-            ..where((r) => r.viewId.equals(viewId) & r.lensId.equals(lensId)))
-          .write(ViewLensCompanion(statusFilter: Value(filter)));
+  Future<void> setLensStatusFilter(int lensId, int filter) =>
+      (db.update(db.lenses)..where((x) => x.id.equals(lensId))).write(
+        LensesCompanion(statusFilter: Value(filter)),
+      );
 
   /// Watch a single View row (null once deleted).
   Stream<ViewRow?> watchView(int viewId) => (db.select(
@@ -347,7 +347,7 @@ class ViewRepository {
         for (final row in rows)
           ViewLensEntry(
             lens: row.readTable(l),
-            statusFilter: row.readTable(vl).statusFilter,
+            statusFilter: row.readTable(l).statusFilter,
           ),
       ],
     );
@@ -409,7 +409,7 @@ class ViewRepository {
     for (final row in rows) {
       final lensRow = row.readTable(db.lenses);
       lensById[lensRow.id] = lensRow;
-      filterById[lensRow.id] = row.readTable(db.viewLens).statusFilter;
+      filterById[lensRow.id] = lensRow.statusFilter;
       members.putIfAbsent(lensRow.id, () => []);
 
       final taskRow = row.readTableOrNull(db.tasks);

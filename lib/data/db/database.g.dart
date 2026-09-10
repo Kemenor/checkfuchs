@@ -92,6 +92,18 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _statusFilterMeta = const VerificationMeta(
+    'statusFilter',
+  );
+  @override
+  late final GeneratedColumn<int> statusFilter = GeneratedColumn<int>(
+    'status_filter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -102,6 +114,7 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
     period,
     dormantAfter,
     sortIndex,
+    statusFilter,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -145,6 +158,15 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
       context.handle(
         _sortIndexMeta,
         sortIndex.isAcceptableOrUnknown(data['sort_index']!, _sortIndexMeta),
+      );
+    }
+    if (data.containsKey('status_filter')) {
+      context.handle(
+        _statusFilterMeta,
+        statusFilter.isAcceptableOrUnknown(
+          data['status_filter']!,
+          _statusFilterMeta,
+        ),
       );
     }
     return context;
@@ -194,6 +216,10 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
         DriftSqlType.int,
         data['${effectivePrefix}sort_index'],
       )!,
+      statusFilter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status_filter'],
+      )!,
     );
   }
 
@@ -221,6 +247,11 @@ class LensRow extends DataClass implements Insertable<LensRow> {
   final Recurrence? period;
   final int? dormantAfter;
   final int sortIndex;
+
+  /// Which outcomes this lens shows besides its open tasks — bits done(1),
+  /// skipped(2), missed(4), and hide-upcoming(8). A property of the lens
+  /// since v12 (was per view↔lens pair; that column is now a dead legacy).
+  final int statusFilter;
   const LensRow({
     required this.id,
     required this.name,
@@ -230,6 +261,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     this.period,
     this.dormantAfter,
     required this.sortIndex,
+    required this.statusFilter,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -256,6 +288,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       map['dormant_after'] = Variable<int>(dormantAfter);
     }
     map['sort_index'] = Variable<int>(sortIndex);
+    map['status_filter'] = Variable<int>(statusFilter);
     return map;
   }
 
@@ -273,6 +306,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           ? const Value.absent()
           : Value(dormantAfter),
       sortIndex: Value(sortIndex),
+      statusFilter: Value(statusFilter),
     );
   }
 
@@ -294,6 +328,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       period: serializer.fromJson<Recurrence?>(json['period']),
       dormantAfter: serializer.fromJson<int?>(json['dormantAfter']),
       sortIndex: serializer.fromJson<int>(json['sortIndex']),
+      statusFilter: serializer.fromJson<int>(json['statusFilter']),
     );
   }
   @override
@@ -312,6 +347,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       'period': serializer.toJson<Recurrence?>(period),
       'dormantAfter': serializer.toJson<int?>(dormantAfter),
       'sortIndex': serializer.toJson<int>(sortIndex),
+      'statusFilter': serializer.toJson<int>(statusFilter),
     };
   }
 
@@ -324,6 +360,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     Value<Recurrence?> period = const Value.absent(),
     Value<int?> dormantAfter = const Value.absent(),
     int? sortIndex,
+    int? statusFilter,
   }) => LensRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -333,6 +370,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     period: period.present ? period.value : this.period,
     dormantAfter: dormantAfter.present ? dormantAfter.value : this.dormantAfter,
     sortIndex: sortIndex ?? this.sortIndex,
+    statusFilter: statusFilter ?? this.statusFilter,
   );
   LensRow copyWithCompanion(LensesCompanion data) {
     return LensRow(
@@ -346,6 +384,9 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           ? data.dormantAfter.value
           : this.dormantAfter,
       sortIndex: data.sortIndex.present ? data.sortIndex.value : this.sortIndex,
+      statusFilter: data.statusFilter.present
+          ? data.statusFilter.value
+          : this.statusFilter,
     );
   }
 
@@ -359,7 +400,8 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           ..write('selection: $selection, ')
           ..write('period: $period, ')
           ..write('dormantAfter: $dormantAfter, ')
-          ..write('sortIndex: $sortIndex')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('statusFilter: $statusFilter')
           ..write(')'))
         .toString();
   }
@@ -374,6 +416,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     period,
     dormantAfter,
     sortIndex,
+    statusFilter,
   );
   @override
   bool operator ==(Object other) =>
@@ -386,7 +429,8 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           other.selection == this.selection &&
           other.period == this.period &&
           other.dormantAfter == this.dormantAfter &&
-          other.sortIndex == this.sortIndex);
+          other.sortIndex == this.sortIndex &&
+          other.statusFilter == this.statusFilter);
 }
 
 class LensesCompanion extends UpdateCompanion<LensRow> {
@@ -398,6 +442,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
   final Value<Recurrence?> period;
   final Value<int?> dormantAfter;
   final Value<int> sortIndex;
+  final Value<int> statusFilter;
   const LensesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -407,6 +452,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     this.period = const Value.absent(),
     this.dormantAfter = const Value.absent(),
     this.sortIndex = const Value.absent(),
+    this.statusFilter = const Value.absent(),
   });
   LensesCompanion.insert({
     this.id = const Value.absent(),
@@ -417,6 +463,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     this.period = const Value.absent(),
     this.dormantAfter = const Value.absent(),
     this.sortIndex = const Value.absent(),
+    this.statusFilter = const Value.absent(),
   }) : name = Value(name),
        ordering = Value(ordering),
        selection = Value(selection);
@@ -429,6 +476,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     Expression<String>? period,
     Expression<int>? dormantAfter,
     Expression<int>? sortIndex,
+    Expression<int>? statusFilter,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -439,6 +487,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
       if (period != null) 'period': period,
       if (dormantAfter != null) 'dormant_after': dormantAfter,
       if (sortIndex != null) 'sort_index': sortIndex,
+      if (statusFilter != null) 'status_filter': statusFilter,
     });
   }
 
@@ -451,6 +500,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     Value<Recurrence?>? period,
     Value<int?>? dormantAfter,
     Value<int>? sortIndex,
+    Value<int>? statusFilter,
   }) {
     return LensesCompanion(
       id: id ?? this.id,
@@ -461,6 +511,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
       period: period ?? this.period,
       dormantAfter: dormantAfter ?? this.dormantAfter,
       sortIndex: sortIndex ?? this.sortIndex,
+      statusFilter: statusFilter ?? this.statusFilter,
     );
   }
 
@@ -497,6 +548,9 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     if (sortIndex.present) {
       map['sort_index'] = Variable<int>(sortIndex.value);
     }
+    if (statusFilter.present) {
+      map['status_filter'] = Variable<int>(statusFilter.value);
+    }
     return map;
   }
 
@@ -510,7 +564,8 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
           ..write('selection: $selection, ')
           ..write('period: $period, ')
           ..write('dormantAfter: $dormantAfter, ')
-          ..write('sortIndex: $sortIndex')
+          ..write('sortIndex: $sortIndex, ')
+          ..write('statusFilter: $statusFilter')
           ..write(')'))
         .toString();
   }
@@ -3926,6 +3981,7 @@ typedef $$LensesTableCreateCompanionBuilder =
       Value<Recurrence?> period,
       Value<int?> dormantAfter,
       Value<int> sortIndex,
+      Value<int> statusFilter,
     });
 typedef $$LensesTableUpdateCompanionBuilder =
     LensesCompanion Function({
@@ -3937,6 +3993,7 @@ typedef $$LensesTableUpdateCompanionBuilder =
       Value<Recurrence?> period,
       Value<int?> dormantAfter,
       Value<int> sortIndex,
+      Value<int> statusFilter,
     });
 
 final class $$LensesTableReferences
@@ -4065,6 +4122,11 @@ class $$LensesTableFilterComposer
 
   ColumnFilters<int> get sortIndex => $composableBuilder(
     column: $table.sortIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get statusFilter => $composableBuilder(
+    column: $table.statusFilter,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4217,6 +4279,11 @@ class $$LensesTableOrderingComposer
     column: $table.sortIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get statusFilter => $composableBuilder(
+    column: $table.statusFilter,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LensesTableAnnotationComposer
@@ -4253,6 +4320,11 @@ class $$LensesTableAnnotationComposer
 
   GeneratedColumn<int> get sortIndex =>
       $composableBuilder(column: $table.sortIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get statusFilter => $composableBuilder(
+    column: $table.statusFilter,
+    builder: (column) => column,
+  );
 
   Expression<T> templatesRefs<T extends Object>(
     Expression<T> Function($$TemplatesTableAnnotationComposer a) f,
@@ -4396,6 +4468,7 @@ class $$LensesTableTableManager
                 Value<Recurrence?> period = const Value.absent(),
                 Value<int?> dormantAfter = const Value.absent(),
                 Value<int> sortIndex = const Value.absent(),
+                Value<int> statusFilter = const Value.absent(),
               }) => LensesCompanion(
                 id: id,
                 name: name,
@@ -4405,6 +4478,7 @@ class $$LensesTableTableManager
                 period: period,
                 dormantAfter: dormantAfter,
                 sortIndex: sortIndex,
+                statusFilter: statusFilter,
               ),
           createCompanionCallback:
               ({
@@ -4416,6 +4490,7 @@ class $$LensesTableTableManager
                 Value<Recurrence?> period = const Value.absent(),
                 Value<int?> dormantAfter = const Value.absent(),
                 Value<int> sortIndex = const Value.absent(),
+                Value<int> statusFilter = const Value.absent(),
               }) => LensesCompanion.insert(
                 id: id,
                 name: name,
@@ -4425,6 +4500,7 @@ class $$LensesTableTableManager
                 period: period,
                 dormantAfter: dormantAfter,
                 sortIndex: sortIndex,
+                statusFilter: statusFilter,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -143,6 +143,10 @@ resolved_at`.
 (dueDate|manual|automatic), selection (top|random), period (none | recurrence json),
 dormant_after, created_at`.
 
+**`lenses.status_filter`** (v12) — which outcomes a lens shows besides its open
+tasks (done/skipped/missed bits, hide-upcoming bit). Moved off the view↔lens
+pair: a lens *is* a way of looking; two looks = two lenses.
+
 **`template_lens`** — which lenses a series' generated instances join (many-to-many,
 v10; `templates.default_lens_id` remains as a legacy mirror and is no longer read).
 

@@ -145,7 +145,7 @@ void main() {
         isNot(contains(domain.TaskStatus.done)),
       );
 
-      await viewRepo.setStatusFilter(home.id, lensId, 1); // done=1
+      await viewRepo.setLensStatusFilter(lensId, 1); // done=1
       state = (await viewRepo.watchViewState(home.id, clock).first)!;
       expect(
         state.sections.single.shown.map((t) => t.status),
@@ -185,7 +185,7 @@ void main() {
         ]);
 
         // Filter 1 shows it — nothing left to peek at.
-        await viewRepo.setStatusFilter(home.id, lensId, 1);
+        await viewRepo.setLensStatusFilter(lensId, 1);
         section = (await viewRepo.watchViewState(home.id, clock).first)!
             .sections
             .single;
@@ -208,7 +208,7 @@ void main() {
         ),
       );
       final home = (await viewRepo.watchViews().first).single;
-      await viewRepo.setStatusFilter(home.id, lensId, 5); // done + missed
+      await viewRepo.setLensStatusFilter(lensId, 5); // done + missed
 
       // Day 1: complete it.
       await taskRepo.reconcileAll(d(2026, 6, 27, 8));
@@ -315,7 +315,7 @@ void main() {
       expect(entries.single.lens.id, lensId);
       expect(entries.single.statusFilter, 0);
 
-      await viewRepo.setStatusFilter(home.id, lensId, 5); // done + missed
+      await viewRepo.setLensStatusFilter(lensId, 5); // done + missed
       entries = await viewRepo.watchViewLenses(home.id).first;
       expect(entries.single.statusFilter, 5);
     });

@@ -32,7 +32,10 @@ void main() {
     final tasks = await repo.allTasks();
     expect(tasks.map((t) => t.name), isNot(contains('junk')));
     expect((await db.select(db.views).get()).length, 3);
-    expect((await db.select(db.lenses).get()).length, 4);
+    expect(
+      (await db.select(db.lenses).get()).length,
+      5,
+    ); // + daily habits · outcomes
     expect((await db.select(db.templates).get()).length, 5);
     // Settings survived the wipe.
     final settings = await db.select(db.appSettings).getSingle();
