@@ -307,6 +307,27 @@ void main() {
       expect((await db.select(db.lenses).getSingle()).name, 'Alles');
     });
 
+    test('setLensViews mounts/unmounts a lens across views', () async {
+      final lensId = await viewRepo.seedDefaults();
+      final home = (await viewRepo.watchViews().first).single;
+      final habits = await viewRepo.createView('Habits', icon: 'repeat');
+      final extra = await viewRepo.createLensInView(habits, 'Extra');
+      expect(await viewRepo.watchLensViewIds(lensId).first, {home.id});
+
+      // Move Default into Habits (behind Extra), out of Home.
+      await viewRepo.setLensViews(lensId, {habits});
+      expect(await viewRepo.watchLensViewIds(lensId).first, {habits});
+      final inHabits = await viewRepo.watchViewLenses(habits).first;
+      expect([
+        for (final e in inHabits) e.lens.id,
+      ], unorderedEquals([extra, lensId]));
+      expect(await viewRepo.watchViewLenses(home.id).first, isEmpty);
+
+      // And into both.
+      await viewRepo.setLensViews(lensId, {home.id, habits});
+      expect(await viewRepo.watchLensViewIds(lensId).first, {home.id, habits});
+    });
+
     test('watchViewLenses emits the lens with its statusFilter', () async {
       final lensId = await viewRepo.seedDefaults();
       final home = (await viewRepo.watchViews().first).single;

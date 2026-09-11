@@ -869,6 +869,10 @@
   "@demoLensDailyOutcomes": {
     "description": "Demo suite: the Habits view lens (daily habits with outcomes shown)"
   },
+  "lensShownInSection": "Shown in",
+  "@lensShownInSection": {
+    "description": "Lens editor: section header above the per-view checkboxes"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",

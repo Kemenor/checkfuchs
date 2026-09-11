@@ -334,6 +334,41 @@ class ViewRepository {
         }
       });
 
+  /// The views a lens is mounted in.
+  Stream<Set<int>> watchLensViewIds(int lensId) =>
+      (db.select(db.viewLens)..where((vl) => vl.lensId.equals(lensId)))
+          .watch()
+          .map((rows) => {for (final r in rows) r.viewId});
+
+  /// Mount the lens in exactly [viewIds]: new mounts go last in their view,
+  /// unticked views drop the pair (the lens and its tasks stay).
+  Future<void> setLensViews(int lensId, Set<int> viewIds) =>
+      db.transaction(() async {
+        final current = await watchLensViewIds(lensId).first;
+        for (final v in current.difference(viewIds)) {
+          await (db.delete(db.viewLens)
+                ..where((vl) => vl.lensId.equals(lensId) & vl.viewId.equals(v)))
+              .go();
+        }
+        for (final v in viewIds.difference(current)) {
+          final maxOrder = db.viewLens.sortOrder.max();
+          final row =
+              await (db.selectOnly(db.viewLens)
+                    ..addColumns([maxOrder])
+                    ..where(db.viewLens.viewId.equals(v)))
+                  .getSingle();
+          await db
+              .into(db.viewLens)
+              .insert(
+                ViewLensCompanion.insert(
+                  viewId: v,
+                  lensId: lensId,
+                  sortOrder: Value((row.read(maxOrder) ?? -1) + 1),
+                ),
+              );
+        }
+      });
+
   /// Watch the lenses of a View with their per-pair statusFilter — the
   /// view-edit screen's live source.
   Stream<List<ViewLensEntry>> watchViewLenses(int viewId) {

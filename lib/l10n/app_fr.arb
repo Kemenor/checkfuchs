@@ -189,6 +189,7 @@
   "reorderHint": "Faites glisser les poignées pour définir l’ordre.",
   "openLensEditor": "Tâches affichées, ordre, période, résultats — modifier la lentille",
   "demoLensDailyOutcomes": "Habitudes quotidiennes · résultats",
+  "lensShownInSection": "Affichée dans",
   "demoViewHabits": "Habitudes",
   "demoViewLongterm": "Long terme",
   "demoLensDaily": "Habitudes quotidiennes",

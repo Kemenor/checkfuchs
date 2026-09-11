@@ -196,8 +196,48 @@ class LensEditScreen extends ConsumerWidget {
                     ],
                   ),
                 _LensDialsCard(key: ValueKey(entry.lens.id), entry: entry),
+                // Where the lens is mounted — a lens can sit in several views;
+                // moving it is "untick here, tick there".
+                FuchsbauSectionHeader(l10n.lensShownInSection),
+                _LensViewsCard(lensId: lensId),
               ],
             ),
+    );
+  }
+}
+
+final _lensViewIdsProvider = StreamProvider.autoDispose.family<Set<int>, int>(
+  (ref, lensId) => ref.watch(viewRepositoryProvider).watchLensViewIds(lensId),
+);
+
+class _LensViewsCard extends ConsumerWidget {
+  const _LensViewsCard({required this.lensId});
+  final int lensId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final views = ref.watch(viewsProvider).asData?.value ?? const [];
+    final mounted = ref.watch(_lensViewIdsProvider(lensId)).asData?.value;
+    if (mounted == null) return const SizedBox.shrink();
+    return FuchsbauSettingsCard(
+      children: [
+        for (final v in views)
+          CheckboxListTile(
+            key: ValueKey('lens-view-${v.id}'),
+            contentPadding: fuchsbauCardRowPadding,
+            secondary: Icon(viewIcon(v.icon)),
+            title: Text(v.name),
+            value: mounted.contains(v.id),
+            onChanged: (on) => ref
+                .read(viewRepositoryProvider)
+                .setLensViews(
+                  lensId,
+                  on == true
+                      ? {...mounted, v.id}
+                      : ({...mounted}..remove(v.id)),
+                ),
+          ),
+      ],
     );
   }
 }
