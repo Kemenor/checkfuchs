@@ -95,6 +95,23 @@ class WindowEditor extends StatelessWidget {
                   selected: value.days == n,
                   onSelected: (_) => onChanged(value.withDays(n)),
                 ),
+              // Any other number of days: the chip shows the current custom
+              // value once one is set.
+              ChoiceChip(
+                avatar: const Icon(Symbols.edit_rounded, size: 16),
+                label: Text(
+                  value.days != null && !const [1, 2, 3, 7].contains(value.days)
+                      ? l10n.windowDays(value.days!)
+                      : l10n.windowCustom,
+                ),
+                selected:
+                    value.days != null &&
+                    !const [1, 2, 3, 7].contains(value.days),
+                onSelected: (_) async {
+                  final n = await _askDays(context, value.days ?? 14);
+                  if (n != null) onChanged(value.withDays(n));
+                },
+              ),
             ],
           ),
         ],
@@ -202,4 +219,40 @@ class _BandRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A one-field dialog for "open for N days" (1…365).
+Future<int?> _askDays(BuildContext context, int initial) async {
+  final l10n = AppLocalizations.of(context);
+  final controller = TextEditingController(text: '$initial');
+  final result = await showDialog<int>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.windowOpenFor),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          suffixText: l10n.windowDays(2).split(' ').last,
+        ),
+        onSubmitted: (_) =>
+            Navigator.pop(ctx, int.tryParse(controller.text.trim())),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.pop(ctx, int.tryParse(controller.text.trim())),
+          child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null) return null;
+  return result.clamp(1, 365);
 }
