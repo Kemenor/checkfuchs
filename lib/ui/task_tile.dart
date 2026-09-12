@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/lens.dart';
@@ -148,6 +149,19 @@ class TaskTile extends ConsumerWidget {
             isEnd: true,
           ),
           color: status.amber,
+        ),
+        // Resolved rows: the day they belong to, tinted by outcome — a lens
+        // drill-in lists a week of the same habit, and without this every
+        // "Brush teeth" looks alike.
+        _ when task.isTerminal => _StatusPill(
+          label: DateFormat.MMMEd(
+            Localizations.localeOf(context).toString(),
+          ).format(task.occurrence ?? task.resolvedAt ?? task.createdAt),
+          color: switch (task.status) {
+            TaskStatus.done => scheme.tertiary,
+            TaskStatus.skipped => status.neutral,
+            _ => status.taupe,
+          },
         ),
         _ => null,
       },

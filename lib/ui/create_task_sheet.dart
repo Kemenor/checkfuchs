@@ -23,11 +23,13 @@ final _viewLensesProvider = StreamProvider.autoDispose
           .map((entries) => [for (final e in entries) e.lens]),
     );
 
-/// Create a task or habit (Phase 3): name + lens (the bucket it lives in —
-/// only this view's lenses are offered, preselected to [lensId] when the
-/// sheet was opened from a lens card's +) + recurrence (Off = one-off) + an
-/// active-window picker. A recurrence makes a Template; "Off" makes a
-/// one-off Task. Reconciles so the first instance appears immediately.
+/// Create a habit or a to-do: name + note + a Habit/To-do toggle that shapes
+/// the rest — a habit has a repeat rule and an active window (a Template);
+/// a to-do has a start and a due date and nothing else (a Task, its window
+/// is exactly those two dates). Lenses (the buckets it lives in — only this
+/// view's are offered, preselected to [lensId] when opened from a lens
+/// card's +) and reminders apply to both. Reconciles so the first instance
+/// appears immediately.
 Future<void> showCreateTaskSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -62,15 +64,24 @@ class _CreateTaskSheet extends ConsumerStatefulWidget {
   ConsumerState<_CreateTaskSheet> createState() => _CreateTaskSheetState();
 }
 
+enum _Kind { habit, todo }
+
 class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
   final _noteController = TextEditingController();
-  late Recurrence? _recurrence = widget.initialRecurrence;
+  _Kind _kind = _Kind.habit;
+  late Recurrence _recurrence =
+      widget.initialRecurrence ?? Recurrence.daily(_today);
   WindowSelection _window = WindowSelection.anytime;
   List<TaskNotification> _notifications = const [];
   late Set<int> _lensIds = {if (widget.lensId != null) widget.lensId!};
   DateTime? _startDate;
   DateTime? _dueDate;
+
+  DateTime get _today {
+    final now = ref.read(clockProvider).now();
+    return DateTime(now.year, now.month, now.day);
+  }
 
   @override
   void initState() {
@@ -127,12 +138,12 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     final notifications = _notifications;
     final noteText = _noteController.text.trim();
     final note = noteText.isEmpty ? null : noteText;
-    if (_recurrence != null) {
+    if (_kind == _Kind.habit) {
       await repo.createTemplate(
         Template(
           name: name,
           note: note,
-          recurrence: _recurrence!,
+          recurrence: _recurrence,
           windowRule: _window.toRule(),
           createdAt: now,
           notifications: notifications,
@@ -140,7 +151,13 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
         lensIds: _lensIds,
       );
     } else {
-      final (start, end) = _window.datedWindow(now, _startDate, _dueDate);
+      // A to-do's window is exactly its dates: start (or now) → due (or
+      // open-ended). No hour bands.
+      final (start, end) = WindowSelection.anytime.datedWindow(
+        now,
+        _startDate,
+        _dueDate,
+      );
       await repo.createTask(
         Task(
           name: name,
@@ -150,7 +167,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           createdAt: now,
           notifications: notifications,
           // Only a window with gaps needs bands; the envelope covers the rest.
-          bands: _window.hasGaps ? _window.bands : null,
+          bands: null,
         ),
         lensIds: _lensIds,
       );
@@ -243,18 +260,49 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 ],
               },
               const SizedBox(height: 20),
-              _SectionLabel(l10n.activeWindowSection),
-              const SizedBox(height: 8),
-              WindowEditor(
-                value: _window,
-                recurring: _recurrence != null,
-                onChanged: (w) => setState(() => _window = w),
+              // The fork: a habit repeats and has an active window; a to-do
+              // runs from its start to its due date.
+              SegmentedButton<_Kind>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: _Kind.habit,
+                    icon: const Icon(Symbols.event_repeat_rounded),
+                    label: Text(l10n.kindHabit),
+                  ),
+                  ButtonSegment(
+                    value: _Kind.todo,
+                    icon: const Icon(Symbols.check_circle_rounded),
+                    label: Text(l10n.kindTodo),
+                  ),
+                ],
+                selected: {_kind},
+                onSelectionChanged: (s) => setState(() => _kind = s.first),
               ),
-              // Date-pinned windows (one-offs only — a habit's window comes
-              // from its slice rule): the slice shapes the hours, these pick
-              // the days. "Month of May" = starts 1.5 + due 31.5; a bare due
-              // date = open from now until the end of that day.
-              if (_recurrence == null) ...[
+              if (_kind == _Kind.habit) ...[
+                const SizedBox(height: 20),
+                _SectionLabel(l10n.repeatSection),
+                const SizedBox(height: 10),
+                RecurrenceEditor(
+                  anchor: anchor,
+                  initial: _recurrence,
+                  allowOff: false,
+                  onChanged: (r) =>
+                      setState(() => _recurrence = r ?? _recurrence),
+                ),
+                const SizedBox(height: 20),
+                _SectionLabel(l10n.activeWindowSection),
+                const SizedBox(height: 8),
+                WindowEditor(
+                  value: _window,
+                  recurring: true,
+                  onChanged: (w) => setState(() => _window = w),
+                ),
+              ] else ...[
+                // "Month of May" = starts 1.5 + due 31.5; a bare due date =
+                // open from now until the end of that day; neither = open
+                // until done.
+                const SizedBox(height: 12),
                 _DateRow(
                   icon: Symbols.today_rounded,
                   label: l10n.starts,
@@ -282,18 +330,10 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 // A series always has an occurrence day; a one-off needs a
                 // due (or start) date for day-based reminders.
                 hasDay:
-                    _recurrence != null ||
+                    _kind == _Kind.habit ||
                     _dueDate != null ||
                     _startDate != null,
                 onChanged: (n) => setState(() => _notifications = n),
-              ),
-              const SizedBox(height: 20),
-              _SectionLabel(l10n.repeatSection),
-              const SizedBox(height: 10),
-              RecurrenceEditor(
-                anchor: anchor,
-                initial: widget.initialRecurrence,
-                onChanged: (r) => setState(() => _recurrence = r),
               ),
               const SizedBox(height: 20),
               FilledButton(

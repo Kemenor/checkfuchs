@@ -16,7 +16,12 @@ class RecurrenceEditor extends StatefulWidget {
     required this.anchor,
     required this.onChanged,
     this.initial,
+    this.allowOff = true,
   });
+
+  /// Whether the frequency row offers "Off" (one-off). The create sheet's
+  /// Habit/To-do toggle owns that choice, so a habit starts at daily.
+  final bool allowOff;
 
   /// The reference date intervals count from (typically the task's start/today).
   final DateTime anchor;
@@ -42,7 +47,10 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
   void initState() {
     super.initState();
     final r = widget.initial;
-    if (r == null) return;
+    if (r == null) {
+      if (!widget.allowOff) _freq = Freq.daily;
+      return;
+    }
     _freq = r.freq;
     _interval = r.interval;
     _anchor = DateTime(r.anchor.year, r.anchor.month, r.anchor.day);
@@ -124,7 +132,8 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
         SegmentedButton<int>(
           showSelectedIcon: false,
           segments: [
-            ButtonSegment(value: -1, label: Text(l10n.freqOff)),
+            if (widget.allowOff)
+              ButtonSegment(value: -1, label: Text(l10n.freqOff)),
             ButtonSegment(value: 0, label: Text(l10n.freqDay)),
             ButtonSegment(value: 1, label: Text(l10n.freqWeek)),
             ButtonSegment(value: 2, label: Text(l10n.freqMonth)),

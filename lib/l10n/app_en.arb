@@ -683,7 +683,7 @@
   "@introTaskTitle": {
     "description": "Intro page 1 title"
   },
-  "introTaskBody": "A daily habit and a one-off to-do are the same object here. Give it a window, maybe a repeat. Tap the ring when it's done, swipe it away to skip.",
+  "introTaskBody": "A habit repeats and has an active window — the hours it counts. A to-do runs from its start to its due date. Tap the ring when it's done, swipe it away to skip.",
   "@introTaskBody": {
     "description": "Intro page 1 body"
   },
@@ -906,6 +906,14 @@
   "noteHint": "Add a note…",
   "@noteHint": {
     "description": "Note field placeholder (create + detail)"
+  },
+  "kindHabit": "Habit",
+  "@kindHabit": {
+    "description": "Create sheet toggle: a repeating task with an active window"
+  },
+  "kindTodo": "To-do",
+  "@kindTodo": {
+    "description": "Create sheet toggle: a one-off that runs from start to due"
   },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
