@@ -102,6 +102,9 @@ class _TaskDetailSheet extends ConsumerStatefulWidget {
 
 class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   late final _controller = TextEditingController(text: widget.task.name);
+  late final _noteController = TextEditingController(
+    text: widget.task.note ?? '',
+  );
 
   /// The live task — re-read after nested sheets mutate it (turn-into-series /
   /// stop-repeating change `templateId`, which drives most of this sheet).
@@ -293,13 +296,32 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   @override
   void dispose() {
     _controller.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
+  /// Save: name (a series renames as a whole — it's one habit across its
+  /// history) and note (a series' note is the template default + its open
+  /// instances).
   Future<void> _saveName() async {
+    final repo = ref.read(taskRepositoryProvider);
     final name = _controller.text.trim();
+    final noteText = _noteController.text.trim();
+    final note = noteText.isEmpty ? null : noteText;
+    final tid = _task.templateId;
     if (name.isNotEmpty && name != _task.name) {
-      await ref.read(taskRepositoryProvider).renameTask(_task.id!, name);
+      if (tid != null) {
+        await repo.renameTemplate(tid, name);
+      } else {
+        await repo.renameTask(_task.id!, name);
+      }
+    }
+    if (note != _task.note) {
+      if (tid != null) {
+        await repo.setTemplateNote(tid, note);
+      } else {
+        await repo.setTaskNote(_task.id!, note);
+      }
     }
     if (mounted) Navigator.of(context).pop();
   }
@@ -336,6 +358,18 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 style: Theme.of(context).textTheme.titleLarge,
                 decoration: const InputDecoration(border: InputBorder.none),
                 onSubmitted: (_) => _saveName(),
+              ),
+              TextField(
+                controller: _noteController,
+                textCapitalization: TextCapitalization.sentences,
+                minLines: 1,
+                maxLines: 4,
+                style: TextStyle(color: scheme.outline),
+                decoration: InputDecoration(
+                  hintText: l10n.noteHint,
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
               ),
               const SizedBox(height: 8),
               FilledButton(

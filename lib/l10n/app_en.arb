@@ -899,6 +899,14 @@
   "@occursOnLabel": {
     "description": "Recurrence editor: label above the weekday chips"
   },
+  "noteLabel": "Note",
+  "@noteLabel": {
+    "description": "Create sheet: optional note field label"
+  },
+  "noteHint": "Add a note…",
+  "@noteHint": {
+    "description": "Note field placeholder (create + detail)"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",

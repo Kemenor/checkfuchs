@@ -7,6 +7,7 @@ import '../domain/lens.dart';
 import '../domain/task.dart' as domain;
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'name_prompt_dialog.dart';
 import 'recurrence_summary_l10n.dart';
 import 'task_tile.dart';
 import 'view_edit_screen.dart';
@@ -268,6 +269,20 @@ class AllLensesScreen extends ConsumerWidget {
     final viewNames = ref.watch(_lensViewNamesProvider).asData?.value ?? {};
     return Scaffold(
       appBar: AppBar(title: Text(l10n.allLensesTitle)),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'newLens',
+        onPressed: () async {
+          final r = await promptName(context, l10n.newLens);
+          if (r == null || !context.mounted) return;
+          final id = await ref.read(viewRepositoryProvider).createLens(r.$1);
+          if (!context.mounted) return;
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => LensEditScreen(lensId: id)),
+          );
+        },
+        icon: const Icon(Symbols.add_rounded),
+        label: Text(l10n.newLens),
+      ),
       body: lenses == null
           ? const Center(child: CircularProgressIndicator())
           : lenses.isEmpty
@@ -275,7 +290,7 @@ class AllLensesScreen extends ConsumerWidget {
           : ListView(
               padding: EdgeInsets.only(
                 top: 12,
-                bottom: 12 + MediaQuery.paddingOf(context).bottom,
+                bottom: 96 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 FuchsbauSettingsCard(
@@ -330,20 +345,53 @@ class AllViewsScreen extends ConsumerWidget {
                 bottom: 12 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Text(
+                    l10n.reorderHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+                // Drag = bottom-bar order.
                 FuchsbauSettingsCard(
                   children: [
-                    for (final v in views)
-                      ListTile(
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      itemCount: views.length,
+                      onReorderItem: (from, to) {
+                        final ids = [for (final v in views) v.id];
+                        final moved = ids.removeAt(from);
+                        ids.insert(to, moved);
+                        ref.read(viewRepositoryProvider).setViewOrder(ids);
+                      },
+                      itemBuilder: (context, i) => ListTile(
+                        key: ValueKey('view-${views[i].id}'),
                         contentPadding: fuchsbauCardRowPadding,
-                        leading: Icon(viewIcon(v.icon)),
-                        title: Text(v.name),
-                        trailing: const Icon(Symbols.chevron_right_rounded),
+                        leading: Icon(viewIcon(views[i].icon)),
+                        title: Text(views[i].name),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Symbols.chevron_right_rounded),
+                            const SizedBox(width: 8),
+                            ReorderableDragStartListener(
+                              index: i,
+                              child: const Icon(Symbols.drag_indicator_rounded),
+                            ),
+                          ],
+                        ),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => ViewEditScreen(viewId: v.id),
+                            builder: (_) => ViewEditScreen(viewId: views[i].id),
                           ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ],

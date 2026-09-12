@@ -118,6 +118,14 @@ class TaskTile extends ConsumerWidget {
           decorationColor: status.taupe,
         ),
       ),
+      subtitle: (task.note ?? '').isEmpty
+          ? null
+          : Text(
+              task.note!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: scheme.outline, fontSize: 13),
+            ),
       // Informative pills (§3.6): pending → when the window opens (muted);
       // active with a deadline → when it's due (amber). Anytime stays bare.
       trailing: switch (phase) {

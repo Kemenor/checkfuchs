@@ -46,6 +46,24 @@ void main() {
     },
   );
 
+  test('renaming / annotating a series reaches template + instances', () async {
+    final templateId = await seedDailyHabit();
+    await repo.reconcileAll(d(2026, 6, 27, 8));
+    await repo.renameTemplate(templateId, 'Floss');
+    await repo.setTemplateNote(templateId, 'after dinner');
+    final template = await db.select(db.templates).getSingle();
+    expect(template.name, 'Floss');
+    expect(template.note, 'after dinner');
+    final instance = (await repo.allTasks()).single;
+    expect(instance.name, 'Floss');
+    expect(instance.note, 'after dinner');
+    // The next generated instance carries the note too.
+    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    final next = (await repo.allTasks()).firstWhere((t) => t.isOpen);
+    expect(next.name, 'Floss');
+    expect(next.note, 'after dinner');
+  });
+
   test('reconcileAll materialises one open instance', () async {
     await seedDailyHabit();
     await repo.reconcileAll(d(2026, 6, 27, 8));

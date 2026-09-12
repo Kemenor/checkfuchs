@@ -196,6 +196,8 @@
   "windowUntilNextSummary": "Aperta da ogni occorrenza fino alla successiva.",
   "windowDaysSummary": "Aperta per {n, plural, =1{1 giorno} other{{n} giorni}} da ogni occorrenza.",
   "occursOnLabel": "Si ripete il",
+  "noteLabel": "Nota",
+  "noteHint": "Aggiungi una nota…",
   "demoViewHabits": "Abitudini",
   "demoViewLongterm": "A lungo termine",
   "demoLensDaily": "Abitudini quotidiane",

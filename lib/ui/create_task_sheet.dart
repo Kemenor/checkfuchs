@@ -64,6 +64,7 @@ class _CreateTaskSheet extends ConsumerStatefulWidget {
 
 class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
+  final _noteController = TextEditingController();
   late Recurrence? _recurrence = widget.initialRecurrence;
   WindowSelection _window = WindowSelection.anytime;
   List<TaskNotification> _notifications = const [];
@@ -100,6 +101,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   @override
   void dispose() {
     _controller.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -123,10 +125,13 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     final now = ref.read(clockProvider).now();
 
     final notifications = _notifications;
+    final noteText = _noteController.text.trim();
+    final note = noteText.isEmpty ? null : noteText;
     if (_recurrence != null) {
       await repo.createTemplate(
         Template(
           name: name,
+          note: note,
           recurrence: _recurrence!,
           windowRule: _window.toRule(),
           createdAt: now,
@@ -139,6 +144,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
       await repo.createTask(
         Task(
           name: name,
+          note: note,
           start: start,
           end: end,
           createdAt: now,
@@ -182,6 +188,18 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                   border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _noteController,
+                textCapitalization: TextCapitalization.sentences,
+                minLines: 1,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: l10n.noteLabel,
+                  hintText: l10n.noteHint,
+                  border: const OutlineInputBorder(),
+                ),
               ),
               // The buckets: which lenses this task lives in (concept §4.6 —
               // membership is data; views merely arrange lenses). Multi-select,

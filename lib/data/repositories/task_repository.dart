@@ -245,6 +245,35 @@ class TaskRepository {
     db.tasks,
   )..where((t) => t.id.equals(id))).write(TasksCompanion(name: Value(name)));
 
+  /// Rename a series: the template and every instance (a habit is one thing
+  /// across its history).
+  Future<void> renameTemplate(int templateId, String name) =>
+      db.transaction(() async {
+        await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+            .write(TemplatesCompanion(name: Value(name)));
+        await (db.update(db.tasks)
+              ..where((t) => t.templateId.equals(templateId)))
+            .write(TasksCompanion(name: Value(name)));
+      });
+
+  /// A one-off's note (null/empty clears it).
+  Future<void> setTaskNote(int id, String? note) => (db.update(
+    db.tasks,
+  )..where((t) => t.id.equals(id))).write(TasksCompanion(note: Value(note)));
+
+  /// A series' note: the template's default and its open instances.
+  Future<void> setTemplateNote(int templateId, String? note) =>
+      db.transaction(() async {
+        await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+            .write(TemplatesCompanion(note: Value(note)));
+        await (db.update(db.tasks)..where(
+              (t) =>
+                  t.templateId.equals(templateId) &
+                  t.status.equals(domain.TaskStatus.open.index),
+            ))
+            .write(TasksCompanion(note: Value(note)));
+      });
+
   /// Edit a one-off's window edges (null = unbounded on that side).
   Future<void> setTaskWindow(
     int id,

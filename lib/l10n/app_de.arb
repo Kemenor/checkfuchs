@@ -196,6 +196,8 @@
   "windowUntilNextSummary": "Offen von jedem Termin bis zum nächsten.",
   "windowDaysSummary": "Offen für {n, plural, =1{1 Tag} other{{n} Tage}} ab jedem Termin.",
   "occursOnLabel": "Findet statt am",
+  "noteLabel": "Notiz",
+  "noteHint": "Notiz hinzufügen…",
   "demoViewHabits": "Routinen",
   "demoViewLongterm": "Langfristig",
   "demoLensDaily": "Tägliche Gewohnheiten",

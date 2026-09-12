@@ -80,25 +80,59 @@ class ViewEditScreen extends ConsumerWidget {
                 FuchsbauSectionHeader(l10n.lensesSection),
                 // A view only decides which lenses it mounts; everything a
                 // lens shows (dials, outcomes) is edited on the lens.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Text(
+                    l10n.reorderHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+                // Drag = card order in this view.
                 FuchsbauSettingsCard(
                   children: [
-                    for (final entry in lenses)
-                      ListTile(
-                        key: ValueKey(entry.lens.id),
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      itemCount: lenses.length,
+                      onReorderItem: (from, to) {
+                        final ids = [for (final e in lenses) e.lens.id];
+                        final moved = ids.removeAt(from);
+                        ids.insert(to, moved);
+                        ref
+                            .read(viewRepositoryProvider)
+                            .setViewLensOrder(viewId, ids);
+                      },
+                      itemBuilder: (context, i) => ListTile(
+                        key: ValueKey('view-lens-${lenses[i].lens.id}'),
                         contentPadding: fuchsbauCardRowPadding,
                         leading: const Icon(Symbols.filter_alt_rounded),
-                        title: Text(entry.lens.name),
+                        title: Text(lenses[i].lens.name),
                         subtitle: Text(l10n.openLensEditor),
-                        trailing: const Icon(Symbols.chevron_right_rounded),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Symbols.chevron_right_rounded),
+                            const SizedBox(width: 8),
+                            ReorderableDragStartListener(
+                              index: i,
+                              child: const Icon(Symbols.drag_indicator_rounded),
+                            ),
+                          ],
+                        ),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => LensEditScreen(
                               viewId: viewId,
-                              lensId: entry.lens.id,
+                              lensId: lenses[i].lens.id,
                             ),
                           ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ],

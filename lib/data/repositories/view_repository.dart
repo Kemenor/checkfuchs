@@ -228,21 +228,44 @@ class ViewRepository {
 
   Future<int> createLensInView(int viewId, String name) =>
       db.transaction(() async {
-        final next = await _nextSortIndex(db.lenses.sortIndex, db.lenses);
-        final lensId = await db
-            .into(db.lenses)
-            .insert(
-              LensesCompanion.insert(
-                name: name,
-                ordering: LensOrdering.automatic,
-                selection: LensSelection.top,
-                sortIndex: Value(next),
-              ),
-            );
-        await db
-            .into(db.viewLens)
-            .insert(ViewLensCompanion.insert(viewId: viewId, lensId: lensId));
+        final lensId = await createLens(name);
+        await setLensViews(lensId, {viewId});
         return lensId;
+      });
+
+  /// A lens on its own (mount it with [setLensViews]).
+  Future<int> createLens(String name) async {
+    final next = await _nextSortIndex(db.lenses.sortIndex, db.lenses);
+    return db
+        .into(db.lenses)
+        .insert(
+          LensesCompanion.insert(
+            name: name,
+            ordering: LensOrdering.automatic,
+            selection: LensSelection.top,
+            sortIndex: Value(next),
+          ),
+        );
+  }
+
+  /// Bottom-bar order of the views: [viewIds] left to right.
+  Future<void> setViewOrder(List<int> viewIds) => db.transaction(() async {
+    for (var i = 0; i < viewIds.length; i++) {
+      await (db.update(db.views)..where((v) => v.id.equals(viewIds[i]))).write(
+        ViewsCompanion(sortIndex: Value(i)),
+      );
+    }
+  });
+
+  /// Card order of a view's lenses: [lensIds] top to bottom.
+  Future<void> setViewLensOrder(int viewId, List<int> lensIds) =>
+      db.transaction(() async {
+        for (var i = 0; i < lensIds.length; i++) {
+          await (db.update(db.viewLens)..where(
+                (vl) => vl.viewId.equals(viewId) & vl.lensId.equals(lensIds[i]),
+              ))
+              .write(ViewLensCompanion(sortOrder: Value(i)));
+        }
       });
 
   // --- dial editing (Phase 4 UI) ---------------------------------------------
@@ -376,7 +399,7 @@ class ViewRepository {
     final l = db.lenses;
     final query = db.select(vl).join([innerJoin(l, l.id.equalsExp(vl.lensId))])
       ..where(vl.viewId.equals(viewId))
-      ..orderBy([OrderingTerm.asc(l.sortIndex)]);
+      ..orderBy([OrderingTerm.asc(vl.sortOrder), OrderingTerm.asc(l.id)]);
     return query.watch().map(
       (rows) => [
         for (final row in rows)
@@ -420,7 +443,7 @@ class ViewRepository {
             leftOuterJoin(t, t.id.equalsExp(tl.taskId)),
           ])
           ..where(vl.viewId.equals(viewId))
-          ..orderBy([OrderingTerm.asc(l.sortIndex)]);
+          ..orderBy([OrderingTerm.asc(vl.sortOrder), OrderingTerm.asc(l.id)]);
 
     return query.watch().asyncMap((rows) async {
       // A view with no lenses yields no join rows — fall back to a direct read

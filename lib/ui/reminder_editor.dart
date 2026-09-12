@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../domain/notification.dart';
@@ -26,7 +27,9 @@ class ReminderEditor extends StatelessWidget {
 
   List<TaskNotification> get _custom => [
     for (final n in value)
-      if (n.anchor == NotificationAnchor.day) n,
+      if (n.anchor == NotificationAnchor.day ||
+          n.anchor == NotificationAnchor.absolute)
+        n,
   ];
 
   void _setPresets(Set<ReminderPreset> presets) =>
@@ -34,7 +37,9 @@ class ReminderEditor extends StatelessWidget {
 
   void _replaceCustom(List<TaskNotification> custom) => onChanged([
     for (final n in value)
-      if (n.anchor != NotificationAnchor.day) n,
+      if (n.anchor != NotificationAnchor.day &&
+          n.anchor != NotificationAnchor.absolute)
+        n,
     ...custom,
   ]);
 
@@ -51,29 +56,46 @@ class ReminderEditor extends StatelessWidget {
           onChanged: _setPresets,
         ),
         for (var i = 0; i < custom.length; i++)
-          _CustomRow(
-            key: ValueKey('custom-reminder-$i'),
-            notification: custom[i],
-            onChanged: (n) => _replaceCustom([
-              for (var k = 0; k < custom.length; k++) k == i ? n : custom[k],
-            ]),
-            onRemove: () => _replaceCustom([
-              for (var k = 0; k < custom.length; k++)
-                if (k != i) custom[k],
-            ]),
-          ),
+          if (custom[i].anchor == NotificationAnchor.absolute)
+            _AbsoluteRow(
+              key: ValueKey('absolute-reminder-$i'),
+              notification: custom[i],
+              onChanged: (n) => _replaceCustom([
+                for (var k = 0; k < custom.length; k++) k == i ? n : custom[k],
+              ]),
+              onRemove: () => _replaceCustom([
+                for (var k = 0; k < custom.length; k++)
+                  if (k != i) custom[k],
+              ]),
+            )
+          else
+            _CustomRow(
+              key: ValueKey('custom-reminder-$i'),
+              notification: custom[i],
+              onChanged: (n) => _replaceCustom([
+                for (var k = 0; k < custom.length; k++) k == i ? n : custom[k],
+              ]),
+              onRemove: () => _replaceCustom([
+                for (var k = 0; k < custom.length; k++)
+                  if (k != i) custom[k],
+              ]),
+            ),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
+            // With a day to hang on: "N days before at HH:MM". Without one
+            // (an undated one-off): a fixed date and time.
             onPressed: () => _replaceCustom([
               ...custom,
-              TaskNotification.onDay(timeOfDay: const Duration(hours: 9)),
+              hasDay
+                  ? TaskNotification.onDay(timeOfDay: const Duration(hours: 9))
+                  : TaskNotification.absolute(_tomorrowAt9()),
             ]),
             icon: const Icon(Symbols.add_alarm_rounded),
             label: Text(l10n.remindAtTime),
           ),
         ),
-        if (custom.isNotEmpty && !hasDay)
+        if (!hasDay && custom.any((n) => n.anchor == NotificationAnchor.day))
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
@@ -167,6 +189,84 @@ class _CustomRow extends StatelessWidget {
               }
             },
             child: Text(loc.formatTimeOfDay(tod)),
+          ),
+          IconButton(
+            tooltip: loc.deleteButtonTooltip,
+            icon: const Icon(Symbols.close_rounded),
+            onPressed: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+DateTime _tomorrowAt9() {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day + 1, 9);
+}
+
+/// A reminder at a fixed date and time — for one-offs without a due date.
+class _AbsoluteRow extends StatelessWidget {
+  const _AbsoluteRow({
+    super.key,
+    required this.notification,
+    required this.onChanged,
+    required this.onRemove,
+  });
+
+  final TaskNotification notification;
+  final ValueChanged<TaskNotification> onChanged;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = MaterialLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final at = notification.at ?? _tomorrowAt9();
+    final locale = Localizations.localeOf(context).toString();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Icon(Symbols.alarm_rounded, size: 20, color: scheme.outline),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () async {
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: at,
+                  firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                  lastDate: DateTime(at.year + 5, 12, 31),
+                );
+                if (d == null) return;
+                onChanged(
+                  TaskNotification.absolute(
+                    DateTime(d.year, d.month, d.day, at.hour, at.minute),
+                  ),
+                );
+              },
+              child: Text(DateFormat.yMMMEd(locale).format(at)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: () async {
+              final t = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay(hour: at.hour, minute: at.minute),
+              );
+              if (t == null) return;
+              onChanged(
+                TaskNotification.absolute(
+                  DateTime(at.year, at.month, at.day, t.hour, t.minute),
+                ),
+              );
+            },
+            child: Text(
+              loc.formatTimeOfDay(TimeOfDay(hour: at.hour, minute: at.minute)),
+            ),
           ),
           IconButton(
             tooltip: loc.deleteButtonTooltip,

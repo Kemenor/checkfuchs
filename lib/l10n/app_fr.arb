@@ -196,6 +196,8 @@
   "windowUntilNextSummary": "Ouvert de chaque occurrence à la suivante.",
   "windowDaysSummary": "Ouvert {n, plural, =1{1 jour} other{{n} jours}} à partir de chaque occurrence.",
   "occursOnLabel": "A lieu le",
+  "noteLabel": "Note",
+  "noteHint": "Ajouter une note…",
   "demoViewHabits": "Habitudes",
   "demoViewLongterm": "Long terme",
   "demoLensDaily": "Habitudes quotidiennes",

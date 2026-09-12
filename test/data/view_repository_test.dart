@@ -328,6 +328,25 @@ void main() {
       expect(await viewRepo.watchLensViewIds(lensId).first, {home.id, habits});
     });
 
+    test("views and a view's lenses reorder by drag", () async {
+      final lensId = await viewRepo.seedDefaults();
+      final home = (await viewRepo.watchViews().first).single;
+      final habits = await viewRepo.createView('Habits', icon: 'repeat');
+      await viewRepo.setViewOrder([habits, home.id]);
+      expect(
+        [for (final v in await viewRepo.watchViews().first) v.id],
+        [habits, home.id],
+      );
+      final second = await viewRepo.createLensInView(home.id, 'Second');
+      Future<List<int>> lensOrder() async => [
+        for (final e in await viewRepo.watchViewLenses(home.id).first)
+          e.lens.id,
+      ];
+      expect(await lensOrder(), [lensId, second]);
+      await viewRepo.setViewLensOrder(home.id, [second, lensId]);
+      expect(await lensOrder(), [second, lensId]);
+    });
+
     test('watchViewLenses emits the lens with its statusFilter', () async {
       final lensId = await viewRepo.seedDefaults();
       final home = (await viewRepo.watchViews().first).single;
