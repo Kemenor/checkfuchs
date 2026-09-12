@@ -112,8 +112,8 @@ void main() {
       expect(sel.custom, [Band(from: h * 13, to: h * 14)]);
       expect(sel.toRule(), multi);
       expect(
-        WindowSelection.fromRule(const FixedDuration(Duration(days: 7))),
-        isNull,
+        WindowSelection.fromRule(const FixedDuration(Duration(days: 7)))!.days,
+        7,
       );
     });
 
@@ -135,6 +135,22 @@ void main() {
           null,
         ).isAnytime,
         isTrue,
+      );
+    });
+  });
+
+  group('open for N days', () {
+    test('days → FixedDuration and back; a band clears it', () {
+      final s = WindowSelection.anytime.withDays(2);
+      expect(s.isAnytime, isFalse);
+      expect(s.toRule(), const FixedDuration(Duration(days: 2)));
+      expect(WindowSelection.fromRule(s.toRule())!.days, 2);
+      expect(s.toggle(WindowChoice.morning).days, isNull);
+      expect(s.withDays(null).isAnytime, isTrue);
+      // A non-whole-day duration has no chip form.
+      expect(
+        WindowSelection.fromRule(const FixedDuration(Duration(hours: 36))),
+        isNull,
       );
     });
   });

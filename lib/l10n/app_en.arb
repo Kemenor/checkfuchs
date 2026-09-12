@@ -873,6 +873,32 @@
   "@lensShownInSection": {
     "description": "Lens editor: section header above the per-view checkboxes"
   },
+  "windowOpenFor": "Open for",
+  "@windowOpenFor": {
+    "description": "Window editor (series): label of the open-for row"
+  },
+  "windowUntilNext": "Until the next occurrence",
+  "@windowUntilNext": {
+    "description": "Window editor: default duration chip"
+  },
+  "windowDays": "{n, plural, =1{1 day} other{{n} days}}",
+  "@windowDays": {
+    "description": "Window editor: N-day duration chip",
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "windowUntilNextSummary": "Open from each occurrence until the next.",
+  "@windowUntilNextSummary": {
+    "description": "Window summary for a repeating Anytime task"
+  },
+  "windowDaysSummary": "Open for {n, plural, =1{1 day} other{{n} days}} from each occurrence.",
+  "@windowDaysSummary": {
+    "description": "Window summary for an open-for-N-days task",
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "occursOnLabel": "Occurs on",
+  "@occursOnLabel": {
+    "description": "Recurrence editor: label above the weekday chips"
+  },
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",

@@ -87,7 +87,15 @@ enum WindowChoice {
 /// means *one* task, done once in either band (the gap is honoured by
 /// `phaseOf`); people who want it twice make two tasks.
 class WindowSelection {
-  const WindowSelection({this.presets = const {}, this.custom = const []});
+  const WindowSelection({
+    this.presets = const {},
+    this.custom = const [],
+    this.days,
+  });
+
+  /// "Open for N days" from each occurrence (a [FixedDuration] rule) — the
+  /// weekend chore on a Saturday occurrence. Exclusive with bands.
+  final int? days;
 
   static const anytime = WindowSelection();
 
@@ -98,7 +106,10 @@ class WindowSelection {
     UntilNextOccurrence() => anytime,
     Slice(:final from, :final to) => fromBands([Band(from: from, to: to)]),
     MultiSlice(:final bands) => fromBands(bands),
-    FixedDuration() => null,
+    FixedDuration(:final length) =>
+      length.inDays >= 1 && length.inHours % 24 == 0
+          ? WindowSelection(days: length.inDays)
+          : null,
   };
 
   /// The picker state for a one-off from its stored edges: explicit bands
@@ -139,7 +150,7 @@ class WindowSelection {
   /// Extra bands added via "Custom…", in insertion order.
   final List<Band> custom;
 
-  bool get isAnytime => presets.isEmpty && custom.isEmpty;
+  bool get isAnytime => presets.isEmpty && custom.isEmpty && days == null;
 
   /// All bands, merged and sorted.
   List<Band> get bands => Band.normalize([
@@ -161,7 +172,11 @@ class WindowSelection {
               ? ({...presets}..remove(c))
               : {...presets, c},
           custom: custom,
+          // A band replaces "open for N days" — they don't combine.
         );
+
+  /// "Open for [n] days" (null = until the next occurrence). Clears bands.
+  WindowSelection withDays(int? n) => WindowSelection(days: n);
 
   WindowSelection addCustom(Band b) =>
       WindowSelection(presets: presets, custom: [...custom, b]);
@@ -182,6 +197,7 @@ class WindowSelection {
   /// The series rule: Anytime → until-next; one band → [Slice]; several →
   /// [MultiSlice].
   WindowRule toRule() {
+    if (days != null) return FixedDuration(Duration(days: days!));
     final b = bands;
     if (b.isEmpty) return const UntilNextOccurrence();
     if (b.length == 1) return Slice(from: b.first.from, to: b.first.to);

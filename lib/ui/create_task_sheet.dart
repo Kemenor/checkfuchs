@@ -229,6 +229,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 8),
               WindowEditor(
                 value: _window,
+                recurring: _recurrence != null,
                 onChanged: (w) => setState(() => _window = w),
               ),
               // Date-pinned windows (one-offs only — a habit's window comes

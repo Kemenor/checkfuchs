@@ -9,15 +9,33 @@ import 'window_choice.dart';
 /// "Custom…" adds a band row (from → to, ×), and a summary line spelling out
 /// the merged bands and the "done once in any of them" rule.
 class WindowEditor extends StatelessWidget {
-  const WindowEditor({super.key, required this.value, required this.onChanged});
+  const WindowEditor({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.recurring = false,
+  });
 
   final WindowSelection value;
   final ValueChanged<WindowSelection> onChanged;
+
+  /// For a series the window may also be "open for N days" from each
+  /// occurrence (one-offs pin their days with Starts/Due instead).
+  final bool recurring;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final String? summary = value.days != null
+        ? l10n.windowDaysSummary(value.days!)
+        : value.bands.isNotEmpty
+        ? (value.hasGaps
+              ? l10n.windowBandsSummaryMulti(value.describe(context))
+              : l10n.windowBandsSummary(value.describe(context)))
+        : recurring
+        ? l10n.windowUntilNextSummary
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -53,7 +71,34 @@ class WindowEditor extends StatelessWidget {
             onChanged: (b) => onChanged(value.replaceCustom(i, b)),
             onRemove: () => onChanged(value.removeCustom(i)),
           ),
-        if (!value.isAnytime)
+        if (recurring && value.bands.isEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            l10n.windowOpenFor,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: scheme.outline,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: Text(l10n.windowUntilNext),
+                selected: value.days == null,
+                onSelected: (_) => onChanged(value.withDays(null)),
+              ),
+              for (final n in const [1, 2, 3, 7])
+                ChoiceChip(
+                  label: Text(l10n.windowDays(n)),
+                  selected: value.days == n,
+                  onSelected: (_) => onChanged(value.withDays(n)),
+                ),
+            ],
+          ),
+        ],
+        if (summary != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Row(
@@ -67,9 +112,7 @@ class WindowEditor extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    value.hasGaps
-                        ? l10n.windowBandsSummaryMulti(value.describe(context))
-                        : l10n.windowBandsSummary(value.describe(context)),
+                    summary,
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: scheme.outline),

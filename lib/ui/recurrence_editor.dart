@@ -152,6 +152,15 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
 
         if (_freq == Freq.weekly) ...[
           const SizedBox(height: 16),
+          // Each ticked day is an occurrence — seven ticks = seven a week.
+          Text(
+            l10n.occursOnLabel,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
           _WeekdayPicker(
             selected: _weekdays,
             onChanged: (s) => setState(() {

@@ -630,6 +630,7 @@ class _WindowSheetState extends State<_WindowSheet> {
               const SizedBox(height: 16),
               WindowEditor(
                 value: _sel,
+                recurring: true,
                 onChanged: (w) => setState(() => _sel = w),
               ),
               const SizedBox(height: 20),
