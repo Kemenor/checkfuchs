@@ -206,6 +206,8 @@
   "windowBandsEachDay": "Offen {bands} an jedem dieser Tage.",
   "windowBandsEachDayMulti": "Offen {bands} an jedem dieser Tage · einmal erledigen, egal wann davon.",
   "remindDaysAfter": "{n, plural, =1{1 Tag danach} other{{n} Tage danach}}",
+  "toTodoTitle": "In ein To-do umwandeln?",
+  "toTodoBody": "Es wiederholt sich dann nicht mehr. Vergangene Termine bleiben, aber Serie und Verlauf enden hier.",
   "demoViewHabits": "Routinen",
   "demoViewLongterm": "Langfristig",
   "demoLensDaily": "Tägliche Gewohnheiten",

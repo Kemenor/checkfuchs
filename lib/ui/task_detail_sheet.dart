@@ -13,6 +13,7 @@ import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
+import 'recurrence_summary_l10n.dart';
 import 'reminder_editor.dart';
 import 'task_history_screen.dart';
 import 'window_choice.dart';
@@ -277,9 +278,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
 
   Future<void> _editRepeat() async {
     await showEditRepeatSheet(context, ref, _task);
+    await _reload();
+  }
+
+  /// Re-read the task after a nested sheet or a conversion (the original
+  /// row can be replaced by the first generated instance, and `templateId`
+  /// drives most of this sheet).
+  Future<void> _reload() async {
     if (!mounted || _task.id == null) return;
-    // The nested sheet may have converted/stopped the series (the original
-    // task row can be replaced by the first generated instance) — re-read.
     final fresh = await ref.read(taskRepositoryProvider).taskById(_task.id!);
     if (!mounted) return;
     if (fresh == null) {
@@ -291,6 +297,47 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
       _notifications = fresh.notifications;
     });
     _loadSeriesInfo();
+  }
+
+  /// The Habit/To-do toggle, live like every other row here. To-do → habit:
+  /// a daily series from today (the window keeps the task's own hours; the
+  /// Repeat row is right below to refine). Habit → to-do: stop repeating —
+  /// confirmed, since the streak and history end there.
+  Future<void> _setKind(bool habit) async {
+    final l10n = AppLocalizations.of(context);
+    final repo = ref.read(taskRepositoryProvider);
+    final now = ref.read(clockProvider).now();
+    final tid = _task.templateId;
+    if (habit && tid == null) {
+      await repo.turnIntoSeries(
+        _task,
+        Recurrence.daily(DateTime(now.year, now.month, now.day)),
+        WindowSelection.fromEdges(_task.start, _task.end, _task.bands).toRule(),
+        now,
+      );
+      await _reload();
+    } else if (!habit && tid != null) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.toTodoTitle),
+          content: Text(l10n.toTodoBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.kindTodo),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      await repo.stopRepeating(tid);
+      await _reload();
+    }
   }
 
   @override
@@ -352,6 +399,26 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Same shape as the create sheet: kind → name/note → lenses →
+              // (repeat + window | starts/due) → reminders → save.
+              SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: true,
+                    icon: const Icon(Symbols.event_repeat_rounded),
+                    label: Text(l10n.kindHabit),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    icon: const Icon(Symbols.check_circle_rounded),
+                    label: Text(l10n.kindTodo),
+                  ),
+                ],
+                selected: {recurring},
+                onSelectionChanged: (s) => _setKind(s.first),
+              ),
+              const SizedBox(height: 8),
               TextField(
                 controller: _controller,
                 textCapitalization: TextCapitalization.sentences,
@@ -369,14 +436,6 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   hintText: l10n.noteHint,
                   border: InputBorder.none,
                   isDense: true,
-                ),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: _saveName,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(l10n.save),
                 ),
               ),
               // Missed habit: the logging correction (§11 q7). Pops the sheet —
@@ -443,6 +502,97 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 4),
+              if (_lenses.length > 1)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.filter_alt_rounded),
+                  title: Text(l10n.lensSection),
+                  subtitle: switch (_lenses.where(
+                    (l) => _lensIds.contains(l.id),
+                  )) {
+                    Iterable(isEmpty: true) => null,
+                    final match => Text(match.map((l) => l.name).join(', ')),
+                  },
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: _pickLenses,
+                ),
+              if (recurring) ...[
+                // Repeat, then the active window — the create sheet's order.
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Symbols.event_repeat_rounded),
+                  title: Text(l10n.repeatSection),
+                  subtitle: _templateRecurrence == null
+                      ? null
+                      : Text(
+                          localizedRecurrenceSummary(
+                            context,
+                            _templateRecurrence,
+                          ),
+                        ),
+                  trailing: const Icon(Symbols.chevron_right_rounded),
+                  onTap: _editRepeat,
+                ),
+                if (_templateRule != null)
+                  switch (WindowSelection.fromRule(_templateRule!)) {
+                    null => const SizedBox.shrink(),
+                    final sel => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Symbols.schedule_rounded),
+                      title: Text(l10n.activeWindowSection),
+                      subtitle: Text(
+                        sel.isAnytime
+                            ? l10n.windowAnytime
+                            : [
+                                if (sel.days != null)
+                                  l10n.windowDays(sel.days!),
+                                if (!sel.allDay) sel.describe(context),
+                              ].join(' · '),
+                      ),
+                      trailing: const Icon(Symbols.chevron_right_rounded),
+                      onTap: _editSeriesWindow,
+                    ),
+                  },
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const Icon(Symbols.pause_circle_outline_rounded),
+                  title: Text(l10n.paused),
+                  subtitle: Text(l10n.pausedSubtitle),
+                  value: _paused,
+                  onChanged: (v) async {
+                    await ref
+                        .read(taskRepositoryProvider)
+                        .pauseTemplate(
+                          _task.templateId!,
+                          v,
+                          ref.read(clockProvider).now(),
+                        );
+                    if (mounted) setState(() => _paused = v);
+                  },
+                ),
+              ],
+              // A to-do's window is its dates — editable while it's open.
+              if (!recurring && _task.isOpen) ...[
+                _WindowDateTile(
+                  icon: Symbols.today_rounded,
+                  label: l10n.starts,
+                  value: _task.start,
+                  placeholder: l10n.startsNow,
+                  isEnd: false,
+                  onTap: () => _editWindowDate(isEnd: false),
+                  onClear: () => _writeWindow(null, isEnd: false),
+                ),
+                _WindowDateTile(
+                  icon: Symbols.flag_rounded,
+                  label: l10n.dueLabel,
+                  value: _task.end,
+                  placeholder: l10n.noDueDate,
+                  isEnd: true,
+                  onTap: () => _editWindowDate(isEnd: true),
+                  onClear: () => _writeWindow(null, isEnd: true),
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -470,89 +620,14 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                     _task.start != null,
                 onChanged: _setReminders,
               ),
-              const SizedBox(height: 4),
-              if (_lenses.length > 1)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Symbols.filter_alt_rounded),
-                  title: Text(l10n.lensSection),
-                  subtitle: switch (_lenses.where(
-                    (l) => _lensIds.contains(l.id),
-                  )) {
-                    Iterable(isEmpty: true) => null,
-                    final match => Text(match.map((l) => l.name).join(', ')),
-                  },
-                  trailing: const Icon(Symbols.chevron_right_rounded),
-                  onTap: _pickLenses,
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _saveName,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(l10n.save),
                 ),
-              // Window edges are editable on open one-offs only — a series'
-              // window comes from its recurrence + slice rule.
-              if (!recurring && _task.isOpen) ...[
-                _WindowDateTile(
-                  icon: Symbols.today_rounded,
-                  label: l10n.starts,
-                  value: _task.start,
-                  placeholder: l10n.startsNow,
-                  isEnd: false,
-                  onTap: () => _editWindowDate(isEnd: false),
-                  onClear: () => _writeWindow(null, isEnd: false),
-                ),
-                _WindowDateTile(
-                  icon: Symbols.flag_rounded,
-                  label: l10n.dueLabel,
-                  value: _task.end,
-                  placeholder: l10n.noDueDate,
-                  isEnd: true,
-                  onTap: () => _editWindowDate(isEnd: true),
-                  onClear: () => _writeWindow(null, isEnd: true),
-                ),
-              ],
-              // A habit's active window sits next to its reminders — it's a
-              // property of the series, not of the repeat rule.
-              if (recurring && _templateRule != null)
-                switch (WindowSelection.fromRule(_templateRule!)) {
-                  null => const SizedBox.shrink(),
-                  final sel => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Symbols.schedule_rounded),
-                    title: Text(l10n.activeWindowSection),
-                    subtitle: Text(
-                      sel.isAnytime
-                          ? l10n.windowAnytime
-                          : [
-                              if (sel.days != null) l10n.windowDays(sel.days!),
-                              if (!sel.allDay) sel.describe(context),
-                            ].join(' · '),
-                    ),
-                    trailing: const Icon(Symbols.chevron_right_rounded),
-                    onTap: _editSeriesWindow,
-                  ),
-                },
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Symbols.event_repeat_rounded),
-                title: Text(recurring ? l10n.editRepeat : l10n.makeItAHabit),
-                trailing: const Icon(Symbols.chevron_right_rounded),
-                onTap: _editRepeat,
               ),
-              if (recurring)
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Symbols.pause_circle_outline_rounded),
-                  title: Text(l10n.paused),
-                  subtitle: Text(l10n.pausedSubtitle),
-                  value: _paused,
-                  onChanged: (v) async {
-                    await ref
-                        .read(taskRepositoryProvider)
-                        .pauseTemplate(
-                          _task.templateId!,
-                          v,
-                          ref.read(clockProvider).now(),
-                        );
-                    if (mounted) setState(() => _paused = v);
-                  },
-                ),
               const SizedBox(height: 4),
               TextButton.icon(
                 onPressed: () => _delete(series: false),

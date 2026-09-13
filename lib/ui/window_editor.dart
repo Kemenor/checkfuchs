@@ -64,6 +64,11 @@ class WindowEditor extends StatelessWidget {
             spacing: 8,
             children: [
               ChoiceChip(
+                label: Text(l10n.windowUntilNext),
+                selected: value.days == null,
+                onSelected: (_) => onChanged(value.withDays(null)),
+              ),
+              ChoiceChip(
                 label: Text(l10n.windowSameDay),
                 selected: value.days == 1,
                 onSelected: (_) => onChanged(value.withDays(1)),
@@ -87,11 +92,6 @@ class WindowEditor extends StatelessWidget {
                   final n = await _askDays(context, value.days ?? 14);
                   if (n != null) onChanged(value.withDays(n));
                 },
-              ),
-              ChoiceChip(
-                label: Text(l10n.windowUntilNext),
-                selected: value.days == null,
-                onSelected: (_) => onChanged(value.withDays(null)),
               ),
             ],
           ),

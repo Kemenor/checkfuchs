@@ -194,6 +194,26 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(l10n.newTask, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              // The fork: a habit repeats and has an active window; a to-do
+              // runs from its start to its due date.
+              SegmentedButton<_Kind>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: _Kind.habit,
+                    icon: const Icon(Symbols.event_repeat_rounded),
+                    label: Text(l10n.kindHabit),
+                  ),
+                  ButtonSegment(
+                    value: _Kind.todo,
+                    icon: const Icon(Symbols.check_circle_rounded),
+                    label: Text(l10n.kindTodo),
+                  ),
+                ],
+                selected: {_kind},
+                onSelectionChanged: (s) => setState(() => _kind = s.first),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
@@ -259,28 +279,9 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                   ),
                 ],
               },
-              const SizedBox(height: 20),
-              // The fork: a habit repeats and has an active window; a to-do
-              // runs from its start to its due date.
-              SegmentedButton<_Kind>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: _Kind.habit,
-                    icon: const Icon(Symbols.event_repeat_rounded),
-                    label: Text(l10n.kindHabit),
-                  ),
-                  ButtonSegment(
-                    value: _Kind.todo,
-                    icon: const Icon(Symbols.check_circle_rounded),
-                    label: Text(l10n.kindTodo),
-                  ),
-                ],
-                selected: {_kind},
-                onSelectionChanged: (s) => setState(() => _kind = s.first),
-              ),
+              const SizedBox(height: 8),
               if (_kind == _Kind.habit) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 _SectionLabel(l10n.repeatSection),
                 const SizedBox(height: 10),
                 RecurrenceEditor(

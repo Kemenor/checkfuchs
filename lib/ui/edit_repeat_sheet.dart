@@ -9,10 +9,10 @@ import '../providers.dart';
 import 'recurrence_editor.dart';
 import 'window_choice.dart';
 
-/// Edit a task's repeat rule (design-concept §3.6, §5.2):
-/// - one-off + a rule  → **turn into a series**
-/// - series + new rule → **edit the series** (prospective)
-/// - series + Off      → **stop repeating** (existing tasks become one-offs)
+/// Edit a series' repeat rule (design-concept §3.6, §5.2), prospectively.
+/// Turning a one-off into a series and stopping a series are the detail
+/// sheet's Habit/To-do toggle; a one-off passed here still becomes a series
+/// (kept for the toggle's own use).
 Future<void> showEditRepeatSheet(
   BuildContext context,
   WidgetRef ref,
@@ -121,6 +121,7 @@ class _EditRepeatSheetState extends ConsumerState<_EditRepeatSheet> {
                     RecurrenceEditor(
                       anchor: anchor,
                       initial: _initial,
+                      allowOff: false,
                       onChanged: (r) => setState(() => _recurrence = r),
                     ),
                     const SizedBox(height: 20),
