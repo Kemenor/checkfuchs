@@ -110,7 +110,9 @@ class ReminderEditor extends StatelessWidget {
   }
 }
 
-/// One custom row: [−] N days before [+] · time.
+/// One custom row: [−] N days before / on the day / N days after [+] · time.
+/// "After" exists for multi-day windows (a habit open for the weekend can
+/// ping on Sunday).
 class _CustomRow extends StatelessWidget {
   const _CustomRow({
     super.key,
@@ -153,13 +155,17 @@ class _CustomRow extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   tooltip: l10n.remindDaysBeforeMore,
                   icon: const Icon(Symbols.remove_rounded),
-                  onPressed: () => set(daysBefore: days + 1),
+                  onPressed: days >= 365
+                      ? null
+                      : () => set(daysBefore: days + 1),
                 ),
                 Flexible(
                   child: Text(
                     days == 0
                         ? l10n.remindOnTheDay
-                        : l10n.remindDaysBefore(days),
+                        : days > 0
+                        ? l10n.remindDaysBefore(days)
+                        : l10n.remindDaysAfter(-days),
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
@@ -168,7 +174,9 @@ class _CustomRow extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   tooltip: l10n.remindDaysBeforeFewer,
                   icon: const Icon(Symbols.add_rounded),
-                  onPressed: days == 0 ? null : () => set(daysBefore: days - 1),
+                  onPressed: days <= -365
+                      ? null
+                      : () => set(daysBefore: days - 1),
                 ),
               ],
             ),

@@ -5,9 +5,11 @@ import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 import 'window_choice.dart';
 
-/// The ACTIVE WINDOW section (examples/ui/07): multi-select preset chips,
-/// "Custom…" adds a band row (from → to, ×), and a summary line spelling out
-/// the merged bands and the "done once in any of them" rule.
+/// The ACTIVE WINDOW section, two rows: *how long* (same day / N days /
+/// until the next occurrence) and *which hours* (multi-select preset chips,
+/// "Custom…" adds a band row) — the hours repeat on each day of the span.
+/// A summary line spells out the merged result and the "done once in any of
+/// them" rule.
 class WindowEditor extends StatelessWidget {
   const WindowEditor({
     super.key,
@@ -19,26 +21,84 @@ class WindowEditor extends StatelessWidget {
   final WindowSelection value;
   final ValueChanged<WindowSelection> onChanged;
 
-  /// For a series the window may also be "open for N days" from each
-  /// occurrence (one-offs pin their days with Starts/Due instead).
+  /// For a series the span row is offered (one-offs pin their days with
+  /// Starts/Due instead).
   final bool recurring;
+
+  static const _quickDays = [1, 2, 3, 7];
+
+  String _summary(BuildContext context, AppLocalizations l10n) {
+    final days = value.days;
+    final span = days == null
+        ? l10n.windowUntilNextSummary
+        : l10n.windowDaysSummary(days);
+    if (value.allDay) return span;
+    final hours = value.describe(context);
+    if (days == 1) {
+      return value.hasGaps
+          ? l10n.windowBandsSummaryMulti(hours)
+          : l10n.windowBandsSummary(hours);
+    }
+    final each = value.hasGaps
+        ? l10n.windowBandsEachDayMulti(hours)
+        : l10n.windowBandsEachDay(hours);
+    return '$span $each';
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final String? summary = value.days != null
-        ? l10n.windowDaysSummary(value.days!)
-        : value.bands.isNotEmpty
-        ? (value.hasGaps
-              ? l10n.windowBandsSummaryMulti(value.describe(context))
-              : l10n.windowBandsSummary(value.describe(context)))
-        : recurring
-        ? l10n.windowUntilNextSummary
-        : null;
+    final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: scheme.outline,
+      fontWeight: FontWeight.w600,
+    );
+    final customDays = value.days != null && !_quickDays.contains(value.days);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (recurring) ...[
+          Text(l10n.windowHowLong, style: labelStyle),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: Text(l10n.windowSameDay),
+                selected: value.days == 1,
+                onSelected: (_) => onChanged(value.withDays(1)),
+              ),
+              for (final n in _quickDays)
+                if (n != 1)
+                  ChoiceChip(
+                    label: Text(l10n.windowDays(n)),
+                    selected: value.days == n,
+                    onSelected: (_) => onChanged(value.withDays(n)),
+                  ),
+              // Any other number of days: the chip shows the current custom
+              // value once one is set.
+              ChoiceChip(
+                avatar: const Icon(Symbols.edit_rounded, size: 16),
+                label: Text(
+                  customDays ? l10n.windowDays(value.days!) : l10n.windowCustom,
+                ),
+                selected: customDays,
+                onSelected: (_) async {
+                  final n = await _askDays(context, value.days ?? 14);
+                  if (n != null) onChanged(value.withDays(n));
+                },
+              ),
+              ChoiceChip(
+                label: Text(l10n.windowUntilNext),
+                selected: value.days == null,
+                onSelected: (_) => onChanged(value.withDays(null)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(l10n.windowWhichHours, style: labelStyle),
+          const SizedBox(height: 6),
+        ],
         Wrap(
           spacing: 8,
           children: [
@@ -46,7 +106,7 @@ class WindowEditor extends StatelessWidget {
               FilterChip(
                 label: Text(w.label(l10n)),
                 selected: w == WindowChoice.anytime
-                    ? value.isAnytime
+                    ? value.allDay
                     : value.presets.contains(w),
                 onSelected: (_) => onChanged(value.toggle(w)),
               ),
@@ -71,51 +131,7 @@ class WindowEditor extends StatelessWidget {
             onChanged: (b) => onChanged(value.replaceCustom(i, b)),
             onRemove: () => onChanged(value.removeCustom(i)),
           ),
-        if (recurring && value.bands.isEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            l10n.windowOpenFor,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: scheme.outline,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text(l10n.windowUntilNext),
-                selected: value.days == null,
-                onSelected: (_) => onChanged(value.withDays(null)),
-              ),
-              for (final n in const [1, 2, 3, 7])
-                ChoiceChip(
-                  label: Text(l10n.windowDays(n)),
-                  selected: value.days == n,
-                  onSelected: (_) => onChanged(value.withDays(n)),
-                ),
-              // Any other number of days: the chip shows the current custom
-              // value once one is set.
-              ChoiceChip(
-                avatar: const Icon(Symbols.edit_rounded, size: 16),
-                label: Text(
-                  value.days != null && !const [1, 2, 3, 7].contains(value.days)
-                      ? l10n.windowDays(value.days!)
-                      : l10n.windowCustom,
-                ),
-                selected:
-                    value.days != null &&
-                    !const [1, 2, 3, 7].contains(value.days),
-                onSelected: (_) async {
-                  final n = await _askDays(context, value.days ?? 14);
-                  if (n != null) onChanged(value.withDays(n));
-                },
-              ),
-            ],
-          ),
-        ],
-        if (summary != null)
+        if (recurring || !value.allDay)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Row(
@@ -129,7 +145,7 @@ class WindowEditor extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    summary,
+                    _summary(context, l10n),
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: scheme.outline),

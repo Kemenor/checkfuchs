@@ -123,36 +123,50 @@ class Slice extends WindowRule {
   }
 }
 
-/// Several bands on the occurrence day — "morning *or* evening": the task is
-/// done once in any of them. Resolves to the envelope (first `from` → last
-/// `to`); the gaps are carried by [bands] and honoured by `phaseOf`.
+/// Bands repeated on each of [days] consecutive days from the occurrence —
+/// "morning *or* evening" (one day), or "mornings, for the 2 days of the
+/// weekend". The task is done once in any band of any day. Resolves to the
+/// envelope (first `from` on day 1 → last `to` on day [days]); the gaps —
+/// between bands and between days — are carried by [bands] (which
+/// `Band.contains` checks per civil day) and honoured by `phaseOf`.
 class MultiSlice extends WindowRule {
-  MultiSlice(Iterable<Band> bands)
+  MultiSlice(Iterable<Band> bands, {this.days = 1})
     : bands = Band.normalize(bands),
-      assert(bands.isNotEmpty, 'MultiSlice needs at least one band');
+      assert(bands.isNotEmpty, 'MultiSlice needs at least one band'),
+      assert(days >= 1, 'MultiSlice spans at least one day');
 
   @override
   final List<Band> bands;
+
+  /// How many consecutive days the bands repeat on.
+  final int days;
 
   @override
   Window resolve(DateTime occurrence, DateTime _) {
     final base = _midnight(occurrence);
     return (
       start: _atCivilOffset(base, bands.first.from),
-      end: _atCivilOffset(base, bands.last.to),
+      end: _atCivilOffset(base, Duration(days: days - 1) + bands.last.to),
     );
   }
 
   @override
   bool operator ==(Object other) =>
       other is MultiSlice &&
-      other.bands.length == bands.length &&
-      [
-        for (var i = 0; i < bands.length; i++) other.bands[i] == bands[i],
-      ].every((e) => e);
+      other.days == days &&
+      sameBands(other.bands, bands);
 
   @override
-  int get hashCode => Object.hashAll(bands);
+  int get hashCode => Object.hash(days, Object.hashAll(bands));
+}
+
+bool sameBands(List<Band>? a, List<Band>? b) {
+  if (a == null || b == null) return a == b;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 /// `start = occurrence midnight`, `end = start + length` (e.g. "active for the
@@ -179,17 +193,37 @@ class FixedDuration extends WindowRule {
 }
 
 /// The default: `start = occurrence midnight`, `end = the next occurrence
-/// midnight` — back-to-back, the classic daily habit.
+/// midnight` — back-to-back, the classic daily habit. With [bands] the same
+/// span is active only inside those hours on each of its days ("any morning
+/// this week" for a weekly habit): start = first `from` on the occurrence
+/// day, end = last `to` on the day before the next occurrence.
 class UntilNextOccurrence extends WindowRule {
-  const UntilNextOccurrence();
+  const UntilNextOccurrence() : bands = null;
+
+  UntilNextOccurrence.withBands(Iterable<Band> bands)
+    : bands = Band.normalize(bands);
 
   @override
-  Window resolve(DateTime occurrence, DateTime nextOccurrence) =>
-      (start: _midnight(occurrence), end: _midnight(nextOccurrence));
+  final List<Band>? bands;
 
   @override
-  bool operator ==(Object other) => other is UntilNextOccurrence;
+  Window resolve(DateTime occurrence, DateTime nextOccurrence) {
+    final b = bands;
+    if (b == null || b.isEmpty) {
+      return (start: _midnight(occurrence), end: _midnight(nextOccurrence));
+    }
+    final lastDay = _midnight(nextOccurrence).subtract(const Duration(days: 1));
+    return (
+      start: _atCivilOffset(_midnight(occurrence), b.first.from),
+      end: _atCivilOffset(_midnight(lastDay), b.last.to),
+    );
+  }
 
   @override
-  int get hashCode => 0x0417;
+  bool operator ==(Object other) =>
+      other is UntilNextOccurrence && sameBands(other.bands, bands);
+
+  @override
+  int get hashCode =>
+      Object.hash(0x0417, bands == null ? null : Object.hashAll(bands!));
 }

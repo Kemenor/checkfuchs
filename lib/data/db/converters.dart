@@ -81,8 +81,15 @@ class WindowRuleConverter extends TypeConverter<WindowRule, String> {
         to: Duration(microseconds: m['to'] as int),
       ),
       'duration' => FixedDuration(Duration(microseconds: m['length'] as int)),
-      'untilNext' => const UntilNextOccurrence(),
-      'multi' => MultiSlice(decodeBands(m['bands'])!),
+      'untilNext' => switch (decodeBands(m['bands'])) {
+        null => const UntilNextOccurrence(),
+        final bands => UntilNextOccurrence.withBands(bands),
+      },
+      // `days` arrived with multi-day bands; older rows are one-day.
+      'multi' => MultiSlice(
+        decodeBands(m['bands'])!,
+        days: (m['days'] as int?) ?? 1,
+      ),
       // Fail loudly: silently mapping an unknown kind to a default would mask
       // data corruption (or a forgotten migration) as a behaviour change.
       final kind => throw FormatException('Unknown WindowRule kind: $kind'),
@@ -100,10 +107,14 @@ class WindowRuleConverter extends TypeConverter<WindowRule, String> {
       'kind': 'duration',
       'length': length.inMicroseconds,
     }),
-    UntilNextOccurrence() => jsonEncode({'kind': 'untilNext'}),
-    MultiSlice(:final bands) => jsonEncode({
+    UntilNextOccurrence(:final bands) => jsonEncode({
+      'kind': 'untilNext',
+      if (bands != null) 'bands': encodeBands(bands),
+    }),
+    MultiSlice(:final bands, :final days) => jsonEncode({
       'kind': 'multi',
       'bands': encodeBands(bands),
+      'days': days,
     }),
   };
 }

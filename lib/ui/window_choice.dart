@@ -82,10 +82,12 @@ enum WindowChoice {
   };
 }
 
-/// The multi-band active-window picker state (examples/ui/07): any set of
-/// the preset bands plus custom bands. Empty = Anytime. "Morning + Evening"
-/// means *one* task, done once in either band (the gap is honoured by
-/// `phaseOf`); people who want it twice make two tasks.
+/// The active-window picker state: two independent answers. *How long* —
+/// [days] from each occurrence, or null = until the next occurrence. *Which
+/// hours* — any set of preset bands plus custom bands, repeated on each day
+/// of the span; empty = all day. "Morning + Evening" means *one* task, done
+/// once in either band (the gaps are honoured by `phaseOf`); people who
+/// want it twice make two tasks.
 class WindowSelection {
   const WindowSelection({
     this.presets = const {},
@@ -93,19 +95,23 @@ class WindowSelection {
     this.days,
   });
 
-  /// "Open for N days" from each occurrence (a [FixedDuration] rule) — the
-  /// weekend chore on a Saturday occurrence. Exclusive with bands.
+  /// How long: "open for N days" from each occurrence; null = until the next
+  /// occurrence.
   final int? days;
 
   static const anytime = WindowSelection();
 
   /// Rebuild the picker state from a stored rule — bands that match a preset
   /// become that chip, the rest custom rows. Null when the rule has no chip
-  /// form (a [FixedDuration]); callers then keep the rule untouched.
+  /// form (a [FixedDuration] of partial days); callers then keep the rule
+  /// untouched.
   static WindowSelection? fromRule(WindowRule rule) => switch (rule) {
-    UntilNextOccurrence() => anytime,
-    Slice(:final from, :final to) => fromBands([Band(from: from, to: to)]),
-    MultiSlice(:final bands) => fromBands(bands),
+    UntilNextOccurrence(:final bands) =>
+      bands == null ? anytime : fromBands(bands),
+    Slice(:final from, :final to) => fromBands([
+      Band(from: from, to: to),
+    ], days: 1),
+    MultiSlice(:final bands, :final days) => fromBands(bands, days: days),
     FixedDuration(:final length) =>
       length.inDays >= 1 && length.inHours % 24 == 0
           ? WindowSelection(days: length.inDays)
@@ -129,7 +135,7 @@ class WindowSelection {
     return fromBands([Band(from: from, to: from + span)]);
   }
 
-  static WindowSelection fromBands(List<Band> bands) {
+  static WindowSelection fromBands(List<Band> bands, {int? days}) {
     final presets = <WindowChoice>{};
     final custom = <Band>[];
     for (final b in bands) {
@@ -141,7 +147,7 @@ class WindowSelection {
       );
       match.isEmpty ? custom.add(b) : presets.add(match.first);
     }
-    return WindowSelection(presets: presets, custom: custom);
+    return WindowSelection(presets: presets, custom: custom, days: days);
   }
 
   /// Preset bands (never [WindowChoice.anytime]).
@@ -150,7 +156,11 @@ class WindowSelection {
   /// Extra bands added via "Custom…", in insertion order.
   final List<Band> custom;
 
-  bool get isAnytime => presets.isEmpty && custom.isEmpty && days == null;
+  /// The default: all day, until the next occurrence.
+  bool get isAnytime => allDay && days == null;
+
+  /// No hour bands — the whole of each day is active.
+  bool get allDay => presets.isEmpty && custom.isEmpty;
 
   /// All bands, merged and sorted.
   List<Band> get bands => Band.normalize([
@@ -165,25 +175,29 @@ class WindowSelection {
   /// Whether the merged bands leave a gap (needs `Task.bands`).
   bool get hasGaps => bands.length > 1;
 
+  /// Toggle an hours chip; [WindowChoice.anytime] clears the bands. The span
+  /// ([days]) is untouched — hours and length are independent.
   WindowSelection toggle(WindowChoice c) => c == WindowChoice.anytime
-      ? anytime
+      ? WindowSelection(days: days)
       : WindowSelection(
           presets: presets.contains(c)
               ? ({...presets}..remove(c))
               : {...presets, c},
           custom: custom,
-          // A band replaces "open for N days" — they don't combine.
+          days: days,
         );
 
-  /// "Open for [n] days" (null = until the next occurrence). Clears bands.
-  WindowSelection withDays(int? n) => WindowSelection(days: n);
+  /// "Open for [n] days" (null = until the next occurrence). Keeps the bands.
+  WindowSelection withDays(int? n) =>
+      WindowSelection(presets: presets, custom: custom, days: n);
 
   WindowSelection addCustom(Band b) =>
-      WindowSelection(presets: presets, custom: [...custom, b]);
+      WindowSelection(presets: presets, custom: [...custom, b], days: days);
 
   WindowSelection replaceCustom(int i, Band b) => WindowSelection(
     presets: presets,
     custom: [for (var k = 0; k < custom.length; k++) k == i ? b : custom[k]],
+    days: days,
   );
 
   WindowSelection removeCustom(int i) => WindowSelection(
@@ -192,16 +206,25 @@ class WindowSelection {
       for (var k = 0; k < custom.length; k++)
         if (k != i) custom[k],
     ],
+    days: days,
   );
 
-  /// The series rule: Anytime → until-next; one band → [Slice]; several →
-  /// [MultiSlice].
+  /// The series rule. All day: until-next or [FixedDuration]. With bands:
+  /// until-next carries them ([UntilNextOccurrence.withBands]); one band on
+  /// one day is a [Slice]; anything else a [MultiSlice] over [days].
   WindowRule toRule() {
-    if (days != null) return FixedDuration(Duration(days: days!));
     final b = bands;
-    if (b.isEmpty) return const UntilNextOccurrence();
-    if (b.length == 1) return Slice(from: b.first.from, to: b.first.to);
-    return MultiSlice(b);
+    final n = days;
+    if (b.isEmpty) {
+      return n == null
+          ? const UntilNextOccurrence()
+          : FixedDuration(Duration(days: n));
+    }
+    if (n == null) return UntilNextOccurrence.withBands(b);
+    if (n == 1 && b.length == 1) {
+      return Slice(from: b.first.from, to: b.first.to);
+    }
+    return MultiSlice(b, days: n);
   }
 
   /// (start, end) for a one-off created at [now] — the envelope; see

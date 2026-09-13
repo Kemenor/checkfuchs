@@ -66,6 +66,44 @@ void main() {
     test('round-trips through the window rule converter', () {
       const c = WindowRuleConverter();
       expect(c.fromSql(c.toSql(rule)), rule);
+      final weekend = MultiSlice([morning], days: 2);
+      expect(c.fromSql(c.toSql(weekend)), weekend);
+      expect(c.fromSql(c.toSql(weekend)), isNot(MultiSlice([morning])));
+      final week = UntilNextOccurrence.withBands([morning, evening]);
+      expect(c.fromSql(c.toSql(week)), week);
+      expect(c.fromSql(c.toSql(week)), isNot(const UntilNextOccurrence()));
+      expect(
+        c.fromSql(c.toSql(const UntilNextOccurrence())),
+        const UntilNextOccurrence(),
+      );
+    });
+
+    test('multi-day: the bands repeat on each day of the span', () {
+      // Saturday occurrence, open for the weekend, mornings only.
+      final weekend = MultiSlice([morning], days: 2);
+      expect(weekend.resolve(d(2026, 7, 4), d(2026, 7, 18)), (
+        start: d(2026, 7, 4, 6),
+        end: d(2026, 7, 5, 12),
+      ));
+      final t = Template(
+        id: 3,
+        name: 'Sheets',
+        recurrence: Recurrence.weekly(d(2026, 7, 4), interval: 2),
+        windowRule: weekend,
+        createdAt: d(2026, 7, 4),
+      ).materialize(d(2026, 7, 4), d(2026, 7, 18), now: d(2026, 7, 4));
+      expect(phaseOf(t, d(2026, 7, 4, 8)), TaskPhase.active);
+      expect(phaseOf(t, d(2026, 7, 4, 15)), TaskPhase.pending); // gap
+      expect(phaseOf(t, d(2026, 7, 5, 8)), TaskPhase.active); // day 2
+      expect(phaseOf(t, d(2026, 7, 5, 13)), TaskPhase.expired);
+    });
+
+    test('until-next with bands: any morning until the next occurrence', () {
+      final week = UntilNextOccurrence.withBands([morning]);
+      expect(week.resolve(d(2026, 7, 6), d(2026, 7, 13)), (
+        start: d(2026, 7, 6, 6),
+        end: d(2026, 7, 12, 12),
+      ));
     });
   });
 
@@ -99,6 +137,11 @@ void main() {
       final n = TaskNotification.onDay(daysBefore: 2, timeOfDay: h * 18);
       expect(n.daysBefore, 2);
       expect(n.timeOfDay, h * 18);
+      // Days *after* (a multi-day window): -1 = the second day.
+      final after = TaskNotification.onDay(daysBefore: -1, timeOfDay: h * 9);
+      expect(after.daysBefore, -1);
+      expect(after.timeOfDay, h * 9);
+      expect(after.fireTime(day: d(2026, 7, 4)), d(2026, 7, 5, 9));
       final same = TaskNotification.onDay(timeOfDay: h * 9);
       expect(same.daysBefore, 0);
       expect(same.timeOfDay, h * 9);

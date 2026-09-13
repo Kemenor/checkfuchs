@@ -478,11 +478,11 @@
     "description": "Custom reminder: N days before the task day",
     "placeholders": {"n": {"type": "int"}}
   },
-  "remindDaysBeforeMore": "One more day before",
+  "remindDaysBeforeMore": "One day earlier",
   "@remindDaysBeforeMore": {
     "description": "Tooltip: increase days-before"
   },
-  "remindDaysBeforeFewer": "One day less before",
+  "remindDaysBeforeFewer": "One day later",
   "@remindDaysBeforeFewer": {
     "description": "Tooltip: decrease days-before"
   },
@@ -915,6 +915,18 @@
   "@kindTodo": {
     "description": "Create sheet toggle: a one-off that runs from start to due"
   },
+  "windowHowLong": "How long",
+  "@windowHowLong": {"description": "Active window: label of the span row (same day / N days / until next)"},
+  "windowWhichHours": "Which hours",
+  "@windowWhichHours": {"description": "Active window: label of the hours row (Anytime / Night / \u2026 / Custom)"},
+  "windowSameDay": "Same day",
+  "@windowSameDay": {"description": "Span chip: the occurrence day only"},
+  "windowBandsEachDay": "Open {bands} on each of those days.",
+  "@windowBandsEachDay": {"description": "Summary tail after the span sentence, multi-day window with one band", "placeholders": {"bands": {"type": "String"}}},
+  "windowBandsEachDayMulti": "Open {bands} on each of those days · done once in any of them.",
+  "@windowBandsEachDayMulti": {"description": "Summary tail, multi-day window with several bands", "placeholders": {"bands": {"type": "String"}}},
+  "remindDaysAfter": "{n, plural, =1{1 day after} other{{n} days after}}",
+  "@remindDaysAfter": {"description": "Custom reminder: N days after the task day (multi-day windows)", "placeholders": {"n": {"type": "int"}}},
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",

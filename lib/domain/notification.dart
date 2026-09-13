@@ -6,7 +6,9 @@ library;
 
 /// `day` anchors at the midnight of the task's day (its occurrence, else its
 /// due day, else its start day): "2 days before at 18:00" is
-/// `offset = -2 days + 18 h`. Appended last so stored indices stay stable.
+/// `offset = -2 days + 18 h`; a negative `daysBefore` lands *after* the day
+/// ("the second day of a weekend window"). Appended last so stored indices
+/// stay stable.
 enum NotificationAnchor { start, end, absolute, day }
 
 /// One reminder on a Task. `start`/`end`-anchored fire at `window edge + offset`;
@@ -35,13 +37,15 @@ class TaskNotification {
       offset = Duration.zero,
       at = when;
 
-  /// "[daysBefore] days before, at [timeOfDay]" relative to the task's day.
+  /// "[daysBefore] days before, at [timeOfDay]" relative to the task's day
+  /// (negative = days after: the later days of a multi-day window).
   TaskNotification.onDay({int daysBefore = 0, required Duration timeOfDay})
     : anchor = NotificationAnchor.day,
       offset = timeOfDay - Duration(days: daysBefore),
       at = null;
 
-  /// For a `day` anchor: how many days before the task's day it fires.
+  /// For a `day` anchor: how many days before the task's day it fires
+  /// (negative = that many days after).
   int get daysBefore =>
       anchor == NotificationAnchor.day ? -_split(offset).$1 : 0;
 

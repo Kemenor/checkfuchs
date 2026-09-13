@@ -519,7 +519,10 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                     subtitle: Text(
                       sel.isAnytime
                           ? l10n.windowAnytime
-                          : sel.describe(context),
+                          : [
+                              if (sel.days != null) l10n.windowDays(sel.days!),
+                              if (!sel.allDay) sel.describe(context),
+                            ].join(' · '),
                     ),
                     trailing: const Icon(Symbols.chevron_right_rounded),
                     onTap: _editSeriesWindow,

@@ -14,9 +14,10 @@ void main() {
       expect(s.oneOffWindow(now), (null, null));
     });
 
-    test('one preset → a Slice; toggling anytime clears everything', () {
+    test('one preset → until-next with a band; same day → a Slice', () {
       final s = WindowSelection.anytime.toggle(WindowChoice.morning);
-      expect(s.toRule(), Slice.morning);
+      expect(s.toRule(), UntilNextOccurrence.withBands([Slice.morning.asBand]));
+      expect(s.withDays(1).toRule(), Slice.morning);
       expect(s.hasGaps, isFalse);
       expect(s.toggle(WindowChoice.anytime).isAnytime, isTrue);
     });
@@ -27,7 +28,7 @@ void main() {
           .toggle(WindowChoice.evening);
       expect(s.hasGaps, isTrue);
       expect(
-        s.toRule(),
+        s.withDays(1).toRule(),
         MultiSlice([Slice.morning.asBand, Slice.evening.asBand]),
       );
       // 15:00 today: the envelope (06→24) hasn't ended → today.
@@ -43,7 +44,7 @@ void main() {
           .toggle(WindowChoice.afternoon);
       expect(s.bands, [Band(from: h * 6, to: h * 18)]);
       expect(s.hasGaps, isFalse);
-      expect(s.toRule(), Slice(from: h * 6, to: h * 18));
+      expect(s.withDays(1).toRule(), Slice(from: h * 6, to: h * 18));
     });
 
     test('custom bands add, replace, remove', () {
@@ -100,9 +101,9 @@ void main() {
         WindowSelection.fromRule(const UntilNextOccurrence())!.isAnytime,
         isTrue,
       );
-      expect(WindowSelection.fromRule(Slice.morning)!.presets, {
-        WindowChoice.morning,
-      });
+      final fromSlice = WindowSelection.fromRule(Slice.morning)!;
+      expect(fromSlice.presets, {WindowChoice.morning});
+      expect(fromSlice.days, 1);
       final multi = MultiSlice([
         Slice.evening.asBand,
         Band(from: h * 13, to: h * 14),
@@ -140,12 +141,27 @@ void main() {
   });
 
   group('open for N days', () {
-    test('days → FixedDuration and back; a band clears it', () {
+    test('days → FixedDuration and back; bands and days are independent', () {
       final s = WindowSelection.anytime.withDays(2);
       expect(s.isAnytime, isFalse);
+      expect(s.allDay, isTrue);
       expect(s.toRule(), const FixedDuration(Duration(days: 2)));
       expect(WindowSelection.fromRule(s.toRule())!.days, 2);
-      expect(s.toggle(WindowChoice.morning).days, isNull);
+      // "Weekend mornings": 2 days × morning → a multi-day MultiSlice.
+      final weekend = s.toggle(WindowChoice.morning);
+      expect(weekend.days, 2);
+      expect(weekend.toRule(), MultiSlice([Slice.morning.asBand], days: 2));
+      final back = WindowSelection.fromRule(weekend.toRule())!;
+      expect(back.days, 2);
+      expect(back.presets, {WindowChoice.morning});
+      expect(weekend.toggle(WindowChoice.anytime).days, 2);
+      expect(weekend.withDays(null).presets, {WindowChoice.morning});
+      expect(
+        WindowSelection.fromRule(
+          UntilNextOccurrence.withBands([Slice.evening.asBand]),
+        )!.presets,
+        {WindowChoice.evening},
+      );
       expect(s.withDays(null).isAnytime, isTrue);
       // A non-whole-day duration has no chip form.
       expect(
