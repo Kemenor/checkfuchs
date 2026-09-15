@@ -1,6 +1,7 @@
 import 'recurrence.dart';
 import 'task.dart';
 import 'template.dart';
+import 'window_rule.dart';
 
 /// The per-Template reconcile — the pure heart of generation (design-concept
 /// §3.4, PLAN "the engine"). Given a Template, its existing materialised Tasks,
@@ -17,6 +18,29 @@ import 'template.dart';
 ///
 /// Pure and idempotent: feeding its output back in produces no further changes.
 /// The DB/repository persists [ReconcileResult.changed]; this file does no I/O.
+
+/// Anchor a *new* series to the cycle already running, when that cycle is
+/// still open: a weekly-Monday habit created on Wednesday belongs to this
+/// week, not to next Monday — its window (Monday → next Monday) still has
+/// days left. Returns [r] unchanged when the running cycle's window has
+/// already closed (a Monday-mornings habit made on Wednesday starts next
+/// Monday), when the anchor already covers it, or when the anchor is a
+/// deliberate future start.
+///
+/// Only the anchor moves, and only backwards by less than one period, so the
+/// rule's phase — every later occurrence — is untouched. Back-dating creates
+/// no history: the engine starts at the first occurrence whose window hasn't
+/// closed, so skipped-over slots never materialise as Missed.
+Recurrence anchorToRunningCycle(Recurrence r, WindowRule w, DateTime now) {
+  final slot = currentCycleStart(r, now);
+  if (slot == null) return r;
+  final anchored = r.withAnchor(slot);
+  if (!slot.isBefore(DateTime(r.anchor.year, r.anchor.month, r.anchor.day))) {
+    return r; // the anchor is already at or before the running cycle
+  }
+  final window = w.resolve(slot, occurrenceAfter(anchored, slot));
+  return window.end.isAfter(now) ? anchored : r;
+}
 
 /// An absolute period, e.g. one vacation row. Both bounds inclusive.
 typedef DatePeriod = ({DateTime start, DateTime end});

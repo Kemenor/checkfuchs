@@ -24,6 +24,94 @@ Template daily({
 Task only(ReconcileResult r) => r.changed.single;
 
 void main() {
+  group('a series created mid-cycle joins the running cycle', () {
+    // 2026-07-08 is a Wednesday; 07-06 the Monday of that week.
+    Template weekly({
+      WindowRule rule = const UntilNextOccurrence(),
+      DateTime? anchor,
+      Set<Weekday> on = const {Weekday.mon},
+      int interval = 1,
+    }) => Template(
+      id: 1,
+      name: 'Sheets',
+      recurrence: Recurrence.weekly(
+        anchor ?? d(2026, 7, 8),
+        on: on,
+        interval: interval,
+      ),
+      windowRule: rule,
+      createdAt: anchor ?? d(2026, 7, 8),
+    );
+
+    Template anchored(Template t, DateTime now) => Template(
+      id: t.id,
+      name: t.name,
+      recurrence: anchorToRunningCycle(t.recurrence, t.windowRule, now),
+      windowRule: t.windowRule,
+      createdAt: t.createdAt,
+    );
+
+    test('a weekly Monday habit made on Wednesday is open THIS week', () {
+      final now = d(2026, 7, 8, 10);
+      final t = anchored(weekly(), now);
+      final task = only(reconcileTemplate(t, [], now));
+      expect(task.occurrence, d(2026, 7, 6)); // this week's Monday
+      expect(task.status, TaskStatus.open);
+      expect(phaseOf(task, now), TaskPhase.active);
+      expect(task.end, d(2026, 7, 13)); // until the next Monday
+    });
+
+    test('a Monday-mornings habit made on Wednesday waits for next Monday', () {
+      final now = d(2026, 7, 8, 10);
+      final t = anchored(weekly(rule: Slice.morning), now);
+      final task = only(reconcileTemplate(t, [], now));
+      expect(task.occurrence, d(2026, 7, 13)); // the closed cycle is skipped
+      expect(task.status, TaskStatus.open); // no retroactive Miss
+      expect(phaseOf(task, now), TaskPhase.pending);
+    });
+
+    test('a deliberate future start is left alone', () {
+      final now = d(2026, 7, 8, 10);
+      final t = anchored(weekly(anchor: d(2026, 8, 3)), now);
+      final task = only(reconcileTemplate(t, [], now));
+      expect(task.occurrence, d(2026, 8, 3));
+      expect(phaseOf(task, now), TaskPhase.pending);
+    });
+
+    test('the phase survives: every other week keeps its rhythm', () {
+      final now = d(2026, 7, 8, 10);
+      final t = anchored(weekly(interval: 2), now);
+      final first = only(reconcileTemplate(t, [], now));
+      expect(first.occurrence, d(2026, 7, 6));
+      final done = first.copyWith(
+        status: TaskStatus.done,
+        resolvedAt: d(2026, 7, 8, 11),
+      );
+      final next = only(reconcileTemplate(t, [done], d(2026, 7, 8, 12)));
+      expect(next.occurrence, d(2026, 7, 20)); // two weeks on, not one
+    });
+
+    test('a monthly habit made after its day is open for this month', () {
+      final now = d(2026, 7, 20, 9);
+      final t = Template(
+        id: 1,
+        name: 'Rent',
+        recurrence: Recurrence.monthly(d(2026, 7, 20), day: 5),
+        createdAt: now,
+      );
+      final task = only(reconcileTemplate(anchored(t, now), [], now));
+      expect(task.occurrence, d(2026, 7, 5));
+      expect(phaseOf(task, now), TaskPhase.active);
+      expect(task.end, d(2026, 8, 5));
+    });
+
+    test('a daily habit is unaffected (its cycle starts today)', () {
+      final now = d(2026, 6, 27, 8);
+      final t = anchored(daily(), now);
+      expect(only(reconcileTemplate(t, [], now)).occurrence, d(2026, 6, 27));
+    });
+  });
+
   group('brand-new template', () {
     test('materialises today as the current open instance', () {
       final r = reconcileTemplate(daily(), [], d(2026, 6, 27, 8));

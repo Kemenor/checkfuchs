@@ -105,6 +105,25 @@ class Recurrence {
 
   /// Yearly only — month (1–12). Null ⇒ the anchor's month.
   final int? byMonth;
+
+  /// The same rule anchored at [date]. The implicit fields (weekday, day of
+  /// month, month — the ones that default to the anchor's) are pinned first,
+  /// so moving the anchor can never shift the phase.
+  Recurrence withAnchor(DateTime date) {
+    final a = _dateOnly(anchor);
+    return Recurrence(
+      freq: freq,
+      anchor: _dateOnly(date),
+      interval: interval,
+      byWeekday: freq == Freq.weekly && byWeekday.isEmpty
+          ? {Weekday.fromDateTime(a)}
+          : byWeekday,
+      byMonthDay: freq == Freq.monthly || freq == Freq.yearly
+          ? (byMonthDay ?? a.day)
+          : byMonthDay,
+      byMonth: freq == Freq.yearly ? (byMonth ?? a.month) : byMonth,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -213,6 +232,42 @@ DateTime occurrenceOnOrAfter(Recurrence r, DateTime from) =>
 /// The first occurrence strictly after [date].
 DateTime occurrenceAfter(Recurrence r, DateTime date) =>
     occurrences(r, from: _addDays(_dateOnly(date), 1)).first;
+
+/// The slot of the cycle that contains [now] — *even when that slot precedes
+/// the anchor*. A series created mid-cycle (weekly on Mondays, made on a
+/// Wednesday) has its first occurrence next week, but the cycle it belongs
+/// to started on Monday; this is that Monday. Null when [now] lies before
+/// the rule's first cycle (a deliberately future start).
+DateTime? currentCycleStart(Recurrence r, DateTime now) =>
+    lastOccurrenceOnOrBefore(_rewoundOneCycle(r), now);
+
+/// [r] with its anchor moved back one whole interval period — same phase,
+/// one cycle of headroom, so the generator will also yield the slots the
+/// anchor was cutting off.
+Recurrence _rewoundOneCycle(Recurrence r) {
+  final a = _dateOnly(r.anchor);
+  return switch (r.freq) {
+    Freq.daily => r.withAnchor(_addDays(a, -r.interval)),
+    Freq.weekly => r.withAnchor(_addDays(a, -7 * r.interval)),
+    Freq.monthly => r.withAnchor(_monthsBefore(a, r.interval)),
+    Freq.yearly => r.withAnchor(
+      DateTime(
+        a.year - r.interval,
+        a.month,
+        _resolveDay(a.year - r.interval, a.month, a.day),
+      ),
+    ),
+  };
+}
+
+/// [n] months before [a], clamping the day into the shorter month instead of
+/// rolling over into the next one (31 Mar − 1 month = 28 Feb, never 3 Mar).
+DateTime _monthsBefore(DateTime a, int n) {
+  final mi = a.year * 12 + (a.month - 1) - n;
+  final y = mi ~/ 12;
+  final m = mi % 12 + 1;
+  return DateTime(y, m, _resolveDay(y, m, a.day));
+}
 
 /// The latest occurrence on or before [date], or null if [date] precedes the
 /// first occurrence. Iterates from the anchor — cheap when the anchor is near

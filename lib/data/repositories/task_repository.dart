@@ -60,13 +60,20 @@ class TaskRepository {
     Set<int>? lensIds,
   }) => db.transaction(() async {
     final ids = await _resolveLensIds(lensIds, defaultLensId);
+    // A series created mid-cycle joins the cycle already running (a weekly
+    // Monday habit made on Wednesday is open for the rest of this week).
+    final recurrence = anchorToRunningCycle(
+      t.recurrence,
+      t.windowRule,
+      t.createdAt,
+    );
     final id = await db
         .into(db.templates)
         .insert(
           TemplatesCompanion.insert(
             name: t.name,
             note: Value(t.note),
-            recurrence: t.recurrence,
+            recurrence: recurrence,
             windowRule: t.windowRule,
             paused: Value(t.paused),
             resumeOn: Value(t.resumeOn),

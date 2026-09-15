@@ -64,6 +64,23 @@ void main() {
     expect(next.note, 'after dinner');
   });
 
+  test('a weekly habit created mid-week opens for the running week', () async {
+    // 2026-07-08 is a Wednesday.
+    final now = d(2026, 7, 8, 10);
+    await repo.createTemplate(
+      Template(
+        name: 'Sheets',
+        recurrence: Recurrence.weekly(d(2026, 7, 8), on: {Weekday.mon}),
+        createdAt: now,
+      ),
+    );
+    await repo.reconcileAll(now);
+    final task = (await repo.allTasks()).single;
+    expect(task.occurrence, d(2026, 7, 6)); // this week's Monday
+    expect(task.isOpen, isTrue);
+    expect(phaseOf(task, now), TaskPhase.active);
+  });
+
   test('reconcileAll materialises one open instance', () async {
     await seedDailyHabit();
     await repo.reconcileAll(d(2026, 6, 27, 8));

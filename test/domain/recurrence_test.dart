@@ -6,6 +6,7 @@ List<DateTime> firstN(Recurrence r, int n, {DateTime? from}) =>
     occurrences(r, from: from).take(n).toList();
 
 void main() {
+  _cycleTests();
   group('daily', () {
     test('every day', () {
       expect(firstN(Recurrence.daily(d(2026, 6, 27)), 3), [
@@ -124,5 +125,62 @@ void main() {
         expect(occurrenceOnOrAfter(r, d(2026, 7, 12)), d(2026, 7, 25));
       },
     );
+  });
+}
+
+void _cycleTests() {
+  group('currentCycleStart', () {
+    test('finds the cycle that contains now, behind the anchor', () {
+      // Weekly on Mondays, anchored on a Wednesday: this week's Monday.
+      final r = Recurrence.weekly(DateTime(2026, 7, 8), on: {Weekday.mon});
+      expect(
+        currentCycleStart(r, DateTime(2026, 7, 8, 10)),
+        DateTime(2026, 7, 6),
+      );
+      // Every other week keeps the phase of the anchor's week.
+      final biweekly = Recurrence.weekly(
+        DateTime(2026, 7, 8),
+        on: {Weekday.mon},
+        interval: 2,
+      );
+      expect(
+        currentCycleStart(biweekly, DateTime(2026, 7, 8, 10)),
+        DateTime(2026, 7, 6),
+      );
+      // Monthly on the 5th, anchored on the 20th.
+      final monthly = Recurrence.monthly(DateTime(2026, 7, 20), day: 5);
+      expect(
+        currentCycleStart(monthly, DateTime(2026, 7, 20)),
+        DateTime(2026, 7, 5),
+      );
+      // A month-end day clamps instead of rolling over.
+      final endOfMonth = Recurrence.monthly(DateTime(2026, 3, 31));
+      expect(
+        currentCycleStart(endOfMonth, DateTime(2026, 3, 15)),
+        DateTime(2026, 2, 28),
+      );
+      // Yearly, before this year's date.
+      final yearly = Recurrence.yearly(DateTime(2026, 9, 15), month: 3, day: 1);
+      expect(
+        currentCycleStart(yearly, DateTime(2026, 9, 15)),
+        DateTime(2026, 3, 1),
+      );
+      // A future anchor has no running cycle.
+      expect(
+        currentCycleStart(
+          Recurrence.weekly(DateTime(2026, 8, 3), on: {Weekday.mon}),
+          DateTime(2026, 7, 8),
+        ),
+        isNull,
+      );
+    });
+
+    test('withAnchor pins the implicit fields so the phase cannot shift', () {
+      final r = Recurrence.monthly(DateTime(2026, 3, 31));
+      final moved = r.withAnchor(DateTime(2026, 2, 28));
+      expect(moved.byMonthDay, 31); // the anchor's day, not February's 28
+      final weekly = Recurrence.weekly(DateTime(2026, 7, 8)); // a Wednesday
+      expect(weekly.withAnchor(DateTime(2026, 7, 1)).byWeekday, {Weekday.wed});
+    });
   });
 }
