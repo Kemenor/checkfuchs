@@ -931,6 +931,34 @@
   "@toTodoTitle": {"description": "Detail sheet: confirm switching a habit to a to-do (stop repeating)"},
   "toTodoBody": "It stops repeating. Past occurrences stay as they are, but the streak and history end here.",
   "@toTodoBody": {"description": "Body of that confirmation"},
+  "remindNeedsDueDateChips": "Set a due date to use the reminders that count from it.",
+  "@remindNeedsDueDateChips": {"description": "Hint under the reminder presets when the task has no due date"},
+  "lensTasksRow": "Tasks in this lens",
+  "@lensTasksRow": {"description": "Lens editor: the row opening the lens's own task list"},
+  "addLensHere": "Add a lens",
+  "@addLensHere": {"description": "View editor: add an existing lens to this view"},
+  "addLensNoneLeft": "Every lens is already in this view.",
+  "@addLensNoneLeft": {"description": "Add-a-lens picker: nothing left to add"},
+  "stateDone": "Done",
+  "@stateDone": {"description": "Detail sheet status line: done, time unknown"},
+  "stateDoneAt": "Done {when}",
+  "@stateDoneAt": {"description": "Detail sheet status line: done at a time", "placeholders": {"when": {"type": "String"}}},
+  "stateSkipped": "Skipped",
+  "@stateSkipped": {"description": "Detail sheet status line: skipped"},
+  "stateMissed": "Missed — the window closed",
+  "@stateMissed": {"description": "Detail sheet status line: missed"},
+  "stateOpenNoDeadline": "Open — no deadline",
+  "@stateOpenNoDeadline": {"description": "Detail sheet status line: open, unbounded window"},
+  "stateOpenUntil": "Open until {when}",
+  "@stateOpenUntil": {"description": "Detail sheet status line: open until an edge", "placeholders": {"when": {"type": "String"}}},
+  "stateOpensAt": "Opens {when}",
+  "@stateOpensAt": {"description": "Detail sheet status line: not open yet", "placeholders": {"when": {"type": "String"}}},
+  "stateWaiting": "Waiting to open",
+  "@stateWaiting": {"description": "Detail sheet status line: pending, no start known"},
+  "stateClosed": "The window has closed",
+  "@stateClosed": {"description": "Detail sheet status line: window expired, still open"},
+  "stateOpenUntilMidnight": "Open until midnight",
+  "@stateOpenUntilMidnight": {"description": "Detail sheet status line: open until tonight's midnight"},
   "demoViewHabits": "Habits",
   "demoViewLongterm": "Long-term",
   "demoLensDaily": "Daily habits",
@@ -1212,14 +1240,10 @@
       }
     }
   },
-  "statsStreakDays": "days · best {best}",
+  "statsStreakDays": "{count, plural, =1{day · best {best}} other{days · best {best}}}",
   "@statsStreakDays": {
-    "description": "Stats: statsStreakDays",
-    "placeholders": {
-      "best": {
-        "type": "int"
-      }
-    }
+    "description": "Streaks row: the unit plus the personal best",
+    "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
   },
   "statsLegendDone": "Done",
   "@statsLegendDone": {

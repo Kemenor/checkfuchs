@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fuchsbau/fuchsbau.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
+import '../data/repositories/task_repository.dart';
 import '../domain/analytics.dart';
 import '../domain/notification.dart';
 import '../domain/recurrence.dart';
@@ -16,6 +18,7 @@ import 'edit_repeat_sheet.dart';
 import 'recurrence_summary_l10n.dart';
 import 'reminder_editor.dart';
 import 'task_history_screen.dart';
+import 'when_label.dart';
 import 'window_choice.dart';
 import 'window_editor.dart';
 
@@ -106,6 +109,12 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   late final _noteController = TextEditingController(
     text: widget.task.note ?? '',
   );
+  final _nameFocus = FocusNode();
+  final _noteFocus = FocusNode();
+
+  /// Captured once: `ref` is gone by the time [dispose] runs, and the last
+  /// edit still has to reach the database.
+  late final TaskRepository _repo = ref.read(taskRepositoryProvider);
 
   /// The live task — re-read after nested sheets mutate it (turn-into-series /
   /// stop-repeating change `templateId`, which drives most of this sheet).
@@ -138,6 +147,15 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   @override
   void initState() {
     super.initState();
+    // Everything on this sheet saves itself; the text fields commit when they
+    // lose focus and again when the sheet goes away, so a rename followed by
+    // a swipe-down is never lost.
+    _nameFocus.addListener(() {
+      if (!_nameFocus.hasFocus) _commitText();
+    });
+    _noteFocus.addListener(() {
+      if (!_noteFocus.hasFocus) _commitText();
+    });
     _loadSeriesInfo();
     _loadLensInfo();
   }
@@ -342,35 +360,52 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
 
   @override
   void dispose() {
+    _commitText();
+    _nameFocus.dispose();
+    _noteFocus.dispose();
     _controller.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
-  /// Save: name (a series renames as a whole — it's one habit across its
-  /// history) and note (a series' note is the template default + its open
-  /// instances).
-  Future<void> _saveName() async {
-    final repo = ref.read(taskRepositoryProvider);
+  /// Commit the name and the note. A series renames as a whole — it is one
+  /// habit across its history — and a series' note is the template default
+  /// plus its open instances. Safe to call repeatedly: unchanged text writes
+  /// nothing.
+  void _commitText() {
+    final id = _task.id;
+    if (id == null) return;
     final name = _controller.text.trim();
     final noteText = _noteController.text.trim();
     final note = noteText.isEmpty ? null : noteText;
     final tid = _task.templateId;
     if (name.isNotEmpty && name != _task.name) {
       if (tid != null) {
-        await repo.renameTemplate(tid, name);
+        _repo.renameTemplate(tid, name);
       } else {
-        await repo.renameTask(_task.id!, name);
+        _repo.renameTask(id, name);
       }
+      _task = _task.copyWith(name: name);
     }
     if (note != _task.note) {
       if (tid != null) {
-        await repo.setTemplateNote(tid, note);
+        _repo.setTemplateNote(tid, note);
       } else {
-        await repo.setTaskNote(_task.id!, note);
+        _repo.setTaskNote(id, note);
       }
+      _task = _task.copyWith(note: note);
     }
-    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// The status actions — the reason most people open this sheet. Each one
+  /// writes and re-reads in place, so the sheet shows the new state instead
+  /// of closing under the user.
+  Future<void> _act(
+    Future<void> Function(TaskRepository repo, DateTime now) run,
+  ) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await run(ref.read(taskRepositoryProvider), ref.read(clockProvider).now());
+    await _reload();
   }
 
   Future<void> _delete({required bool series}) async {
@@ -421,13 +456,16 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
               const SizedBox(height: 8),
               TextField(
                 controller: _controller,
+                focusNode: _nameFocus,
                 textCapitalization: TextCapitalization.sentences,
                 style: Theme.of(context).textTheme.titleLarge,
                 decoration: const InputDecoration(border: InputBorder.none),
-                onSubmitted: (_) => _saveName(),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _nameFocus.unfocus(),
               ),
               TextField(
                 controller: _noteController,
+                focusNode: _noteFocus,
                 textCapitalization: TextCapitalization.sentences,
                 minLines: 1,
                 maxLines: 4,
@@ -438,33 +476,15 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   isDense: true,
                 ),
               ),
-              // Missed habit: the logging correction (§11 q7). Pops the sheet —
-              // the stream re-renders the row as done.
-              if (canCorrectMiss(_task)) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await ref
-                        .read(taskRepositoryProvider)
-                        .correctMissedTask(_task);
-                    if (context.mounted) Navigator.of(context).pop();
-                  },
-                  icon: const Icon(Symbols.check_circle_rounded),
-                  label: Text(l10n.markDoneAnyway),
-                ),
-              ],
-              // Done/Skipped: undo it (mis-tap, mis-swipe, changed your mind).
-              if (canReopen(_task)) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await ref.read(taskRepositoryProvider).reopenTask(_task);
-                    if (context.mounted) Navigator.of(context).pop();
-                  },
-                  icon: const Icon(Symbols.undo_rounded),
-                  label: Text(l10n.reopenTask),
-                ),
-              ],
+              const SizedBox(height: 12),
+              _StatusBlock(
+                task: _task,
+                now: ref.read(clockProvider).now(),
+                onDone: () => _act((r, now) => r.completeTask(_task, now)),
+                onSkip: () => _act((r, now) => r.skipTask(_task, now)),
+                onCorrectMiss: () => _act((r, _) => r.correctMissedTask(_task)),
+                onReopen: () => _act((r, _) => r.reopenTask(_task)),
+              ),
               if (_stats?.hasData ?? false) ...[
                 const SizedBox(height: 14),
                 Row(
@@ -618,17 +638,12 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                     _task.occurrence != null ||
                     _task.end != null ||
                     _task.start != null,
+                // A preset can only fire if the edge it hangs on exists.
+                hasStart: _task.start != null,
+                hasEnd: _task.end != null,
                 onChanged: _setReminders,
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _saveName,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(l10n.save),
-                ),
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: () => _delete(series: false),
                 style: TextButton.styleFrom(foregroundColor: scheme.error),
@@ -757,6 +772,146 @@ class _WindowSheetState extends State<_WindowSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What state this task is in *right now*, and the one or two actions that
+/// change it. The sheet's first answer: people open a task to check it off
+/// or to see whether they already did.
+class _StatusBlock extends StatelessWidget {
+  const _StatusBlock({
+    required this.task,
+    required this.now,
+    required this.onDone,
+    required this.onSkip,
+    required this.onCorrectMiss,
+    required this.onReopen,
+  });
+
+  final Task task;
+  final DateTime now;
+  final VoidCallback onDone;
+  final VoidCallback onSkip;
+  final VoidCallback onCorrectMiss;
+  final VoidCallback onReopen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final status = FuchsbauStatusColors.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final phase = phaseOf(task, now);
+
+    String edge(DateTime t, {required bool isEnd}) =>
+        whenLabel(l10n, locale, now, t, isEnd: isEnd);
+
+    final (IconData icon, Color colour, String line) = switch (task.status) {
+      TaskStatus.done => (
+        Symbols.check_circle_rounded,
+        scheme.tertiary,
+        task.resolvedAt == null
+            ? l10n.stateDone
+            : l10n.stateDoneAt(edge(task.resolvedAt!, isEnd: false)),
+      ),
+      TaskStatus.skipped => (
+        Symbols.remove_circle_outline_rounded,
+        status.neutral,
+        l10n.stateSkipped,
+      ),
+      TaskStatus.missed => (
+        Symbols.radio_button_unchecked_rounded,
+        status.taupe,
+        l10n.stateMissed,
+      ),
+      TaskStatus.open => switch (phase) {
+        TaskPhase.active => (
+          Symbols.radio_button_unchecked_rounded,
+          scheme.primary,
+          switch (task.end) {
+            null => l10n.stateOpenNoDeadline,
+            // A window ending at midnight closes *tonight*; "until Today"
+            // is not a sentence (DESIGN_SYSTEM §3.6).
+            final e
+                when e.hour == 0 &&
+                    e.minute == 0 &&
+                    e.difference(now).inHours < 24 =>
+              l10n.stateOpenUntilMidnight,
+            final e => l10n.stateOpenUntil(edge(e, isEnd: true)),
+          },
+        ),
+        TaskPhase.pending => (
+          Symbols.schedule_rounded,
+          scheme.outline,
+          task.start == null
+              ? l10n.stateWaiting
+              : l10n.stateOpensAt(edge(task.start!, isEnd: false)),
+        ),
+        TaskPhase.expired => (
+          Symbols.radio_button_unchecked_rounded,
+          status.taupe,
+          l10n.stateClosed,
+        ),
+      },
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: colour),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                line,
+                style: TextStyle(color: colour, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            if (canComplete(task, now))
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onDone,
+                  icon: const Icon(Symbols.check_circle_rounded),
+                  label: Text(l10n.swipeDone),
+                ),
+              ),
+            if (canComplete(task, now) && canSkip(task, now))
+              const SizedBox(width: 8),
+            if (canSkip(task, now))
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onSkip,
+                  icon: const Icon(Symbols.remove_circle_outline_rounded),
+                  label: Text(l10n.swipeSkip),
+                ),
+              ),
+            // A missed habit can still be logged; a resolved one can be undone.
+            if (canCorrectMiss(task))
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onCorrectMiss,
+                  icon: const Icon(Symbols.check_circle_rounded),
+                  label: Text(l10n.markDoneAnyway),
+                ),
+              ),
+            if (canReopen(task))
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onReopen,
+                  icon: const Icon(Symbols.undo_rounded),
+                  label: Text(l10n.reopenTask),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -125,21 +125,43 @@ class _TaskSectionsState extends ConsumerState<_TaskSections> {
         (a.end ?? a.start ?? far).compareTo(b.end ?? b.start ?? far);
     final now = ref.read(clockProvider).now();
     final allOpen = tasks.where((t) => t.isOpen).toList();
+    // In the inventory (splitKinds) the sections are *types*, so a habit whose
+    // window hasn't opened is still under Habits — the row's pill says when.
+    // Elsewhere the not-yet-open ones get their own block.
     final upcoming =
-        allOpen
-            .where((t) => domain.phaseOf(t, now) == domain.TaskPhase.pending)
-            .toList()
+        (widget.splitKinds
+              ? <domain.Task>[]
+              : allOpen
+                    .where(
+                      (t) => domain.phaseOf(t, now) == domain.TaskPhase.pending,
+                    )
+                    .toList())
           ..sort(byEdge);
     final open =
         allOpen
-            .where((t) => domain.phaseOf(t, now) != domain.TaskPhase.pending)
+            .where(
+              (t) =>
+                  widget.splitKinds ||
+                  domain.phaseOf(t, now) != domain.TaskPhase.pending,
+            )
             .toList()
           ..sort(
             widget.manualLensId != null
                 ? (a, b) => (widget.orderOf[a.id] ?? 0).compareTo(
                     widget.orderOf[b.id] ?? 0,
                   )
-                : byEdge,
+                : (a, b) {
+                    // Actionable first, then the ones still waiting to open.
+                    final pa =
+                        domain.phaseOf(a, now) == domain.TaskPhase.pending
+                        ? 1
+                        : 0;
+                    final pb =
+                        domain.phaseOf(b, now) == domain.TaskPhase.pending
+                        ? 1
+                        : 0;
+                    return pa != pb ? pa - pb : byEdge(a, b);
+                  },
           );
 
     final allResolved =
@@ -335,6 +357,16 @@ class AllViewsScreen extends ConsumerWidget {
     final views = ref.watch(viewsProvider).asData?.value;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.allViewsTitle)),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'newView',
+        onPressed: () async {
+          final r = await promptName(context, l10n.newView, withIcon: true);
+          if (r == null) return;
+          await ref.read(viewRepositoryProvider).createView(r.$1, icon: r.$2);
+        },
+        icon: const Icon(Symbols.add_rounded),
+        label: Text(l10n.newView),
+      ),
       body: views == null
           ? const Center(child: CircularProgressIndicator())
           : views.isEmpty

@@ -15,6 +15,8 @@ class ReminderEditor extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.hasDay = true,
+    this.hasStart = true,
+    this.hasEnd = true,
   });
 
   final List<TaskNotification> value;
@@ -24,6 +26,11 @@ class ReminderEditor extends StatelessWidget {
   /// occurrence, or a due/start date). When false the rows are still kept
   /// but a hint explains they need a due date.
   final bool hasDay;
+
+  /// Whether the task's window has a start / an end. A missing edge greys
+  /// out the presets that hang on it.
+  final bool hasStart;
+  final bool hasEnd;
 
   List<TaskNotification> get _custom => [
     for (final n in value)
@@ -54,7 +61,19 @@ class ReminderEditor extends StatelessWidget {
         ReminderPresetChips(
           selected: ReminderPreset.fromNotifications(value),
           onChanged: _setPresets,
+          hasStart: hasStart,
+          hasEnd: hasEnd,
         ),
+        if (!hasEnd)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              l10n.remindNeedsDueDateChips,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.outline),
+            ),
+          ),
         for (var i = 0; i < custom.length; i++)
           if (custom[i].anchor == NotificationAnchor.absolute)
             _AbsoluteRow(

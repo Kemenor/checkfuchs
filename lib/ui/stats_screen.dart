@@ -513,7 +513,8 @@ class _StreaksTile extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: '  ${l10n.statsStreakDays(s.streaks[i].best)}',
+                        text:
+                            '  ${l10n.statsStreakDays(s.streaks[i].current, s.streaks[i].best)}',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: scheme.outline,
                           fontWeight: FontWeight.w600,

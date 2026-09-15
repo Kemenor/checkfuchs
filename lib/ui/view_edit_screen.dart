@@ -133,6 +133,14 @@ class ViewEditScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    // Mount a lens that already exists, or make a new one —
+                    // the list should not be a dead end.
+                    ListTile(
+                      contentPadding: fuchsbauCardRowPadding,
+                      leading: const Icon(Symbols.add_rounded),
+                      title: Text(l10n.addLensHere),
+                      onTap: () => _addLens(context, ref, viewId, lenses),
+                    ),
                   ],
                 ),
               ],
@@ -159,6 +167,70 @@ class ViewEditScreen extends ConsumerWidget {
   }
 }
 
+/// Pick a lens that is not in this view yet, or create one. Tapping a name
+/// mounts it; "New lens" names it and opens its dials.
+Future<void> _addLens(
+  BuildContext context,
+  WidgetRef ref,
+  int viewId,
+  List<ViewLensEntry> mounted,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final repo = ref.read(viewRepositoryProvider);
+  final all = await repo.watchAllLenses().first;
+  final here = {for (final e in mounted) e.lens.id};
+  final free = [
+    for (final l in all)
+      if (!here.contains(l.id)) l,
+  ];
+  if (!context.mounted) return;
+  final picked = await showDialog<int>(
+    context: context,
+    builder: (ctx) => SimpleDialog(
+      title: Text(l10n.addLensHere),
+      children: [
+        for (final lens in free)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, lens.id),
+            child: Text(lens.name),
+          ),
+        if (free.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: Text(
+              l10n.addLensNoneLeft,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.outline),
+            ),
+          ),
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(ctx, -1),
+          child: Row(
+            children: [
+              const Icon(Symbols.add_rounded, size: 20),
+              const SizedBox(width: 8),
+              Text(l10n.newLens),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+  if (picked == null || !context.mounted) return;
+  if (picked != -1) {
+    await repo.addLensToView(viewId, picked);
+    return;
+  }
+  final r = await promptName(context, l10n.newLens);
+  if (r == null || !context.mounted) return;
+  final id = await repo.createLensInView(viewId, r.$1);
+  if (!context.mounted) return;
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => LensEditScreen(viewId: viewId, lensId: id),
+    ),
+  );
+}
+
 /// One lens's dials standalone — pushed right after "New lens here" (with a
 /// [viewId], so the View↔Lens statusFilter chips are offered too) and from
 /// Settings → Library → All lenses (no view: the lens's own dials only).
@@ -173,6 +245,10 @@ class LensEditScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final viewId = this.viewId;
+    final memberCount = ref
+        .watch(_lensTaskCountsProvider)
+        .asData
+        ?.value[lensId];
     final ViewLensEntry? entry;
     if (viewId != null) {
       ref.listen(_viewLensesProvider(viewId), (_, next) {
@@ -210,25 +286,27 @@ class LensEditScreen extends ConsumerWidget {
                 bottom: 24 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
-                if (viewId == null)
-                  FuchsbauSettingsCard(
-                    children: [
-                      ListTile(
-                        contentPadding: fuchsbauCardRowPadding,
-                        leading: const Icon(Symbols.checklist_rounded),
-                        title: Text(l10n.allTasksTitle),
-                        trailing: const Icon(Symbols.chevron_right_rounded),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => LensTasksScreen(
-                              lensId: lensId,
-                              name: entry!.lens.name,
-                            ),
+                // The lens's own task list — offered from every door into
+                // this editor, not just the one in Settings.
+                FuchsbauSettingsCard(
+                  children: [
+                    ListTile(
+                      contentPadding: fuchsbauCardRowPadding,
+                      leading: const Icon(Symbols.checklist_rounded),
+                      title: Text(l10n.lensTasksRow),
+                      subtitle: Text(l10n.taskCount(memberCount ?? 0)),
+                      trailing: const Icon(Symbols.chevron_right_rounded),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => LensTasksScreen(
+                            lensId: lensId,
+                            name: entry!.lens.name,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
                 _LensDialsCard(key: ValueKey(entry.lens.id), entry: entry),
                 // Where the lens is mounted — a lens can sit in several views;
                 // moving it is "untick here, tick there".
@@ -239,6 +317,10 @@ class LensEditScreen extends ConsumerWidget {
     );
   }
 }
+
+final _lensTaskCountsProvider = StreamProvider.autoDispose<Map<int, int>>(
+  (ref) => ref.watch(viewRepositoryProvider).watchLensTaskCounts(),
+);
 
 final _lensViewIdsProvider = StreamProvider.autoDispose.family<Set<int>, int>(
   (ref, lensId) => ref.watch(viewRepositoryProvider).watchLensViewIds(lensId),

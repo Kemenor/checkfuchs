@@ -328,6 +328,20 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 8),
               ReminderEditor(
                 value: _notifications,
+                // A habit's window always has both edges; a to-do's are its
+                // dates, and a preset without its edge can never fire.
+                hasStart:
+                    _kind == _Kind.habit ||
+                    WindowSelection.anytime
+                            .datedWindow(now, _startDate, _dueDate)
+                            .$1 !=
+                        null,
+                hasEnd:
+                    _kind == _Kind.habit ||
+                    WindowSelection.anytime
+                            .datedWindow(now, _startDate, _dueDate)
+                            .$2 !=
+                        null,
                 // A series always has an occurrence day; a one-off needs a
                 // due (or start) date for day-based reminders.
                 hasDay:

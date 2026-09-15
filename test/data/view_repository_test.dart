@@ -347,6 +347,23 @@ void main() {
       expect(await lensOrder(), [second, lensId]);
     });
 
+    test('addLensToView mounts an existing lens without moving it', () async {
+      final lensId = await viewRepo.seedDefaults();
+      final home = (await viewRepo.watchViews().first).single;
+      final habits = await viewRepo.createView('Habits', icon: 'repeat');
+      await viewRepo.addLensToView(habits, lensId);
+      expect(await viewRepo.watchLensViewIds(lensId).first, {home.id, habits});
+      // Idempotent: mounting twice changes nothing.
+      await viewRepo.addLensToView(habits, lensId);
+      expect(
+        [
+          for (final e in await viewRepo.watchViewLenses(habits).first)
+            e.lens.id,
+        ],
+        [lensId],
+      );
+    });
+
     test('watchViewLenses emits the lens with its statusFilter', () async {
       final lensId = await viewRepo.seedDefaults();
       final home = (await viewRepo.watchViews().first).single;

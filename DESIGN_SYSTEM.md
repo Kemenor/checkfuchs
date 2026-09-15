@@ -92,10 +92,21 @@ screens use them.
   **More** (a sheet with the rest).
 - **No app-bar overflow menu.** The altitude map: *act on tasks* = list + big FAB ·
   *shape structure* = small FAB's sheet (§3.6) · *configure the app* = Settings tab.
-- Each `View↔Lens` carries `statusFilter`; the same lens reads differently per View.
+- `statusFilter` ("Also show": done / skipped / missed / upcoming) belongs to the
+  **lens**, not to the View↔Lens pair (schema v12 — one lens, one reading, edited in
+  one place). `view_lens.status_filter` is dead legacy; the pair still carries its
+  `sortOrder` (the card order within a View).
 
 ### 3.4 Detail sheet → `examples/ui/05-task-detail.html`
 - Bottom sheet (Fuchsbau pattern): `xl`(28) top, drag handle, `isScrollControlled`.
+- Order, matching the create sheet: **kind toggle → name + note → status block →
+  stats/history → lenses → scheduling → reminders → delete**.
+- The **status block** is the sheet's first answer: one line saying what state the
+  current instance is in ("Open until 18:00", "Done 19:12", "Missed — the window
+  closed") and the actions that change it (Done · Skip, Mark done anyway, Reopen).
+- **Everything on the sheet saves itself.** No Save button: rows commit on change,
+  the text fields commit on blur and again when the sheet closes. A sheet that mixes
+  instant rows with a Save button loses edits on a swipe-down.
 - Prominent name field; **This-occurrence / The-series** segmented (only when recurring).
 - Property rows (icon + label + value, drill-in): **Active window** (day/morning/…/time
   chips), **Repeat**, **Reminders**, **Lens**, **Note**.

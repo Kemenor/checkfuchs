@@ -14,6 +14,10 @@ enum ReminderPreset {
 
   final TaskNotification notification;
 
+  /// Which window edge this preset hangs on — a task without that edge can
+  /// never fire it, so the chip is offered disabled.
+  NotificationAnchor get anchor => notification.anchor;
+
   String label(AppLocalizations l10n) => switch (this) {
     ReminderPreset.whenOpens => l10n.remindWhenOpens,
     ReminderPreset.beforeDue => l10n.remindBeforeDue,
@@ -43,10 +47,21 @@ class ReminderPresetChips extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
+    this.hasStart = true,
+    this.hasEnd = true,
   });
 
   final Set<ReminderPreset> selected;
   final ValueChanged<Set<ReminderPreset>> onChanged;
+
+  /// Whether the task's window has a start / an end for the presets to hang
+  /// on. A missing edge disables its chips: ticking "when it's due" on a
+  /// to-do with no due date would look saved and never fire.
+  final bool hasStart;
+  final bool hasEnd;
+
+  bool _enabled(ReminderPreset p) =>
+      p.anchor == NotificationAnchor.start ? hasStart : hasEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -57,12 +72,14 @@ class ReminderPresetChips extends StatelessWidget {
         for (final p in ReminderPreset.values)
           FilterChip(
             label: Text(p.label(l10n)),
-            selected: selected.contains(p),
-            onSelected: (on) {
-              final next = {...selected};
-              on ? next.add(p) : next.remove(p);
-              onChanged(next);
-            },
+            selected: selected.contains(p) && _enabled(p),
+            onSelected: _enabled(p)
+                ? (on) {
+                    final next = {...selected};
+                    on ? next.add(p) : next.remove(p);
+                    onChanged(next);
+                  }
+                : null,
           ),
       ],
     );

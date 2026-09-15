@@ -248,6 +248,13 @@ class ViewRepository {
         );
   }
 
+  /// Mount an existing lens in [viewId] (it keeps the views it already has).
+  Future<void> addLensToView(int viewId, int lensId) async {
+    final current = await watchLensViewIds(lensId).first;
+    if (current.contains(viewId)) return;
+    await setLensViews(lensId, {...current, viewId});
+  }
+
   /// Bottom-bar order of the views: [viewIds] left to right.
   Future<void> setViewOrder(List<int> viewIds) => db.transaction(() async {
     for (var i = 0; i < viewIds.length; i++) {
