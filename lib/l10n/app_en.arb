@@ -739,7 +739,7 @@
   "@backupExport": {
     "description": "Settings tile: share a backup ZIP."
   },
-  "backupExportSub": "Share a .zip (database + JSON)",
+  "backupExportSub": "Save a .zip (database + JSON)",
   "@backupExportSub": {
     "description": "Subtitle of the export tile."
   },
@@ -779,13 +779,10 @@
   "@backupImportAction": {
     "description": "Confirm button of the replace-all import dialog."
   },
-  "backupShareSubject": "Checkfuchs backup",
-  "@backupShareSubject": {
-    "description": "Share-sheet subject line for the exported ZIP."
-  },
-  "backupFileType": "Backup",
-  "@backupFileType": {
-    "description": "File-picker type-group label for .zip backups."
+  "backupSaved": "Backup saved ({size}).",
+  "@backupSaved": {
+    "description": "Snackbar after the backup .zip was written via the system save dialog; size is preformatted, e.g. '14 KB'.",
+    "placeholders": { "size": { "type": "String" } }
   },
   "backupReplaceTitle": "Replace all data?",
   "@backupReplaceTitle": {

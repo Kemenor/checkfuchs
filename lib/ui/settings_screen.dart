@@ -1,4 +1,4 @@
-import 'package:file_selector/file_selector.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fuchsbau/fuchsbau.dart';
@@ -227,16 +227,20 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-/// Export: build the ZIP (sqlite snapshot + JSON) and hand it to the share
-/// sheet. The share sheet itself is the success feedback; failures get an
-/// honest snackbar with the actual error.
+/// Export: build the ZIP (sqlite snapshot + JSON) and open the system save
+/// dialog. A saved file confirms with its size; a cancelled dialog stays
+/// silent; failures get an honest snackbar with the actual error.
 Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context);
   try {
-    await ref
-        .read(backupServiceProvider)
-        .shareBackup(subject: l10n.backupShareSubject);
+    final bytes = await ref.read(backupServiceProvider).saveBackup();
+    if (bytes != null) {
+      final size = bytes >= 1024 * 1024
+          ? '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB'
+          : '${(bytes / 1024).round()} KB';
+      messenger.showSnackBar(SnackBar(content: Text(l10n.backupSaved(size))));
+    }
   } catch (e) {
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.backupExportFailed('$e'))),
@@ -244,10 +248,6 @@ Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
   }
 }
 
-/// Import: pick a .zip, confirm the replace-all consequence, restore. The
-/// restore applies live (validate → migrate the snapshot → one replace-all
-/// transaction), so no restart is needed; settings are re-read afterwards
-/// because theme/font/locale live in the restored database.
 /// Wipe content (tasks, habits, lenses, views, vacations) and reseed the
 /// default View/Lens; settings stay. The user-facing counterpart to the
 /// developer "Reset to intro" — e.g. to clear the example dataset.
@@ -295,15 +295,35 @@ Future<void> _deleteAllData(BuildContext context, WidgetRef ref) async {
   }
 }
 
+/// Import: pick a .zip, confirm the replace-all consequence, restore. The
+/// restore applies live (validate → migrate the snapshot → one replace-all
+/// transaction), so no restart is needed; settings are re-read afterwards
+/// because theme/font/locale live in the restored database.
+///
+/// Picked via flutter_file_dialog, not file_selector: file_selector trusts
+/// the provider's reported size, and Proton Drive (like MIUI's documents
+/// provider in knobelfuchs) reports one that doesn't match the stream — its
+/// read hit EOF and a null log message crashed the app (phone, 2026-10-07).
+/// This plugin streams the copy to EOF instead. No mime filter — the
+/// manifest check is the validator, and filters hid the file on some
+/// pickers.
 Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context);
-  final file = await openFile(
-    acceptedTypeGroups: [
-      XTypeGroup(label: l10n.backupFileType, extensions: const ['zip']),
-    ],
-  );
-  if (file == null || !context.mounted) return;
+  final String? path;
+  try {
+    path = await FlutterFileDialog.pickFile(
+      params: const OpenFileDialogParams(
+        dialogType: OpenFileDialogType.document,
+      ),
+    );
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.backupImportFailed('$e'))),
+    );
+    return;
+  }
+  if (path == null || !context.mounted) return;
 
   final confirmed = await showDialog<bool>(
     context: context,
@@ -325,7 +345,7 @@ Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
   if (confirmed != true) return;
 
   try {
-    await ref.read(backupServiceProvider).restoreFromZip(file.path);
+    await ref.read(backupServiceProvider).restoreFromZip(path);
     // Theme/font/locale/debug flag were just replaced under the controller.
     ref.invalidate(settingsProvider);
     messenger.showSnackBar(SnackBar(content: Text(l10n.backupRestored)));

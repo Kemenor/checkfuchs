@@ -6,7 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:drift/native.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 
 import '../db/database.dart';
 
@@ -239,13 +239,19 @@ Future<void> restoreBackupZipBytes(AppDatabase db, List<int> zipBytes) async {
   }
 }
 
-/// Platform shell: builds the ZIP and hands it to the share sheet, or reads a
-/// picked .zip back in. File *picking* stays in the UI (mirrors knabberfuchs).
+/// Platform shell: builds the ZIP and hands it to the system save dialog, or
+/// reads a picked .zip back in. File *picking* stays in the UI (mirrors
+/// knabberfuchs).
 class BackupService {
   BackupService(this.db);
   final AppDatabase db;
 
-  Future<void> shareBackup({String? subject}) async {
+  /// Build the ZIP and open the system SAVE dialog (SAF / document picker) —
+  /// the share sheet has no reliable save-to-file target on every ROM, and
+  /// the save dialog reaches cloud providers too (knobelfuchs finding,
+  /// 2026-07-14). Returns the zip size in bytes, or null when cancelled —
+  /// the size shows in the confirmation so an empty-file bug is visible.
+  Future<int?> saveBackup() async {
     final now = DateTime.now();
     var appVersion = 'unknown';
     try {
@@ -259,19 +265,26 @@ class BackupService {
       now: now,
       appVersion: appVersion,
     );
-    // systemTemp is the app cache dir on Android/iOS (the engine sets TMPDIR);
-    // share_plus copies the file into its own share cache anyway.
+    // systemTemp is the app cache dir on Android/iOS (the engine sets TMPDIR).
+    // Hand the save dialog a PATH, not bytes — the in-memory mode produced
+    // 0-byte files on MIUI (knobelfuchs tablet playtest 2026-07-14).
     final stamp = DateFormat('yyyyMMdd-HHmmss').format(now);
     final file = File(
       '${Directory.systemTemp.path}/checkfuchs-backup-$stamp.zip',
     );
     await file.writeAsBytes(bytes, flush: true);
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: 'application/zip')],
-        subject: subject ?? 'Checkfuchs backup',
-      ),
-    );
+    try {
+      final saved = await FlutterFileDialog.saveFile(
+        params: SaveFileDialogParams(
+          sourceFilePath: file.path,
+          fileName: 'checkfuchs-backup-$stamp.zip',
+          mimeTypesFilter: const ['application/zip'],
+        ),
+      );
+      return saved != null ? bytes.length : null;
+    } finally {
+      if (await file.exists()) await file.delete();
+    }
   }
 
   /// Replace all data with the contents of a backup .zip at [path]. Throws
