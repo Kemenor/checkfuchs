@@ -17,6 +17,10 @@ enum LensSelection {
   random,
 }
 
+/// What a new Task created from a lens is: a repeating habit (a Template) or
+/// a one-off to-do. A lens's default preselects the create sheet's toggle.
+enum TaskKind { habit, todo }
+
 class Lens {
   const Lens({
     this.id,

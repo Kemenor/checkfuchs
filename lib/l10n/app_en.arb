@@ -647,6 +647,10 @@
   "@statusFilterLabel": {
     "description": "Label above the terminal-status filter chips (which resolved tasks to also show)."
   },
+  "lensDefaultKindDial": "New tasks start as",
+  "@lensDefaultKindDial": {
+    "description": "Lens editor dial: whether the create sheet opened from this lens's + starts on Habit or To-do"
+  },
   "filterShowDone": "Done",
   "@filterShowDone": {
     "description": "Status-filter chip: also show Done tasks."

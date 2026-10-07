@@ -452,6 +452,18 @@ class _LensDialsCard extends ConsumerWidget {
           filter: lens.statusFilter,
           onChanged: (f) => repo.setLensStatusFilter(lens.id, f),
         ),
+        // What this lens's + starts the create sheet on.
+        FuchsbauChoicePicker<TaskKind>(
+          key: ValueKey('default-kind-${lens.id}'),
+          icon: Symbols.add_task_rounded,
+          title: l10n.lensDefaultKindDial,
+          value: lens.defaultKind,
+          options: {
+            TaskKind.habit: l10n.kindHabit,
+            TaskKind.todo: l10n.kindTodo,
+          },
+          onChanged: (v) => repo.setLensDefaultKind(lens.id, v),
+        ),
         _DeleteTile(
           key: ValueKey('delete-lens-${lens.id}'),
           title: l10n.deleteLens,

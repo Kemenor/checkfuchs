@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
+import '../domain/lens.dart';
 import '../domain/notification.dart';
 import '../domain/recurrence.dart';
 import '../domain/task.dart';
@@ -28,13 +29,16 @@ final _viewLensesProvider = StreamProvider.autoDispose
 /// a to-do has a start and a due date and nothing else (a Task, its window
 /// is exactly those two dates). Lenses (the buckets it lives in — only this
 /// view's are offered, preselected to [lensId] when opened from a lens
-/// card's +) and reminders apply to both. Reconciles so the first instance
-/// appears immediately.
+/// card's +) and reminders apply to both. The toggle starts on
+/// [initialKind] — the lens's default kind — or, when opened without a lens,
+/// on the default of the lens the task will land in. Reconciles so the first
+/// instance appears immediately.
 Future<void> showCreateTaskSheet(
   BuildContext context,
   WidgetRef ref, {
   int? viewId,
   int? lensId,
+  TaskKind? initialKind,
   Recurrence? initialRecurrence,
 }) {
   return showModalBottomSheet<void>(
@@ -44,13 +48,19 @@ Future<void> showCreateTaskSheet(
     builder: (_) => _CreateTaskSheet(
       viewId: viewId,
       lensId: lensId,
+      initialKind: initialKind,
       initialRecurrence: initialRecurrence,
     ),
   );
 }
 
 class _CreateTaskSheet extends ConsumerStatefulWidget {
-  const _CreateTaskSheet({this.viewId, this.lensId, this.initialRecurrence});
+  const _CreateTaskSheet({
+    this.viewId,
+    this.lensId,
+    this.initialKind,
+    this.initialRecurrence,
+  });
 
   /// Preset repeat rule — the first-launch "Start clean" opens the sheet as
   /// a daily habit (the carrier), so the first thing created keeps the app
@@ -59,17 +69,22 @@ class _CreateTaskSheet extends ConsumerStatefulWidget {
 
   final int? viewId;
   final int? lensId;
+  final TaskKind? initialKind;
 
   @override
   ConsumerState<_CreateTaskSheet> createState() => _CreateTaskSheetState();
 }
 
-enum _Kind { habit, todo }
-
 class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   final _controller = TextEditingController();
   final _noteController = TextEditingController();
-  _Kind _kind = _Kind.habit;
+  late TaskKind _kind = widget.initialRecurrence != null
+      ? TaskKind.habit
+      : widget.initialKind ?? TaskKind.habit;
+
+  /// Set once the user flips the toggle — a lens default resolved late
+  /// (the FAB's async lens pick) must not undo their choice.
+  bool _kindTouched = false;
   late Recurrence _recurrence =
       widget.initialRecurrence ?? Recurrence.daily(_today);
   WindowSelection _window = WindowSelection.anytime;
@@ -88,7 +103,8 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     super.initState();
     // Default bucket when none was preselected: the first lens of the view
     // the sheet was opened from — or, when that view has no lens yet, the
-    // first lens overall (a task must land somewhere visible).
+    // first lens overall (a task must land somewhere visible). Its default
+    // kind sets the toggle, unless a preset repeat rule already chose habit.
     if (_lensIds.isEmpty) {
       final repo = ref.read(viewRepositoryProvider);
       final viewId = widget.viewId;
@@ -103,7 +119,14 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
             ? lenses
             : await repo.watchAllLenses().first;
         if (mounted && _lensIds.isEmpty && pick.isNotEmpty) {
-          setState(() => _lensIds = {pick.first.id});
+          setState(() {
+            _lensIds = {pick.first.id};
+            if (!_kindTouched &&
+                widget.initialKind == null &&
+                widget.initialRecurrence == null) {
+              _kind = pick.first.defaultKind;
+            }
+          });
         }
       });
     }
@@ -138,7 +161,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     final notifications = _notifications;
     final noteText = _noteController.text.trim();
     final note = noteText.isEmpty ? null : noteText;
-    if (_kind == _Kind.habit) {
+    if (_kind == TaskKind.habit) {
       await repo.createTemplate(
         Template(
           name: name,
@@ -197,22 +220,25 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
               const SizedBox(height: 12),
               // The fork: a habit repeats and has an active window; a to-do
               // runs from its start to its due date.
-              SegmentedButton<_Kind>(
+              SegmentedButton<TaskKind>(
                 showSelectedIcon: false,
                 segments: [
                   ButtonSegment(
-                    value: _Kind.habit,
+                    value: TaskKind.habit,
                     icon: const Icon(Symbols.event_repeat_rounded),
                     label: Text(l10n.kindHabit),
                   ),
                   ButtonSegment(
-                    value: _Kind.todo,
+                    value: TaskKind.todo,
                     icon: const Icon(Symbols.check_circle_rounded),
                     label: Text(l10n.kindTodo),
                   ),
                 ],
                 selected: {_kind},
-                onSelectionChanged: (s) => setState(() => _kind = s.first),
+                onSelectionChanged: (s) => setState(() {
+                  _kind = s.first;
+                  _kindTouched = true;
+                }),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -280,7 +306,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 ],
               },
               const SizedBox(height: 8),
-              if (_kind == _Kind.habit) ...[
+              if (_kind == TaskKind.habit) ...[
                 const SizedBox(height: 12),
                 _SectionLabel(l10n.repeatSection),
                 const SizedBox(height: 10),
@@ -331,13 +357,13 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 // A habit's window always has both edges; a to-do's are its
                 // dates, and a preset without its edge can never fire.
                 hasStart:
-                    _kind == _Kind.habit ||
+                    _kind == TaskKind.habit ||
                     WindowSelection.anytime
                             .datedWindow(now, _startDate, _dueDate)
                             .$1 !=
                         null,
                 hasEnd:
-                    _kind == _Kind.habit ||
+                    _kind == TaskKind.habit ||
                     WindowSelection.anytime
                             .datedWindow(now, _startDate, _dueDate)
                             .$2 !=
@@ -345,7 +371,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                 // A series always has an occurrence day; a one-off needs a
                 // due (or start) date for day-based reminders.
                 hasDay:
-                    _kind == _Kind.habit ||
+                    _kind == TaskKind.habit ||
                     _dueDate != null ||
                     _startDate != null,
                 onChanged: (n) => setState(() => _notifications = n),

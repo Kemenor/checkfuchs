@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:checkfuchs/data/db/database.dart';
+import 'package:checkfuchs/domain/lens.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,7 +16,7 @@ void main() {
 
   test('a fresh database opens at the current schemaVersion', () async {
     await db.select(db.tasks).get(); // force the lazy open
-    expect(db.schemaVersion, 12);
+    expect(db.schemaVersion, 13);
   });
 
   test('PRAGMA foreign_keys is ON after open (beforeOpen ran)', () async {
@@ -74,7 +75,7 @@ void main() {
       expect(rows, hasLength(1));
       expect((rows.single.templateId, rows.single.lensId), (3, 7));
       final v = await v10.customSelect('PRAGMA user_version').getSingle();
-      expect(v.data.values.single, 12);
+      expect(v.data.values.single, 13);
     },
   );
 
@@ -111,6 +112,26 @@ void main() {
       expect(lenses.firstWhere((l) => l.id == 2).statusFilter, 8);
     },
   );
+
+  test('v12 → v13 gives every existing lens the habit default kind', () async {
+    final dir = await Directory.systemTemp.createTemp('checkfuchs-mig');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/v12.sqlite');
+    final v12 = AppDatabase(NativeDatabase(file));
+    await v12.select(v12.tasks).get();
+    await v12.customStatement('ALTER TABLE lenses DROP COLUMN default_kind');
+    await v12.customStatement(
+      "INSERT INTO lenses (id, name, show_count, ordering, selection) "
+      "VALUES (1, 'To-dos', -1, 0, 0)",
+    );
+    await v12.customStatement('PRAGMA user_version = 12');
+    await v12.close();
+
+    final v13 = AppDatabase(NativeDatabase(file));
+    addTearDown(v13.close);
+    final lens = await v13.select(v13.lenses).getSingle();
+    expect(lens.defaultKind, TaskKind.habit);
+  });
 
   test('migration heals a half-migrated database (stale user_version over '
       'current-shape tables — the wedged-dogfood regression)', () async {

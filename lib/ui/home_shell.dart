@@ -370,6 +370,7 @@ class _ViewBody extends ConsumerWidget {
                   ref,
                   viewId: viewId,
                   lensId: s.lens.id,
+                  initialKind: s.lens.defaultKind,
                 ),
               ),
           ],

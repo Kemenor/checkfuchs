@@ -376,5 +376,15 @@ void main() {
       entries = await viewRepo.watchViewLenses(home.id).first;
       expect(entries.single.statusFilter, 5);
     });
+
+    test('a lens defaults to habit and remembers a to-do default', () async {
+      final lensId = await viewRepo.seedDefaults();
+      Future<LensRow> read() async => (await viewRepo.watchAllLenses().first)
+          .singleWhere((l) => l.id == lensId);
+
+      expect((await read()).defaultKind, TaskKind.habit);
+      await viewRepo.setLensDefaultKind(lensId, TaskKind.todo);
+      expect((await read()).defaultKind, TaskKind.todo);
+    });
   });
 }

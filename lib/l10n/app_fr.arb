@@ -136,6 +136,7 @@
   "dormantOff": "Jamais",
   "dormantPeriods": "{count, plural, one{1 période sans activité} other{{count} périodes sans activité}}",
   "statusFilterLabel": "Afficher aussi",
+  "lensDefaultKindDial": "Type par défaut",
   "filterShowDone": "Terminées",
   "filterShowSkipped": "Ignorées",
   "filterShowMissed": "Manquées",

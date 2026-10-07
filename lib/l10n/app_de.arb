@@ -136,6 +136,7 @@
   "dormantOff": "Nie",
   "dormantPeriods": "{count, plural, one{1 Periode unberührt} other{{count} Perioden unberührt}}",
   "statusFilterLabel": "Zusätzlich anzeigen",
+  "lensDefaultKindDial": "Neue Aufgaben starten als",
   "filterShowDone": "Erledigt",
   "filterShowSkipped": "Übersprungen",
   "filterShowMissed": "Verpasst",

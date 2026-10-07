@@ -328,6 +328,12 @@ class ViewRepository {
         LensesCompanion(statusFilter: Value(filter)),
       );
 
+  /// Set what the create sheet starts on when opened from [lensId].
+  Future<void> setLensDefaultKind(int lensId, TaskKind kind) =>
+      (db.update(db.lenses)..where((x) => x.id.equals(lensId))).write(
+        LensesCompanion(defaultKind: Value(kind)),
+      );
+
   /// Watch a single View row (null once deleted).
   Stream<ViewRow?> watchView(int viewId) => (db.select(
     db.views,

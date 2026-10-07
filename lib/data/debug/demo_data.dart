@@ -85,6 +85,7 @@ Future<void> loadDemoData(
             ordering: LensOrdering.dueDate,
             selection: LensSelection.top,
             sortIndex: const Value(1),
+            defaultKind: const Value(TaskKind.todo),
           ),
         );
     final weeklyLens = await db

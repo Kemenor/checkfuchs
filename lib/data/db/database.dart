@@ -96,6 +96,10 @@ class Lenses extends Table {
   /// skipped(2), missed(4), and hide-upcoming(8). A property of the lens
   /// since v12 (was per view↔lens pair; that column is now a dead legacy).
   IntColumn get statusFilter => integer().withDefault(const Constant(0))();
+
+  /// What the create sheet starts on when opened from this lens's + (v13).
+  IntColumn get defaultKind =>
+      intEnum<TaskKind>().withDefault(const Constant(0))();
 }
 
 /// A View — the screen layer (§4.6). `icon` is a stable slug into the curated
@@ -200,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -312,6 +316,11 @@ class AppDatabase extends _$AppDatabase {
             'UPDATE lenses SET status_filter = $v WHERE id = $lid',
           );
         }
+      }
+      if (from < 13) {
+        // Per-lens default kind for the create sheet (habit = the old
+        // behaviour everywhere).
+        await _addColumnIfMissing(m, lenses, lenses.defaultKind);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete
