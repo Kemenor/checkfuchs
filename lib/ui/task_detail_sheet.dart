@@ -435,23 +435,40 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Same shape as the create sheet: kind → name/note → lenses →
-              // (repeat + window | starts/due) → reminders → save.
-              SegmentedButton<bool>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: true,
-                    icon: const Icon(Symbols.event_repeat_rounded),
-                    label: Text(l10n.kindHabit),
+              // (repeat + window | starts/due) → reminders → save. The sheet
+              // fills the screen, so it carries an explicit close — swiping
+              // the handle is not discoverable. Closing saves (dispose
+              // commits the text fields), like every other way out.
+              Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<bool>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: true,
+                          icon: const Icon(Symbols.event_repeat_rounded),
+                          label: Text(l10n.kindHabit),
+                        ),
+                        ButtonSegment(
+                          value: false,
+                          icon: const Icon(Symbols.check_circle_rounded),
+                          label: Text(l10n.kindTodo),
+                        ),
+                      ],
+                      selected: {recurring},
+                      onSelectionChanged: (s) => _setKind(s.first),
+                    ),
                   ),
-                  ButtonSegment(
-                    value: false,
-                    icon: const Icon(Symbols.check_circle_rounded),
-                    label: Text(l10n.kindTodo),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
+                    icon: const Icon(Symbols.close_rounded),
+                    onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ],
-                selected: {recurring},
-                onSelectionChanged: (s) => _setKind(s.first),
               ),
               const SizedBox(height: 8),
               TextField(

@@ -532,15 +532,14 @@ class ViewRepository {
         return t.resolvedAt != null && !t.resolvedAt!.isBefore(dayStart);
       }
 
-      final projected = projectLens(lens, ms, now);
-      final projectedIds = {for (final x in projected) x.id};
-      // Per-view "only what needs doing now": drop upcoming instances.
-      final visible = filter & _hideUpcoming != 0
-          ? [
-              for (final x in projected)
-                if (domain.phaseOf(x, now) != domain.TaskPhase.pending) x,
-            ]
-          : projected;
+      // "Only what needs doing now": upcoming instances never take a slot.
+      final visible = projectLens(
+        lens,
+        ms,
+        now,
+        hideUpcoming: filter & _hideUpcoming != 0,
+      );
+      final projectedIds = {for (final x in visible) x.id};
       final terminals = <domain.Task>[];
       final hiddenTerminals = <domain.Task>[];
       for (final m in ms) {

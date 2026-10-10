@@ -216,7 +216,23 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.newTask, style: Theme.of(context).textTheme.titleLarge),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.newTask,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
+                    icon: const Icon(Symbols.close_rounded),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               // The fork: a habit repeats and has an active window; a to-do
               // runs from its start to its due date.

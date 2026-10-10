@@ -50,11 +50,17 @@ bool isDormant(LensMember m, Lens lens, DateTime now) {
 /// [randomSeed] pins `LensSelection.random`; when null the seed derives from
 /// the current period (periodic) or the civil day (continuous), so the pick
 /// rotates on rollover instead of being frozen forever.
+///
+/// [hideUpcoming] (the lens's "Upcoming" chip off) drops pending members
+/// *before* the slots are filled — filtering after the draw let upcoming
+/// instances win every slot of a capped lens and then vanish, leaving the
+/// card empty with an open task behind it.
 List<Task> projectLens(
   Lens lens,
   List<LensMember> members,
   DateTime now, {
   int? randomSeed,
+  bool hideUpcoming = false,
 }) {
   final ps = lens.isPeriodic ? periodStart(lens.period!, now) : null;
 
@@ -74,7 +80,10 @@ List<Task> projectLens(
   var candidates = members
       .where(
         (m) =>
-            m.task.isOpen && !isDormant(m, lens, now) && !passedThisPeriod(m),
+            m.task.isOpen &&
+            !isDormant(m, lens, now) &&
+            !passedThisPeriod(m) &&
+            !(hideUpcoming && phaseOf(m.task, now) == TaskPhase.pending),
       )
       .toList();
 

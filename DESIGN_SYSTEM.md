@@ -99,6 +99,9 @@ screens use them.
 
 ### 3.4 Detail sheet → `examples/ui/05-task-detail.html`
 - Bottom sheet (Fuchsbau pattern): `xl`(28) top, drag handle, `isScrollControlled`.
+- **A close ✕ at the top right** (beside the kind toggle; beside the title on the
+  create sheet). These sheets fill the screen, so swiping the handle isn't a
+  discoverable way out. On the detail sheet closing saves, like every exit.
 - Order, matching the create sheet: **kind toggle → name + note → status block →
   stats/history → lenses → scheduling → reminders → delete**.
 - The **status block** is the sheet's first answer: one line saying what state the

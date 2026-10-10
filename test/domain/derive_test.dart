@@ -155,6 +155,37 @@ void main() {
     expect(a, b); // same seed → same pick
   });
 
+  test('hideUpcoming: upcoming members never take a capped slot', () {
+    // The phone case: 3 random slots, 5 upcoming weeklies + 1 open one. The
+    // upcoming ones used to win the draw and then get filtered out → empty.
+    Task upcoming(int id) => Task(
+      id: id,
+      name: 'u$id',
+      start: d(2026, 6, 29),
+      createdAt: d(2026, 6, 1),
+    );
+    const lens = Lens(
+      name: 'weekly',
+      showCount: 3,
+      ordering: LensOrdering.automatic,
+      selection: LensSelection.random,
+    );
+    final members = [
+      for (var i = 1; i <= 5; i++) mem(upcoming(i)),
+      mem(task(6, end: d(2026, 6, 28))), // open, due tomorrow
+    ];
+    for (var seed = 0; seed < 20; seed++) {
+      expect(
+        ids(
+          projectLens(lens, members, now, randomSeed: seed, hideUpcoming: true),
+        ),
+        [6],
+      );
+    }
+    // Without the flag upcoming members still compete for the slots.
+    expect(projectLens(lens, members, now, randomSeed: 1), hasLength(3));
+  });
+
   group('periodic hold-till-rollover (§4.3)', () {
     // Weekly period anchored Monday 06-01 → the period at `now` (06-27) runs
     // 06-22 .. 06-29.
