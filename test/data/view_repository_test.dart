@@ -57,6 +57,30 @@ void main() {
     expect(state!.sections, hasLength(1));
     expect(state.sections.single.shown.map((t) => t.name), ['Brush teeth']);
     expect(state.sections.single.openCount, 1);
+    expect(state.sections.single.upcomingCount, 0);
+  });
+
+  test('a not-yet-open instance counts as upcoming, not open', () async {
+    await viewRepo.seedDefaults();
+    await taskRepo.createTemplate(
+      Template(
+        name: 'Brush teeth',
+        recurrence: Recurrence.daily(d(2026, 6, 27)),
+        windowRule: Slice.morning,
+        createdAt: d(2026, 6, 27),
+      ),
+    );
+    await taskRepo.reconcileAll(d(2026, 6, 27, 5)); // before the morning slot
+
+    final home = (await viewRepo.watchViews().first).single;
+    final section =
+        (await viewRepo
+                .watchViewState(home.id, FixedClock(d(2026, 6, 27, 5)))
+                .first)!
+            .sections
+            .single;
+    expect(section.openCount, 0);
+    expect(section.upcomingCount, 1);
   });
 
   test('completing a task updates the open/done counts', () async {

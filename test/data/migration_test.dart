@@ -16,7 +16,7 @@ void main() {
 
   test('a fresh database opens at the current schemaVersion', () async {
     await db.select(db.tasks).get(); // force the lazy open
-    expect(db.schemaVersion, 13);
+    expect(db.schemaVersion, 14);
   });
 
   test('PRAGMA foreign_keys is ON after open (beforeOpen ran)', () async {
@@ -75,7 +75,7 @@ void main() {
       expect(rows, hasLength(1));
       expect((rows.single.templateId, rows.single.lensId), (3, 7));
       final v = await v10.customSelect('PRAGMA user_version').getSingle();
-      expect(v.data.values.single, 13);
+      expect(v.data.values.single, 14);
     },
   );
 
@@ -131,6 +131,25 @@ void main() {
     addTearDown(v13.close);
     final lens = await v13.select(v13.lenses).getSingle();
     expect(lens.defaultKind, TaskKind.habit);
+  });
+
+  test('v13 → v14 shows all three header counts on existing lenses', () async {
+    final dir = await Directory.systemTemp.createTemp('checkfuchs-mig');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/v13.sqlite');
+    final v13 = AppDatabase(NativeDatabase(file));
+    await v13.select(v13.tasks).get();
+    await v13.customStatement('ALTER TABLE lenses DROP COLUMN header_counts');
+    await v13.customStatement(
+      "INSERT INTO lenses (id, name, show_count, ordering, selection) "
+      "VALUES (1, 'Weekly', 3, 2, 1)",
+    );
+    await v13.customStatement('PRAGMA user_version = 13');
+    await v13.close();
+
+    final v14 = AppDatabase(NativeDatabase(file));
+    addTearDown(v14.close);
+    expect((await v14.select(v14.lenses).getSingle()).headerCounts, 7);
   });
 
   test('migration heals a half-migrated database (stale user_version over '

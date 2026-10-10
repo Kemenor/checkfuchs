@@ -22,6 +22,7 @@ class LensSection {
     required this.doneCount,
     required this.missedCount,
     required this.openCount,
+    required this.upcomingCount,
     required this.avoidedTemplateIds,
   });
 
@@ -36,7 +37,12 @@ class LensSection {
 
   final int doneCount;
   final int missedCount;
+
+  /// Unfinished and actionable now (active or overdue).
   final int openCount;
+
+  /// Unfinished but not open yet (window still ahead).
+  final int upcomingCount;
 
   /// Templates past the consecutive-miss avoidance threshold (§8) — their open
   /// instance renders in soft amber. Information, never a forced action.
@@ -328,6 +334,13 @@ class ViewRepository {
         LensesCompanion(statusFilter: Value(filter)),
       );
 
+  /// Set which counts [lensId]'s card header shows (bitmask: done=1 —
+  /// missed rides along — open=2, upcoming=4).
+  Future<void> setLensHeaderCounts(int lensId, int mask) =>
+      (db.update(db.lenses)..where((x) => x.id.equals(lensId))).write(
+        LensesCompanion(headerCounts: Value(mask)),
+      );
+
   /// Set what the create sheet starts on when opened from [lensId].
   Future<void> setLensDefaultKind(int lensId, TaskKind kind) =>
       (db.update(db.lenses)..where((x) => x.id.equals(lensId))).write(
@@ -585,7 +598,20 @@ class ViewRepository {
                     isCurrentTerminal(m.task),
               )
               .length,
-          openCount: ms.where((m) => m.task.isOpen).length,
+          openCount: ms
+              .where(
+                (m) =>
+                    m.task.isOpen &&
+                    domain.phaseOf(m.task, now) != domain.TaskPhase.pending,
+              )
+              .length,
+          upcomingCount: ms
+              .where(
+                (m) =>
+                    m.task.isOpen &&
+                    domain.phaseOf(m.task, now) == domain.TaskPhase.pending,
+              )
+              .length,
           avoidedTemplateIds: avoided,
         ),
       );

@@ -62,7 +62,7 @@
   },
   "allDone": "all done",
   "@allDone": {
-    "description": "Lens-card breakdown when no open/done/missed counts remain."
+    "description": "Lens-card breakdown when nothing is open or upcoming and no shown count remains."
   },
   "countDone": "{count, plural, one{1 done} other{{count} done}}",
   "@countDone": {
@@ -82,14 +82,15 @@
       }
     }
   },
-  "countLeft": "{count, plural, one{1 left} other{{count} left}}",
-  "@countLeft": {
-    "description": "Lens-card breakdown segment: tasks still open.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
+  "countOpen": "{count, plural, one{1 open} other{{count} open}}",
+  "@countOpen": {
+    "description": "Lens-card breakdown segment: unfinished tasks open right now (active or overdue).",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "countUpcoming": "{count, plural, one{1 upcoming} other{{count} upcoming}}",
+  "@countUpcoming": {
+    "description": "Lens-card breakdown segment: unfinished tasks whose window has not opened yet.",
+    "placeholders": { "count": { "type": "int" } }
   },
   "newTask": "New task",
   "@newTask": {
@@ -646,6 +647,10 @@
   "statusFilterLabel": "Also show",
   "@statusFilterLabel": {
     "description": "Label above the terminal-status filter chips (which resolved tasks to also show)."
+  },
+  "headerCountsLabel": "Summary shows",
+  "@headerCountsLabel": {
+    "description": "Lens editor: label above the chips choosing which counts the lens card header shows (Done/Open/Upcoming)."
   },
   "lensDefaultKindDial": "New tasks start as",
   "@lensDefaultKindDial": {

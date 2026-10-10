@@ -452,6 +452,11 @@ class _LensDialsCard extends ConsumerWidget {
           filter: lens.statusFilter,
           onChanged: (f) => repo.setLensStatusFilter(lens.id, f),
         ),
+        _HeaderCountsRow(
+          key: ValueKey('header-counts-${lens.id}'),
+          mask: lens.headerCounts,
+          onChanged: (m) => repo.setLensHeaderCounts(lens.id, m),
+        ),
         // What this lens's + starts the create sheet on.
         FuchsbauChoicePicker<TaskKind>(
           key: ValueKey('default-kind-${lens.id}'),
@@ -578,6 +583,57 @@ class _StatusFilterRow extends StatelessWidget {
               chip(l10n.filterShowSkipped, _showSkipped),
               chip(l10n.filterShowMissed, _showMissed),
               invertedChip(l10n.filterShowUpcoming, _hideUpcoming),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Which counts the lens card's header shows: Done (with missed) · Open ·
+/// Upcoming, one bit each (lenses.header_counts), all on by default.
+class _HeaderCountsRow extends StatelessWidget {
+  const _HeaderCountsRow({
+    super.key,
+    required this.mask,
+    required this.onChanged,
+  });
+
+  final int mask;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget chip(String label, int bit) => FilterChip(
+      label: Text(label),
+      selected: mask & bit != 0,
+      onSelected: (on) => onChanged(on ? mask | bit : mask & ~bit),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.headerCountsLabel,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: scheme.outline,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              chip(l10n.filterShowDone, 1),
+              chip(l10n.openSection, 2),
+              chip(l10n.filterShowUpcoming, 4),
             ],
           ),
         ],

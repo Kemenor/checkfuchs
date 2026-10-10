@@ -114,6 +114,18 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
         requiredDuringInsert: false,
         defaultValue: const Constant(0),
       ).withConverter<TaskKind>($LensesTable.$converterdefaultKind);
+  static const VerificationMeta _headerCountsMeta = const VerificationMeta(
+    'headerCounts',
+  );
+  @override
+  late final GeneratedColumn<int> headerCounts = GeneratedColumn<int>(
+    'header_counts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(7),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -126,6 +138,7 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
     sortIndex,
     statusFilter,
     defaultKind,
+    headerCounts,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -177,6 +190,15 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
         statusFilter.isAcceptableOrUnknown(
           data['status_filter']!,
           _statusFilterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('header_counts')) {
+      context.handle(
+        _headerCountsMeta,
+        headerCounts.isAcceptableOrUnknown(
+          data['header_counts']!,
+          _headerCountsMeta,
         ),
       );
     }
@@ -237,6 +259,10 @@ class $LensesTable extends Lenses with TableInfo<$LensesTable, LensRow> {
           data['${effectivePrefix}default_kind'],
         )!,
       ),
+      headerCounts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}header_counts'],
+      )!,
     );
   }
 
@@ -274,6 +300,10 @@ class LensRow extends DataClass implements Insertable<LensRow> {
 
   /// What the create sheet starts on when opened from this lens's + (v13).
   final TaskKind defaultKind;
+
+  /// Which counts the card header shows — bits done(1, with missed),
+  /// open(2), upcoming(4); 7 = all three (v14).
+  final int headerCounts;
   const LensRow({
     required this.id,
     required this.name,
@@ -285,6 +315,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     required this.sortIndex,
     required this.statusFilter,
     required this.defaultKind,
+    required this.headerCounts,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -317,6 +348,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
         $LensesTable.$converterdefaultKind.toSql(defaultKind),
       );
     }
+    map['header_counts'] = Variable<int>(headerCounts);
     return map;
   }
 
@@ -336,6 +368,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       sortIndex: Value(sortIndex),
       statusFilter: Value(statusFilter),
       defaultKind: Value(defaultKind),
+      headerCounts: Value(headerCounts),
     );
   }
 
@@ -361,6 +394,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       defaultKind: $LensesTable.$converterdefaultKind.fromJson(
         serializer.fromJson<int>(json['defaultKind']),
       ),
+      headerCounts: serializer.fromJson<int>(json['headerCounts']),
     );
   }
   @override
@@ -383,6 +417,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       'defaultKind': serializer.toJson<int>(
         $LensesTable.$converterdefaultKind.toJson(defaultKind),
       ),
+      'headerCounts': serializer.toJson<int>(headerCounts),
     };
   }
 
@@ -397,6 +432,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     int? sortIndex,
     int? statusFilter,
     TaskKind? defaultKind,
+    int? headerCounts,
   }) => LensRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -408,6 +444,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     sortIndex: sortIndex ?? this.sortIndex,
     statusFilter: statusFilter ?? this.statusFilter,
     defaultKind: defaultKind ?? this.defaultKind,
+    headerCounts: headerCounts ?? this.headerCounts,
   );
   LensRow copyWithCompanion(LensesCompanion data) {
     return LensRow(
@@ -427,6 +464,9 @@ class LensRow extends DataClass implements Insertable<LensRow> {
       defaultKind: data.defaultKind.present
           ? data.defaultKind.value
           : this.defaultKind,
+      headerCounts: data.headerCounts.present
+          ? data.headerCounts.value
+          : this.headerCounts,
     );
   }
 
@@ -442,7 +482,8 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           ..write('dormantAfter: $dormantAfter, ')
           ..write('sortIndex: $sortIndex, ')
           ..write('statusFilter: $statusFilter, ')
-          ..write('defaultKind: $defaultKind')
+          ..write('defaultKind: $defaultKind, ')
+          ..write('headerCounts: $headerCounts')
           ..write(')'))
         .toString();
   }
@@ -459,6 +500,7 @@ class LensRow extends DataClass implements Insertable<LensRow> {
     sortIndex,
     statusFilter,
     defaultKind,
+    headerCounts,
   );
   @override
   bool operator ==(Object other) =>
@@ -473,7 +515,8 @@ class LensRow extends DataClass implements Insertable<LensRow> {
           other.dormantAfter == this.dormantAfter &&
           other.sortIndex == this.sortIndex &&
           other.statusFilter == this.statusFilter &&
-          other.defaultKind == this.defaultKind);
+          other.defaultKind == this.defaultKind &&
+          other.headerCounts == this.headerCounts);
 }
 
 class LensesCompanion extends UpdateCompanion<LensRow> {
@@ -487,6 +530,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
   final Value<int> sortIndex;
   final Value<int> statusFilter;
   final Value<TaskKind> defaultKind;
+  final Value<int> headerCounts;
   const LensesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -498,6 +542,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     this.sortIndex = const Value.absent(),
     this.statusFilter = const Value.absent(),
     this.defaultKind = const Value.absent(),
+    this.headerCounts = const Value.absent(),
   });
   LensesCompanion.insert({
     this.id = const Value.absent(),
@@ -510,6 +555,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     this.sortIndex = const Value.absent(),
     this.statusFilter = const Value.absent(),
     this.defaultKind = const Value.absent(),
+    this.headerCounts = const Value.absent(),
   }) : name = Value(name),
        ordering = Value(ordering),
        selection = Value(selection);
@@ -524,6 +570,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     Expression<int>? sortIndex,
     Expression<int>? statusFilter,
     Expression<int>? defaultKind,
+    Expression<int>? headerCounts,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -536,6 +583,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
       if (sortIndex != null) 'sort_index': sortIndex,
       if (statusFilter != null) 'status_filter': statusFilter,
       if (defaultKind != null) 'default_kind': defaultKind,
+      if (headerCounts != null) 'header_counts': headerCounts,
     });
   }
 
@@ -550,6 +598,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
     Value<int>? sortIndex,
     Value<int>? statusFilter,
     Value<TaskKind>? defaultKind,
+    Value<int>? headerCounts,
   }) {
     return LensesCompanion(
       id: id ?? this.id,
@@ -562,6 +611,7 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
       sortIndex: sortIndex ?? this.sortIndex,
       statusFilter: statusFilter ?? this.statusFilter,
       defaultKind: defaultKind ?? this.defaultKind,
+      headerCounts: headerCounts ?? this.headerCounts,
     );
   }
 
@@ -606,6 +656,9 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
         $LensesTable.$converterdefaultKind.toSql(defaultKind.value),
       );
     }
+    if (headerCounts.present) {
+      map['header_counts'] = Variable<int>(headerCounts.value);
+    }
     return map;
   }
 
@@ -621,7 +674,8 @@ class LensesCompanion extends UpdateCompanion<LensRow> {
           ..write('dormantAfter: $dormantAfter, ')
           ..write('sortIndex: $sortIndex, ')
           ..write('statusFilter: $statusFilter, ')
-          ..write('defaultKind: $defaultKind')
+          ..write('defaultKind: $defaultKind, ')
+          ..write('headerCounts: $headerCounts')
           ..write(')'))
         .toString();
   }
@@ -4039,6 +4093,7 @@ typedef $$LensesTableCreateCompanionBuilder =
       Value<int> sortIndex,
       Value<int> statusFilter,
       Value<TaskKind> defaultKind,
+      Value<int> headerCounts,
     });
 typedef $$LensesTableUpdateCompanionBuilder =
     LensesCompanion Function({
@@ -4052,6 +4107,7 @@ typedef $$LensesTableUpdateCompanionBuilder =
       Value<int> sortIndex,
       Value<int> statusFilter,
       Value<TaskKind> defaultKind,
+      Value<int> headerCounts,
     });
 
 final class $$LensesTableReferences
@@ -4193,6 +4249,11 @@ class $$LensesTableFilterComposer
         column: $table.defaultKind,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnFilters<int> get headerCounts => $composableBuilder(
+    column: $table.headerCounts,
+    builder: (column) => ColumnFilters(column),
+  );
 
   Expression<bool> templatesRefs(
     Expression<bool> Function($$TemplatesTableFilterComposer f) f,
@@ -4353,6 +4414,11 @@ class $$LensesTableOrderingComposer
     column: $table.defaultKind,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get headerCounts => $composableBuilder(
+    column: $table.headerCounts,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LensesTableAnnotationComposer
@@ -4400,6 +4466,11 @@ class $$LensesTableAnnotationComposer
         column: $table.defaultKind,
         builder: (column) => column,
       );
+
+  GeneratedColumn<int> get headerCounts => $composableBuilder(
+    column: $table.headerCounts,
+    builder: (column) => column,
+  );
 
   Expression<T> templatesRefs<T extends Object>(
     Expression<T> Function($$TemplatesTableAnnotationComposer a) f,
@@ -4545,6 +4616,7 @@ class $$LensesTableTableManager
                 Value<int> sortIndex = const Value.absent(),
                 Value<int> statusFilter = const Value.absent(),
                 Value<TaskKind> defaultKind = const Value.absent(),
+                Value<int> headerCounts = const Value.absent(),
               }) => LensesCompanion(
                 id: id,
                 name: name,
@@ -4556,6 +4628,7 @@ class $$LensesTableTableManager
                 sortIndex: sortIndex,
                 statusFilter: statusFilter,
                 defaultKind: defaultKind,
+                headerCounts: headerCounts,
               ),
           createCompanionCallback:
               ({
@@ -4569,6 +4642,7 @@ class $$LensesTableTableManager
                 Value<int> sortIndex = const Value.absent(),
                 Value<int> statusFilter = const Value.absent(),
                 Value<TaskKind> defaultKind = const Value.absent(),
+                Value<int> headerCounts = const Value.absent(),
               }) => LensesCompanion.insert(
                 id: id,
                 name: name,
@@ -4580,6 +4654,7 @@ class $$LensesTableTableManager
                 sortIndex: sortIndex,
                 statusFilter: statusFilter,
                 defaultKind: defaultKind,
+                headerCounts: headerCounts,
               ),
           withReferenceMapper: (p0) => p0
               .map(

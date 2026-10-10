@@ -438,7 +438,9 @@ class _LensCardState extends State<_LensCard> {
                     _Breakdown(
                       done: section.doneCount,
                       missed: section.missedCount,
-                      left: section.openCount,
+                      open: section.openCount,
+                      upcoming: section.upcomingCount,
+                      mask: section.lens.headerCounts,
                     ),
                     const SizedBox(width: 2),
                     Icon(
@@ -483,18 +485,27 @@ class _LensCardState extends State<_LensCard> {
   }
 }
 
-/// The text-breakdown header (DESIGN_SYSTEM §3.2): "1 done · 1 missed · 2 left",
-/// zero parts omitted, the `missed` segment in taupe.
+/// Header-count bits (lenses.header_counts).
+const _countDone = 1, _countOpen = 2, _countUpcoming = 4;
+
+/// The text-breakdown header (DESIGN_SYSTEM §3.2):
+/// "1 done · 1 missed · 2 open · 5 upcoming", zero parts omitted, `missed` in
+/// taupe, `upcoming` faded (context, not work). [mask] is the lens's choice
+/// of parts; "all done" only when nothing is open or upcoming at all.
 class _Breakdown extends StatelessWidget {
   const _Breakdown({
     required this.done,
     required this.missed,
-    required this.left,
+    required this.open,
+    required this.upcoming,
+    required this.mask,
   });
 
   final int done;
   final int missed;
-  final int left;
+  final int open;
+  final int upcoming;
+  final int mask;
 
   @override
   Widget build(BuildContext context) {
@@ -507,16 +518,27 @@ class _Breakdown extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
 
+    final showDone = mask & _countDone != 0;
     final parts = <TextSpan>[
-      if (done > 0) TextSpan(text: l10n.countDone(done)),
-      if (missed > 0)
+      if (showDone && done > 0) TextSpan(text: l10n.countDone(done)),
+      if (showDone && missed > 0)
         TextSpan(
           text: l10n.countMissed(missed),
           style: TextStyle(color: taupe),
         ),
-      if (left > 0) TextSpan(text: l10n.countLeft(left)),
+      if (mask & _countOpen != 0 && open > 0)
+        TextSpan(text: l10n.countOpen(open)),
+      if (mask & _countUpcoming != 0 && upcoming > 0)
+        TextSpan(
+          text: l10n.countUpcoming(upcoming),
+          style: TextStyle(color: scheme.outline.withValues(alpha: .6)),
+        ),
     ];
-    if (parts.isEmpty) return Text(l10n.allDone, style: base);
+    if (parts.isEmpty) {
+      return mask == 0 || open + upcoming > 0
+          ? const SizedBox.shrink()
+          : Text(l10n.allDone, style: base);
+    }
     return Text.rich(
       TextSpan(
         style: base,

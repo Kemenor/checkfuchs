@@ -64,7 +64,11 @@ screens use them.
 
 ### 3.2 Lens card → `examples/ui/04-lens-view.html`
 - A `lg`(20) card. Header = lens name + the **text-breakdown summary**
-  ("1 done · 1 missed · 1 left", `missed` in taupe, zero parts omitted). Header counts
+  ("1 done · 1 missed · 2 open · 5 upcoming", `missed` in taupe, `upcoming` faded —
+  context, not work — zero parts omitted). **open** = actionable now (active or
+  overdue), **upcoming** = window not open yet — the same words as the drill-in's
+  sections; never a lumped "left". Each lens chooses its parts (*Summary shows*:
+  Done — with missed — · Open · Upcoming, all on by default). Header counts
   and the `statusFilter` rows cover the lens's **current outcomes only** — a terminal
   instance is shown while it is its habit's latest non-future slot (a completed daily
   shows ✓ until tomorrow's slot arrives, a weekly all week; resolved one-offs for the

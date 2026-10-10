@@ -100,6 +100,10 @@ class Lenses extends Table {
   /// What the create sheet starts on when opened from this lens's + (v13).
   IntColumn get defaultKind =>
       intEnum<TaskKind>().withDefault(const Constant(0))();
+
+  /// Which counts the card header shows — bits done(1, with missed),
+  /// open(2), upcoming(4); 7 = all three (v14).
+  IntColumn get headerCounts => integer().withDefault(const Constant(7))();
 }
 
 /// A View — the screen layer (§4.6). `icon` is a stable slug into the curated
@@ -204,7 +208,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -321,6 +325,11 @@ class AppDatabase extends _$AppDatabase {
         // Per-lens default kind for the create sheet (habit = the old
         // behaviour everywhere).
         await _addColumnIfMissing(m, lenses, lenses.defaultKind);
+      }
+      if (from < 14) {
+        // Per-lens choice of header counts (all three = the old "left" split
+        // into open + upcoming).
+        await _addColumnIfMissing(m, lenses, lenses.headerCounts);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete
