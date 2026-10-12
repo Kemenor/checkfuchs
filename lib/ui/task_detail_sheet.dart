@@ -592,7 +592,11 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      l10n.dayStreak(_stats!.currentStreak),
+                      localizedStreak(
+                        l10n,
+                        _stats!.currentStreak,
+                        _templateRecurrence,
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 14),

@@ -137,6 +137,42 @@
       }
     }
   },
+  "weekStreak": "{count, plural, one{1 week in a row} other{{count} weeks in a row}}",
+  "@weekStreak": {
+    "description": "Current streak of a weekly habit (met weeks in a row), detail sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthStreak": "{count, plural, one{1 month in a row} other{{count} months in a row}}",
+  "@monthStreak": {
+    "description": "Current streak of a monthly habit, detail sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearStreak": "{count, plural, one{1 year in a row} other{{count} years in a row}}",
+  "@yearStreak": {
+    "description": "Current streak of a yearly habit, detail sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cycleStreak": "{count, plural, one{1 in a row} other{{count} in a row}}",
+  "@cycleStreak": {
+    "description": "Current streak of an every-N habit (every 2 weeks …), counted in its cycles.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "percentDone": "{percent}% done",
   "@percentDone": {
     "description": "Habit completion rate in the task detail sheet.",
@@ -1408,9 +1444,9 @@
   "@statsDoneRate30": {
     "description": "Stats: statsDoneRate30"
   },
-  "statsWeekBreakdown": "{done} done · {skipped} skipped · {missed} missed of {total} windows this week",
+  "statsWeekBreakdown": "{done} done · {skipped} skipped · {missed} missed this week",
   "@statsWeekBreakdown": {
-    "description": "Stats: statsWeekBreakdown",
+    "description": "Stats: the last 7 days in units — done and missed count check-ins (a counter's 1 of 2 is 1 done + 1 missed), skipped counts cycles.",
     "placeholders": {
       "done": {
         "type": "int"
@@ -1420,15 +1456,32 @@
       },
       "missed": {
         "type": "int"
-      },
-      "total": {
-        "type": "int"
       }
     }
   },
   "statsStreakDays": "{count, plural, =1{day · best {best}} other{days · best {best}}}",
   "@statsStreakDays": {
     "description": "Streaks row: the unit plus the personal best",
+    "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
+  },
+  "statsStreakWeeks": "{count, plural, =1{week · best {best}} other{weeks · best {best}}}",
+  "@statsStreakWeeks": {
+    "description": "Streaks row for a weekly habit: the unit plus the personal best",
+    "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
+  },
+  "statsStreakMonths": "{count, plural, =1{month · best {best}} other{months · best {best}}}",
+  "@statsStreakMonths": {
+    "description": "Streaks row for a monthly habit",
+    "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
+  },
+  "statsStreakYears": "{count, plural, =1{year · best {best}} other{years · best {best}}}",
+  "@statsStreakYears": {
+    "description": "Streaks row for a yearly habit",
+    "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
+  },
+  "statsStreakCycles": "{count, plural, =1{in a row · best {best}} other{in a row · best {best}}}",
+  "@statsStreakCycles": {
+    "description": "Streaks row for an every-N habit (every 2 weeks …), counted in its cycles",
     "placeholders": {"count": {"type": "int"}, "best": {"type": "int"}}
   },
   "statsLegendDone": "Done",

@@ -4,8 +4,11 @@
 ///
 /// Conventions follow [computeStats] (concept §8): **Skip is neutral** — a
 /// done-rate is `done / (done + missed)`; a skipped day neither helps nor
-/// hurts. Every day-keyed number uses the instance's occurrence day (falling
-/// back to resolvedAt, then createdAt).
+/// hurts. Done and missed are **check-in units** (§3.7, §8): each check-in is
+/// a done placed on *its own day* (a Done from before check-ins sits on its
+/// occurrence day), each check-in a closed cycle fell short is a missed. Every
+/// other day-keyed number uses the instance's occurrence day (falling back to
+/// resolvedAt, then createdAt).
 library;
 
 import 'analytics.dart';
@@ -138,6 +141,14 @@ int _dayIndex(DateTime day, DateTime from) => DateTime.utc(
   day.day,
 ).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
 
+/// The days [t]'s done units land on: one per check-in, or — a Done from
+/// before check-ins existed — its own day.
+Iterable<DateTime> _doneDays(Task t) => t.checkIns.isNotEmpty
+    ? t.checkIns.map(_midnight)
+    : t.status == TaskStatus.done
+    ? [_dayOf(t)]
+    : const [];
+
 DayMark _mark(Task t) => switch (t.status) {
   TaskStatus.done => DayMark.done,
   TaskStatus.skipped => DayMark.skipped,
@@ -201,25 +212,20 @@ StatsSummary computeStatsSummary(
     ..sort((a, b) => templateNames[a]!.compareTo(templateNames[b]!));
 
   // --- completion 7 / 30 ---------------------------------------------------
+  // Done units on their check-in days (a running cycle's count already);
+  // skipped cycles and missed units on the instance's day.
   var done7 = 0, skipped7 = 0, missed7 = 0, done30 = 0, missed30 = 0;
   for (final t in habits) {
-    if (!t.isTerminal) continue;
-    final day = _dayOf(t);
-    if (!day.isBefore(from30)) {
-      if (t.status == TaskStatus.done) done30++;
-      if (t.status == TaskStatus.missed) missed30++;
+    for (final day in _doneDays(t)) {
+      if (day.isAfter(today)) continue;
+      if (!day.isBefore(from30)) done30++;
+      if (!day.isBefore(from7)) done7++;
     }
+    final day = _dayOf(t);
+    if (!day.isBefore(from30)) missed30 += t.missedUnits;
     if (!day.isBefore(from7)) {
-      switch (t.status) {
-        case TaskStatus.done:
-          done7++;
-        case TaskStatus.skipped:
-          skipped7++;
-        case TaskStatus.missed:
-          missed7++;
-        case TaskStatus.open:
-          break;
-      }
+      missed7 += t.missedUnits;
+      if (t.status == TaskStatus.skipped) skipped7++;
     }
   }
 
@@ -232,14 +238,22 @@ StatsSummary computeStatsSummary(
     final instances = byTemplate[id]!;
     final days7 = List.filled(7, DayMark.none);
     final days30 = List.filled(30, DayMark.none);
-    for (final t in instances) {
-      final m = _mark(t);
-      final i7 = _dayIndex(_dayOf(t), from7);
+    void put(DateTime day, DayMark m) {
+      final i7 = _dayIndex(day, from7);
       if (i7 >= 0 && i7 < 7 && _rank(m) > _rank(days7[i7])) days7[i7] = m;
-      final i30 = _dayIndex(_dayOf(t), from30);
+      final i30 = _dayIndex(day, from30);
       if (i30 >= 0 && i30 < 30 && _rank(m) > _rank(days30[i30])) {
         days30[i30] = m;
       }
+    }
+
+    for (final t in instances) {
+      // Each check-in marks its own day done (the gym days show where they
+      // happened); the instance's own state sits on its day as before.
+      for (final day in _doneDays(t)) {
+        put(day, DayMark.done);
+      }
+      if (t.status != TaskStatus.done) put(_dayOf(t), _mark(t));
     }
     final wDone = days7.where((m) => m == DayMark.done).length;
     final wResolved = days7
@@ -260,21 +274,22 @@ StatsSummary computeStatsSummary(
     heat.add(HabitHeat(templateId: id, name: name, days: days30));
 
     final stats = computeStats(instances);
-    // Best run ever: consecutive done, skips neutral, misses break.
+    // Best run ever: consecutive met cycles (Done, or a running counter
+    // already met), skips neutral, misses break.
     final chronological = [
       for (final t in instances)
-        if (t.isTerminal) t,
+        if (t.isTerminal || t.isMet) t,
     ]..sort((a, b) => _dayOf(a).compareTo(_dayOf(b)));
     var run = 0, best = 0;
     for (final t in chronological) {
       switch (t.status) {
         case TaskStatus.done:
+        case TaskStatus.open: // only met ones are here
           run++;
           if (run > best) best = run;
         case TaskStatus.missed:
           run = 0;
         case TaskStatus.skipped:
-        case TaskStatus.open:
           break;
       }
     }
@@ -294,15 +309,13 @@ StatsSummary computeStatsSummary(
   final wMissed = <StatsWindow, int>{};
   final missesByWeekday = List.filled(7, 0);
   for (final t in habits) {
-    if (!t.isTerminal || _dayOf(t).isBefore(from30)) continue;
+    if (_dayOf(t).isBefore(from30)) continue;
     final w = windowOf(t);
     if (w != null) {
-      if (t.status == TaskStatus.done) wDone[w] = (wDone[w] ?? 0) + 1;
-      if (t.status == TaskStatus.missed) wMissed[w] = (wMissed[w] ?? 0) + 1;
+      wDone[w] = (wDone[w] ?? 0) + t.doneUnits;
+      wMissed[w] = (wMissed[w] ?? 0) + t.missedUnits;
     }
-    if (t.status == TaskStatus.missed) {
-      missesByWeekday[_dayOf(t).weekday - 1]++;
-    }
+    missesByWeekday[_dayOf(t).weekday - 1] += t.missedUnits;
   }
   final byWindow = {
     for (final w in StatsWindow.values)
@@ -329,8 +342,10 @@ StatsSummary computeStatsSummary(
   } else {
     final doneByWeekday = List.filled(7, 0);
     for (final t in habits) {
-      if (t.status == TaskStatus.done && !_dayOf(t).isBefore(from30)) {
-        doneByWeekday[_dayOf(t).weekday - 1]++;
+      for (final day in _doneDays(t)) {
+        if (!day.isBefore(from30) && !day.isAfter(today)) {
+          doneByWeekday[day.weekday - 1]++;
+        }
       }
     }
     var bestDay = -1, bestCount = 0;

@@ -64,6 +64,45 @@ String _ruleSummary(AppLocalizations l10n, String locale, Recurrence r) {
   }
 }
 
+enum _Cycle { day, week, month, year, other }
+
+/// A run is counted in the series' own cycles (§8: streaks count met
+/// cycles) — a weekly habit's streak is in weeks. Unknown → days.
+_Cycle _cycleOf(Recurrence? r) => r == null
+    ? _Cycle.day
+    : r.interval > 1
+    ? _Cycle.other
+    : switch (r.freq) {
+        Freq.daily => _Cycle.day,
+        Freq.weekly => _Cycle.week,
+        Freq.monthly => _Cycle.month,
+        Freq.yearly => _Cycle.year,
+      };
+
+/// "3-day streak", "3 weeks in a row", … for the detail sheet.
+String localizedStreak(AppLocalizations l10n, int count, Recurrence? r) =>
+    switch (_cycleOf(r)) {
+      _Cycle.day => l10n.dayStreak(count),
+      _Cycle.week => l10n.weekStreak(count),
+      _Cycle.month => l10n.monthStreak(count),
+      _Cycle.year => l10n.yearStreak(count),
+      _Cycle.other => l10n.cycleStreak(count),
+    };
+
+/// The streak tile's tail after the number: "weeks · best 5".
+String localizedStreakTail(
+  AppLocalizations l10n,
+  int count,
+  int best,
+  Recurrence? r,
+) => switch (_cycleOf(r)) {
+  _Cycle.day => l10n.statsStreakDays(count, best),
+  _Cycle.week => l10n.statsStreakWeeks(count, best),
+  _Cycle.month => l10n.statsStreakMonths(count, best),
+  _Cycle.year => l10n.statsStreakYears(count, best),
+  _Cycle.other => l10n.statsStreakCycles(count, best),
+};
+
 /// The full localized month name (1 = January) via intl.
 String localizedMonthName(String locale, int month) =>
     DateFormat.MMMM(locale).format(DateTime(2001, month));

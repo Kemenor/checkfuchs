@@ -25,9 +25,7 @@ void main() {
 
   setUp(() => goal = Goal.single);
 
-  testWidgets('collapsed: one stepper, nothing else at 1 of 1', (
-    tester,
-  ) async {
+  testWidgets('collapsed: one stepper, nothing else at 1 of 1', (tester) async {
     await tester.pumpWidget(host());
     expect(find.text('a week'), findsOneWidget);
     expect(find.text('Range…'), findsOneWidget);

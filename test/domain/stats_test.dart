@@ -1,3 +1,4 @@
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/stats.dart';
 import 'package:checkfuchs/domain/task.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +44,56 @@ void main() {
       expect(s.rate7, closeTo(4 / 5, 1e-9));
       expect(s.rate30, closeTo(4 / 6, 1e-9));
       expect((s.done7, s.skipped7, s.missed7), (4, 1, 1));
+    });
+
+    test('a counter adds check-in units on their own days', () {
+      // Gym 2–3, the week of Mon 31 Aug: checked in Thu 3 + Sat 5 (met,
+      // Done at week end); this week (Mon 7) one check-in so far, Tuesday.
+      Task gym(DateTime occ, TaskStatus s, List<DateTime> ins) => Task(
+        templateId: 1,
+        name: 'Gym',
+        status: s,
+        start: occ,
+        end: occ.add(const Duration(days: 7)),
+        occurrence: occ,
+        createdAt: occ,
+        resolvedAt: s == TaskStatus.open ? null : ins.last,
+        goal: const Goal(min: 2, max: 3),
+        checkIns: ins,
+      );
+      final tasks = [
+        gym(d(2026, 8, 31), TaskStatus.done, [
+          d(2026, 9, 3, 18),
+          d(2026, 9, 5, 9),
+        ]),
+        gym(d(2026, 9, 7), TaskStatus.open, [d(2026, 9, 8, 7)]),
+      ];
+      final s = computeStatsSummary(tasks, names, now);
+      expect((s.done7, s.missed7), (3, 0)); // 3 check-ins, nothing missed
+      final w = s.week.single;
+      // Strip from Wed 2 Sep: the check-in days are done, not Monday.
+      expect(w.days[1], DayMark.done); // Thu 3
+      expect(w.days[3], DayMark.done); // Sat 5
+      expect(w.days[5], DayMark.open); // Mon 7 (this week's instance)
+      expect(w.days[6], DayMark.done); // Tue 8 check-in
+    });
+
+    test('a short counter cycle misses one unit per missing check-in', () {
+      final short = Task(
+        templateId: 1,
+        name: 'Gym',
+        status: TaskStatus.missed,
+        start: d(2026, 9, 2),
+        end: d(2026, 9, 8),
+        occurrence: d(2026, 9, 2),
+        createdAt: d(2026, 9, 2),
+        resolvedAt: d(2026, 9, 8),
+        goal: const Goal(min: 3, max: 3),
+        checkIns: [d(2026, 9, 3, 18)],
+      );
+      final s = computeStatsSummary([short], names, now);
+      expect((s.done7, s.missed7), (1, 2));
+      expect(s.missesByWeekday[2], 2); // Wednesday 2 Sep, the cycle's day
     });
 
     test('no data → null rates, empty week', () {

@@ -6,9 +6,11 @@ import 'package:fuchsbau/fuchsbau.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../domain/recurrence.dart';
 import '../domain/stats.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'recurrence_summary_l10n.dart';
 import 'stats_tiles.dart';
 import 'stats_tiles_screen.dart';
 
@@ -22,6 +24,16 @@ final _templateNamesProvider = StreamProvider.autoDispose<Map<int, String>>((
       .map((rows) => {for (final r in rows) r.id: r.name});
 });
 
+/// Each series' repeat rule — the streak tile counts in its cycles ("3 weeks").
+final _templateRecurrencesProvider =
+    StreamProvider.autoDispose<Map<int, Recurrence>>((ref) {
+      final db = ref.watch(databaseProvider);
+      return db
+          .select(db.templates)
+          .watch()
+          .map((rows) => {for (final r in rows) r.id: r.recurrence});
+    });
+
 /// Stats: a column of tiles in the user's order (Settings → tiles), each a
 /// card with an uppercase title. Only *done* wears colour; every day state
 /// also differs by shape (DESIGN_SYSTEM §2 — a miss is never red).
@@ -33,6 +45,8 @@ class StatsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final tasks = ref.watch(tasksProvider).asData?.value;
     final names = ref.watch(_templateNamesProvider).asData?.value;
+    final recurrences =
+        ref.watch(_templateRecurrencesProvider).asData?.value ?? const {};
     final tiles = enabledTiles(ref.watch(settingsProvider).effectiveStatsTiles);
 
     return Scaffold(
@@ -57,16 +71,22 @@ class StatsScreen extends ConsumerWidget {
                 ref.read(clockProvider).now(),
               ),
               tiles: tiles,
+              recurrences: recurrences,
             ),
     );
   }
 }
 
 class _Tiles extends StatelessWidget {
-  const _Tiles({required this.summary, required this.tiles});
+  const _Tiles({
+    required this.summary,
+    required this.tiles,
+    required this.recurrences,
+  });
 
   final StatsSummary summary;
   final List<StatsTile> tiles;
+  final Map<int, Recurrence> recurrences;
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +123,7 @@ class _Tiles extends StatelessWidget {
             child: switch (t) {
               StatsTile.completion => _CompletionTile(summary),
               StatsTile.week => _WeekTile(summary),
-              StatsTile.streaks => _StreaksTile(summary),
+              StatsTile.streaks => _StreaksTile(summary, recurrences),
               StatsTile.insight => _InsightTile(summary),
               StatsTile.heatmap => _HeatmapTile(summary),
               StatsTile.byWindow => _ByWindowTile(summary),
@@ -340,12 +360,7 @@ class _CompletionTile extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          l10n.statsWeekBreakdown(
-            s.done7,
-            s.skipped7,
-            s.missed7,
-            s.done7 + s.skipped7 + s.missed7,
-          ),
+          l10n.statsWeekBreakdown(s.done7, s.skipped7, s.missed7),
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: scheme.outline),
@@ -468,8 +483,9 @@ class _WeekTile extends StatelessWidget {
 }
 
 class _StreaksTile extends StatelessWidget {
-  const _StreaksTile(this.s);
+  const _StreaksTile(this.s, this.recurrences);
   final StatsSummary s;
+  final Map<int, Recurrence> recurrences;
 
   @override
   Widget build(BuildContext context) {
@@ -514,7 +530,7 @@ class _StreaksTile extends StatelessWidget {
                       ),
                       TextSpan(
                         text:
-                            '  ${l10n.statsStreakDays(s.streaks[i].current, s.streaks[i].best)}',
+                            '  ${localizedStreakTail(l10n, s.streaks[i].current, s.streaks[i].best, recurrences[s.streaks[i].templateId])}',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: scheme.outline,
                           fontWeight: FontWeight.w600,
