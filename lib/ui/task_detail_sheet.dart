@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../data/db/database.dart';
 import '../data/repositories/task_repository.dart';
 import '../domain/analytics.dart';
+import '../domain/goal.dart';
 import '../domain/notification.dart';
 import '../domain/recurrence.dart';
 import '../domain/task.dart';
@@ -15,6 +16,8 @@ import '../domain/window_rule.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
 import 'edit_repeat_sheet.dart';
+import 'goal_editor.dart';
+import 'goal_ring.dart';
 import 'recurrence_summary_l10n.dart';
 import 'reminder_editor.dart';
 import 'task_history_screen.dart';
@@ -126,6 +129,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
   /// The series' recurrence + window rule (null until loaded / for one-offs).
   Recurrence? _templateRecurrence;
   WindowRule? _templateRule;
+  Goal _templateGoal = Goal.single;
   List<LensRow> _lenses = const [];
   Set<int> _lensIds = const {};
 
@@ -260,6 +264,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
         setState(() {
           _templateRecurrence = cfg?.recurrence;
           _templateRule = cfg?.windowRule;
+          _templateGoal = cfg?.goal ?? Goal.single;
         });
       }
     });
@@ -292,6 +297,80 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
           ref.read(clockProvider).now(),
         );
     if (mounted) setState(() => _templateRule = newRule);
+  }
+
+  /// The series' goal (§3.7) — applied to the running instance at once.
+  Future<void> _editGoal() async {
+    final recurrence = _templateRecurrence;
+    final rule = _templateRule;
+    if (recurrence == null || rule == null) return;
+    final picked = await showModalBottomSheet<Goal>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _GoalSheet(
+        initial: _templateGoal,
+        unit: goalUnit(AppLocalizations.of(context), recurrence),
+        spanDays: windowSpanDays(recurrence, rule),
+      ),
+    );
+    if (picked == null || picked == _templateGoal || !mounted) return;
+    await ref
+        .read(taskRepositoryProvider)
+        .setTemplateGoal(
+          _task.templateId!,
+          picked,
+          ref.read(clockProvider).now(),
+        );
+    await _reload();
+  }
+
+  /// A forgotten check-in (§3.7): pick a day inside the window (never past
+  /// now), then a time. Rejected picks — a day that already has one under
+  /// "once a day", or the cap — say why instead of failing silently.
+  Future<void> _addForgottenCheckIn() async {
+    final l10n = AppLocalizations.of(context);
+    final now = ref.read(clockProvider).now();
+    final start = _task.start ?? _task.createdAt;
+    final end = _task.end == null || _task.end!.isAfter(now) ? now : _task.end!;
+    final first = DateTime(start.year, start.month, start.day);
+    // A window ending at midnight doesn't include that day.
+    final lastInstant = end.subtract(const Duration(microseconds: 1));
+    final last = DateTime(lastInstant.year, lastInstant.month, lastInstant.day);
+    final day = await showDatePicker(
+      context: context,
+      initialDate: last,
+      firstDate: first,
+      lastDate: last.isBefore(first) ? first : last,
+    );
+    if (day == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        day == DateTime(now.year, now.month, now.day) ? now : end,
+      ),
+    );
+    if (time == null || !mounted) return;
+    var at = DateTime(day.year, day.month, day.day, time.hour, time.minute);
+    // Clamp into the window: a picked time before it opens / after it closes
+    // on the edge days lands on the edge.
+    if (at.isBefore(start)) at = start;
+    if (at.isAfter(end)) at = end;
+    if (!canAddCheckIn(_task, at, now)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.checkInNotAllowed)));
+      return;
+    }
+    await ref.read(taskRepositoryProvider).addCheckIn(_task, at, now);
+    await _reload();
+  }
+
+  Future<void> _removeCheckIn(DateTime at) async {
+    await ref
+        .read(taskRepositoryProvider)
+        .removeCheckIn(_task, at, ref.read(clockProvider).now());
+    await _reload();
   }
 
   Future<void> _editRepeat() async {
@@ -524,6 +603,17 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   ],
                 ),
               ],
+              // A counter's check-ins this cycle (§3.7): each removable, and
+              // a forgotten one can be added with its time.
+              if (_task.isCounter) ...[
+                const SizedBox(height: 12),
+                _CheckInList(
+                  task: _task,
+                  now: ref.read(clockProvider).now(),
+                  onRemove: _removeCheckIn,
+                  onAdd: _addForgottenCheckIn,
+                ),
+              ],
               if (recurring)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -571,6 +661,22 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                   trailing: const Icon(Symbols.chevron_right_rounded),
                   onTap: _editRepeat,
                 ),
+                // Times (§3.7) — between Repeat and the window, as on create.
+                if (_templateRecurrence != null)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Symbols.tag_rounded),
+                    title: Text(l10n.timesSection),
+                    subtitle: Text(
+                      goalRowSummary(
+                        l10n,
+                        _templateGoal,
+                        goalUnit(l10n, _templateRecurrence!),
+                      ),
+                    ),
+                    trailing: const Icon(Symbols.chevron_right_rounded),
+                    onTap: _editGoal,
+                  ),
                 if (_templateRule != null)
                   switch (WindowSelection.fromRule(_templateRule!)) {
                     null => const SizedBox.shrink(),
@@ -824,7 +930,7 @@ class _StatusBlock extends StatelessWidget {
     String edge(DateTime t, {required bool isEnd}) =>
         whenLabel(l10n, locale, now, t, isEnd: isEnd);
 
-    final (IconData icon, Color colour, String line) = switch (task.status) {
+    var (IconData icon, Color colour, String line) = switch (task.status) {
       TaskStatus.done => (
         Symbols.check_circle_rounded,
         scheme.tertiary,
@@ -873,12 +979,27 @@ class _StatusBlock extends StatelessWidget {
       },
     };
 
+    // A counter (§3.7) leads with its progress — "1 of 2–3 · Open until
+    // Sunday" — and turns emerald once met, though it stays open.
+    final counter = task.isCounter;
+    if (counter) {
+      line = '${l10n.counterProgress(task.count, goalSpan(task.goal))} · $line';
+      if (task.isOpen && task.isMet) colour = scheme.tertiary;
+    }
+    final Widget marker = counter && (task.isOpen || task.isMissed)
+        ? GoalRing(count: task.count, goal: task.goal, color: colour, size: 20)
+        : Icon(icon, size: 20, color: colour);
+    // A counter gives check-ins back one by one from its list; the Reopen
+    // button is for a Skip.
+    final showReopen =
+        canReopen(task) && (!counter || task.status == TaskStatus.skipped);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: colour),
+            marker,
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -895,8 +1016,12 @@ class _StatusBlock extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: onDone,
-                  icon: const Icon(Symbols.check_circle_rounded),
-                  label: Text(l10n.swipeDone),
+                  icon: Icon(
+                    counter
+                        ? Symbols.add_rounded
+                        : Symbols.check_circle_rounded,
+                  ),
+                  label: Text(counter ? l10n.checkIn : l10n.swipeDone),
                 ),
               ),
             if (canCheckIn(task, now) && canSkip(task, now))
@@ -918,7 +1043,7 @@ class _StatusBlock extends StatelessWidget {
                   label: Text(l10n.markDoneAnyway),
                 ),
               ),
-            if (canReopen(task))
+            if (showReopen)
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onReopen,
@@ -928,6 +1053,147 @@ class _StatusBlock extends StatelessWidget {
               ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// The series' Times section as a sheet; Save returns the goal.
+class _GoalSheet extends StatefulWidget {
+  const _GoalSheet({
+    required this.initial,
+    required this.unit,
+    required this.spanDays,
+  });
+  final Goal initial;
+  final String unit;
+  final int spanDays;
+
+  @override
+  State<_GoalSheet> createState() => _GoalSheetState();
+}
+
+class _GoalSheetState extends State<_GoalSheet> {
+  late Goal _goal = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 4, 16, viewInsets + 16),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.timesSection,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              GoalEditor(
+                value: _goal,
+                unit: widget.unit,
+                spanDays: widget.spanDays,
+                onChanged: (g) => setState(() => _goal = g),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(_goal),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(l10n.save),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A counter's check-ins this cycle (§3.7): when each happened, a ✕ to take
+/// one back, and "Add a forgotten check-in" while the record can still take
+/// one (a Skipped cycle was declined; one-offs don't count).
+class _CheckInList extends StatelessWidget {
+  const _CheckInList({
+    required this.task,
+    required this.now,
+    required this.onRemove,
+    required this.onAdd,
+  });
+
+  final Task task;
+  final DateTime now;
+  final ValueChanged<DateTime> onRemove;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final locale = Localizations.localeOf(context).toString();
+    final canAdd =
+        task.templateId != null &&
+        task.status != TaskStatus.skipped &&
+        !task.goal.capped(task.count);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.checkInsSection.toUpperCase(),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: scheme.outline,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .6,
+          ),
+        ),
+        if (task.checkIns.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              l10n.noCheckInsYet,
+              style: TextStyle(color: scheme.outline),
+            ),
+          ),
+        for (final at in task.checkIns.reversed)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            leading: Icon(Symbols.check_circle_rounded, color: scheme.tertiary),
+            title: Text(
+              '${DateFormat.MMMEd(locale).format(at)} · '
+              '${DateFormat.Hm(locale).format(at)}',
+              style: const TextStyle(
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            trailing: task.status == TaskStatus.skipped
+                ? null
+                : IconButton(
+                    tooltip: l10n.removeCheckIn,
+                    icon: const Icon(Symbols.close_rounded),
+                    onPressed: () => onRemove(at),
+                  ),
+          ),
+        if (canAdd)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            leading: Icon(Symbols.add_circle_rounded, color: scheme.primary),
+            title: Text(
+              l10n.addForgottenCheckIn,
+              style: TextStyle(
+                color: scheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            onTap: onAdd,
+          ),
       ],
     );
   }

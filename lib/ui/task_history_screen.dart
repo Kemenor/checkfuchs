@@ -7,6 +7,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'goal_ring.dart';
+import 'task_detail_sheet.dart';
 
 /// A habit's past: every generated occurrence, newest first, with its
 /// outcome — and the corrections the model allows per row: a done/skipped
@@ -80,12 +82,24 @@ class TaskHistoryScreen extends ConsumerWidget {
                             locale,
                           ).format(t.occurrence ?? t.start ?? t.createdAt),
                         ),
-                        subtitle: Text(switch (t.status) {
-                          TaskStatus.done => l10n.statsLegendDone,
-                          TaskStatus.skipped => l10n.statsLegendSkipped,
-                          TaskStatus.missed => l10n.statsLegendMissed,
-                          TaskStatus.open => l10n.statsLegendOpen,
-                        }),
+                        subtitle: Text(
+                          [
+                            switch (t.status) {
+                              TaskStatus.done => l10n.statsLegendDone,
+                              TaskStatus.skipped => l10n.statsLegendSkipped,
+                              TaskStatus.missed => l10n.statsLegendMissed,
+                              TaskStatus.open => l10n.statsLegendOpen,
+                            },
+                            // A counter's cycle says how far it got (§3.7).
+                            if (t.isCounter)
+                              l10n.counterProgress(t.count, goalSpan(t.goal)),
+                          ].join(' · '),
+                        ),
+                        // A counter's check-ins are corrected on its sheet
+                        // (a forgotten one needs a time).
+                        onTap: t.isCounter
+                            ? () => showTaskDetailSheet(context, ref, t)
+                            : null,
                         trailing: canReopen(t)
                             ? IconButton(
                                 tooltip: l10n.reopenTask,

@@ -346,6 +346,162 @@
       }
     }
   },
+  "timesSection": "Times",
+  "@timesSection": {
+    "description": "Section label / stepper label: how many check-ins a habit's cycle wants (its goal)."
+  },
+  "goalRange": "Range…",
+  "@goalRange": {
+    "description": "Chip that splits the Times stepper into At least / At most."
+  },
+  "goalRangeOn": "Range",
+  "@goalRangeOn": {
+    "description": "Selected chip in range mode; tapping folds back to one fixed number."
+  },
+  "goalAtLeast": "At least",
+  "@goalAtLeast": {
+    "description": "Stepper label: check-ins that meet the cycle (minimum)."
+  },
+  "goalAtMost": "At most",
+  "@goalAtMost": {
+    "description": "Stepper label: the cap — reaching it makes the habit done (maximum)."
+  },
+  "goalNoLimit": "No limit",
+  "@goalNoLimit": {
+    "description": "Chip: the goal has no maximum."
+  },
+  "goalOncePerDay": "Once a day",
+  "@goalOncePerDay": {
+    "description": "Switch: at most one check-in per calendar day."
+  },
+  "goalOncePerDayHint": "A second check-in on the same day doesn't count",
+  "@goalOncePerDayHint": {
+    "description": "Subtitle of the Once a day switch."
+  },
+  "goalRemindUntil": "Remind until",
+  "@goalRemindUntil": {
+    "description": "Label of the choice when a counter's reminders stop."
+  },
+  "goalRemindUntilHint": "Reminders stop once this is reached",
+  "@goalRemindUntilHint": {
+    "description": "Hint under Remind until."
+  },
+  "goalRemindMin": "Minimum",
+  "@goalRemindMin": {
+    "description": "Remind until: the minimum (reminders stop once met)."
+  },
+  "goalRemindMax": "Maximum",
+  "@goalRemindMax": {
+    "description": "Remind until: the maximum (reminders keep going until the cap)."
+  },
+  "goalUnitDay": "a day",
+  "@goalUnitDay": {
+    "description": "Unit after the Times stepper for a daily habit: '2 a day'."
+  },
+  "goalUnitWeek": "a week",
+  "@goalUnitWeek": {
+    "description": "Unit after the Times stepper for a weekly habit."
+  },
+  "goalUnitMonth": "a month",
+  "@goalUnitMonth": {
+    "description": "Unit after the Times stepper for a monthly habit."
+  },
+  "goalUnitYear": "a year",
+  "@goalUnitYear": {
+    "description": "Unit after the Times stepper for a yearly habit."
+  },
+  "goalUnitCycle": "per cycle",
+  "@goalUnitCycle": {
+    "description": "Unit after the Times stepper for an every-N habit (every 2 weeks …)."
+  },
+  "goalSummaryTimes": "{span} times",
+  "@goalSummaryTimes": {
+    "description": "Repeat banner clause for a counter: 'Every week, 2–3 times'. {span} is '2' or '2–3'.",
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "goalSummaryAtLeast": "at least {count} times",
+  "@goalSummaryAtLeast": {
+    "description": "Repeat banner clause for a counter without a maximum.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalSummaryOncePerDay": "once a day",
+  "@goalSummaryOncePerDay": {
+    "description": "Banner / Times row clause: at most one check-in a day."
+  },
+  "goalOnce": "Once",
+  "@goalOnce": {
+    "description": "Times row value for an ordinary habit (one check-in per cycle)."
+  },
+  "goalRowRemindUntil": "remind until {count}",
+  "@goalRowRemindUntil": {
+    "description": "Times row clause: reminders stop at this many check-ins.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalRowRemindUntilClose": "remind until it closes",
+  "@goalRowRemindUntilClose": {
+    "description": "Times row clause: no limit + remind until maximum — reminders run until the window closes."
+  },
+  "goalNoLimitCount": "{count} · no limit",
+  "@goalNoLimitCount": {
+    "description": "Progress pill of a met counter without a maximum (shown uppercase).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "counterProgress": "{count} of {span}",
+  "@counterProgress": {
+    "description": "A counter's progress in its cycle: '1 of 2–3'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "checkIn": "Check in",
+  "@checkIn": {
+    "description": "Button / tooltip: add one check-in to a counting habit."
+  },
+  "swipeCheckIn": "+1",
+  "@swipeCheckIn": {
+    "description": "Swipe label on a counting habit (adds one check-in)."
+  },
+  "checkInsSection": "Check-ins",
+  "@checkInsSection": {
+    "description": "Detail sheet section listing a counter's check-ins this cycle."
+  },
+  "noCheckInsYet": "No check-ins yet",
+  "@noCheckInsYet": {
+    "description": "Empty state of the check-ins list."
+  },
+  "removeCheckIn": "Remove check-in",
+  "@removeCheckIn": {
+    "description": "Tooltip: take one check-in back."
+  },
+  "addForgottenCheckIn": "Add a forgotten check-in",
+  "@addForgottenCheckIn": {
+    "description": "Action: log a check-in after the fact, with its day and time."
+  },
+  "checkInNotAllowed": "That check-in doesn't fit — the day already has one, or the goal is full",
+  "@checkInNotAllowed": {
+    "description": "Snackbar when a forgotten check-in can't be added."
+  },
   "increase": "Increase",
   "@increase": {
     "description": "Tooltip of the stepper + button."

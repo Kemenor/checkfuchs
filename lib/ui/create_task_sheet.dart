@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/db/database.dart';
+import '../domain/goal.dart';
 import '../domain/lens.dart';
 import '../domain/notification.dart';
 import '../domain/recurrence.dart';
@@ -11,6 +12,7 @@ import '../domain/task.dart';
 import '../domain/template.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'goal_editor.dart';
 import 'recurrence_editor.dart';
 import 'reminder_editor.dart';
 import 'window_choice.dart';
@@ -88,6 +90,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
   late Recurrence _recurrence =
       widget.initialRecurrence ?? Recurrence.daily(_today);
   WindowSelection _window = WindowSelection.anytime;
+  Goal _goal = Goal.single;
   List<TaskNotification> _notifications = const [];
   late Set<int> _lensIds = {if (widget.lensId != null) widget.lensId!};
   DateTime? _startDate;
@@ -170,6 +173,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
           windowRule: _window.toRule(),
           createdAt: now,
           notifications: notifications,
+          goal: _goal.fitTo(windowSpanDays(_recurrence, _window.toRule())),
         ),
         lensIds: _lensIds,
       );
@@ -330,8 +334,20 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
                   anchor: anchor,
                   initial: _recurrence,
                   allowOff: false,
+                  goal: _goal,
                   onChanged: (r) =>
                       setState(() => _recurrence = r ?? _recurrence),
+                ),
+                // Times (§3.7): one line by default — a 1-of-1 habit is
+                // exactly what it was; raising it makes a counter.
+                const SizedBox(height: 20),
+                _SectionLabel(l10n.timesSection),
+                const SizedBox(height: 4),
+                GoalEditor(
+                  value: _goal,
+                  unit: goalUnit(l10n, _recurrence),
+                  spanDays: windowSpanDays(_recurrence, _window.toRule()),
+                  onChanged: (g) => setState(() => _goal = g),
                 ),
                 const SizedBox(height: 20),
                 _SectionLabel(l10n.activeWindowSection),

@@ -84,6 +84,7 @@ class Task {
 
   bool get isOpen => status == TaskStatus.open;
   bool get isTerminal => !isOpen;
+  bool get isMissed => status == TaskStatus.missed;
 
   int get count => checkIns.length;
 

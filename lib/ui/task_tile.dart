@@ -8,6 +8,7 @@ import '../domain/lens.dart';
 import '../domain/task.dart';
 import '../l10n/app_localizations.dart';
 import '../providers.dart';
+import 'goal_ring.dart';
 import 'task_detail_sheet.dart';
 import 'task_history_screen.dart';
 import 'when_label.dart';
@@ -77,6 +78,25 @@ class TaskTile extends ConsumerWidget {
 
     final periodic = lens?.isPeriodic ?? false;
 
+    // A counter (§3.7) wears the segmented ring while it is live or missed:
+    // orange below min, emerald once met. Tapping it adds a check-in; on a
+    // missed counter it opens the sheet, where a forgotten check-in gets its
+    // time (a 1-of-1 miss keeps its one-tap correction).
+    final counter = task.isCounter && (task.isOpen || task.isMissed);
+    final ringColor = switch (phase) {
+      _ when task.isMissed => status.taupe,
+      TaskPhase.pending => scheme.outline,
+      TaskPhase.expired => status.taupe,
+      _ when task.isMet => scheme.tertiary,
+      _ => avoided ? status.amber : scheme.primary,
+    };
+    final canTap = counter
+        ? task.isMissed || canCheckIn(task, now)
+        : actionable;
+    final Widget marker = counter
+        ? GoalRing(count: task.count, goal: task.goal, color: ringColor)
+        : Icon(icon, color: color);
+
     final row = ListTile(
       minVerticalPadding: 14,
       onTap: () => showTaskDetailSheet(context, ref, task),
@@ -94,15 +114,19 @@ class TaskTile extends ConsumerWidget {
             ),
       leading: IconButton(
         iconSize: 26,
-        tooltip: !actionable
+        tooltip: !canTap
             ? null
-            : task.status == TaskStatus.missed
+            : task.isMissed
             ? l10n.markDoneAnyway
+            : counter
+            ? l10n.checkIn
             : l10n.markDone,
-        icon: Icon(icon, color: color),
-        onPressed: !actionable
+        icon: marker,
+        onPressed: !canTap
             ? null
-            : task.status == TaskStatus.missed
+            : counter && task.isMissed
+            ? () => showTaskDetailSheet(context, ref, task)
+            : task.isMissed
             ? () => ref.read(taskRepositoryProvider).correctMissedTask(task)
             : () => ref
                   .read(taskRepositoryProvider)
@@ -130,6 +154,13 @@ class TaskTile extends ConsumerWidget {
       // Informative pills (§3.6): pending → when the window opens (muted);
       // active with a deadline → when it's due (amber). Anytime stays bare.
       trailing: switch (phase) {
+        // A live counter shows its progress instead of the deadline: "1 / 2"
+        // orange, "2 / 2–3" emerald once met, "9 · no limit" past min.
+        _ when counter && task.isOpen && phase != TaskPhase.pending =>
+          _StatusPill(
+            label: goalProgressLabel(l10n, task),
+            color: task.isMet ? scheme.tertiary : scheme.primary,
+          ),
         TaskPhase.pending when task.isOpen && task.start != null => _StatusPill(
           label: whenLabel(
             l10n,
@@ -170,8 +201,19 @@ class TaskTile extends ConsumerWidget {
     // Terminal rows are display-only — no swipe affordances.
     if (task.isTerminal) return row;
 
+    // A counter only offers the swipes that would do something: +1 while
+    // there's room, Skip only below min (a met cycle can't fail). Pass stays.
+    final canStart = !task.isCounter || canCheckIn(task, now);
+    final canEnd = periodic || !task.isCounter || canSkip(task, now);
+
     return Dismissible(
       key: ValueKey('task-${task.id}'),
+      direction: switch ((canStart, canEnd)) {
+        (true, true) => DismissDirection.horizontal,
+        (true, false) => DismissDirection.startToEnd,
+        (false, true) => DismissDirection.endToStart,
+        (false, false) => DismissDirection.none,
+      },
       // The reactive stream removes the row once it's no longer open, so we
       // don't let Dismissible animate it away itself (avoids a double-remove).
       confirmDismiss: (direction) async {
@@ -188,8 +230,10 @@ class TaskTile extends ConsumerWidget {
       },
       background: _SwipeBackground(
         alignment: Alignment.centerLeft,
-        icon: Symbols.check_circle_rounded,
-        label: l10n.swipeDone,
+        icon: task.isCounter
+            ? Symbols.add_circle_rounded
+            : Symbols.check_circle_rounded,
+        label: task.isCounter ? l10n.swipeCheckIn : l10n.swipeDone,
         color: scheme.tertiary,
       ),
       secondaryBackground: periodic

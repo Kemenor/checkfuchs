@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../domain/goal.dart';
 import '../domain/recurrence.dart';
 import '../l10n/app_localizations.dart';
 import 'recurrence_summary_l10n.dart';
@@ -17,7 +18,12 @@ class RecurrenceEditor extends StatefulWidget {
     required this.onChanged,
     this.initial,
     this.allowOff = true,
+    this.goal = Goal.single,
   });
+
+  /// The habit's goal, echoed in the summary banner ("…, 2–3 times") — the
+  /// Times section edits it; this editor only reads it.
+  final Goal goal;
 
   /// Whether the frequency row offers "Off" (one-off). The create sheet's
   /// Habit/To-do toggle owns that choice, so a habit starts at daily.
@@ -121,7 +127,11 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  localizedRecurrenceSummary(context, _build()),
+                  localizedRecurrenceSummary(
+                    context,
+                    _build(),
+                    goal: widget.goal,
+                  ),
                   style: TextStyle(
                     color: scheme.primary,
                     fontWeight: FontWeight.w700,

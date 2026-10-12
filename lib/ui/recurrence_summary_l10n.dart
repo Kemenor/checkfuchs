@@ -1,19 +1,30 @@
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import '../domain/goal.dart';
 import '../domain/recurrence.dart';
 import '../l10n/app_localizations.dart';
+import 'goal_editor.dart';
 
 /// Localized counterpart of the pure-domain `recurrenceSummary()`
 /// (lib/domain/recurrence_summary.dart): the same sentences, but built from
 /// [AppLocalizations] keys plus intl's localized weekday/month names — the live
 /// banner in the recurrence editor. The domain function stays English-only
 /// (its unit tests pin the English copy); this one follows the app locale.
-String localizedRecurrenceSummary(BuildContext context, Recurrence? r) {
+///
+/// With a counting [goal] (§3.7) its clause follows the rule: "Every week,
+/// 2–3 times, once a day" — then the end date, if any.
+String localizedRecurrenceSummary(
+  BuildContext context,
+  Recurrence? r, {
+  Goal goal = Goal.single,
+}) {
   final l10n = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).toString();
   if (r == null) return l10n.summaryNoRepeat;
-  final rule = _ruleSummary(l10n, locale, r);
+  final clause = goalBannerClause(l10n, goal);
+  final base = _ruleSummary(l10n, locale, r);
+  final rule = clause.isEmpty ? base : '$base, $clause';
   final until = r.until;
   return until == null
       ? rule
