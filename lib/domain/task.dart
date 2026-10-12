@@ -372,6 +372,13 @@ Task resolve(Task t, DateTime now) {
   return t.copyWith(status: TaskStatus.open, resolvedAt: null);
 }
 
+/// Whether [t]'s reminders should still fire (§2.4, §3.7): only while Open,
+/// and a met counter set to remind till `min` has done its job (it can no
+/// longer Miss). Till `max` it keeps pinging until the cap makes it Done — or,
+/// with no limit, until the window closes.
+bool wantsReminders(Task t) =>
+    t.isOpen && !(t.isMet && t.goal.remindTill == RemindTill.min);
+
 /// A goal edit reaching the running instance (§3.7, §5): an open Task takes
 /// [goal] and is re-resolved at once. Terminal Tasks are history — null.
 Task? applyGoal(Task t, Goal goal, DateTime now) =>

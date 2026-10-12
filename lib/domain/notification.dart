@@ -116,8 +116,10 @@ class ScheduledNotification {
 
 /// Pick what to actually register with the OS (§: PLAN notifications): only
 /// future fire-times, soonest first, capped at [cap] (the iOS 64-pending limit).
-/// Inputs come from **open** tasks only — a completed task's reminders are simply
-/// never in the list, which is how "cancel on terminal" falls out.
+/// Inputs come from tasks that still want reminders only (`wantsReminders` —
+/// open, and not a counter already met under "remind until minimum") — a
+/// completed task's reminders are simply never in the list, which is how
+/// "cancel on terminal" falls out.
 List<ScheduledNotification> selectScheduled(
   Iterable<ScheduledNotification> all,
   DateTime now, {

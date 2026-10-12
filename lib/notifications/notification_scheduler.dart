@@ -224,16 +224,18 @@ class NotificationScheduler {
     return _exact;
   }
 
-  /// Re-fill the OS schedule from [tasks]: open instances' reminders resolved
-  /// to instants, future-only, soonest-first, capped at 64 (the iOS limit,
-  /// PLAN "≤ 64 pending" — Android follows the same budget).
+  /// Re-fill the OS schedule from [tasks]: the reminders of instances that
+  /// still want them ([domain.wantsReminders] — open, and not a counter met
+  /// under "remind until minimum") resolved to instants, future-only,
+  /// soonest-first, capped at 64 (the iOS limit, PLAN "≤ 64 pending" —
+  /// Android follows the same budget).
   Future<void> sync(List<domain.Task> tasks, DateTime now) async {
     if (!await _ensureReady()) return;
 
     final titles = <int, String>{};
     final all = <ScheduledNotification>[];
     for (final t in tasks) {
-      if (!t.isOpen || t.id == null) continue;
+      if (!domain.wantsReminders(t) || t.id == null) continue;
       final count = t.notifications.length.clamp(0, _slots);
       for (var i = 0; i < count; i++) {
         final fireAt = t.notifications[i].fireTime(

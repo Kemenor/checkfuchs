@@ -359,6 +359,23 @@ void main() {
       expect(applyGoal(capped, const Goal(min: 2, max: 3), thu), isNull);
     });
 
+    test('reminders stop at min or at max, as the goal says', () {
+      final met = checkIn(checkIn(gym(), tue), wed);
+      expect(wantsReminders(gym()), isTrue);
+      expect(wantsReminders(checkIn(gym(), tue)), isTrue); // below min
+      expect(wantsReminders(met), isFalse); // remind till min: done
+      final tillMax = checkIn(
+        checkIn(
+          gym(goal: const Goal(min: 2, max: 3, remindTill: RemindTill.max)),
+          tue,
+        ),
+        wed,
+      );
+      expect(wantsReminders(tillMax), isTrue); // met, but till max
+      expect(wantsReminders(checkIn(tillMax, thu)), isFalse); // Done
+      expect(wantsReminders(taskWith(status: TaskStatus.done)), isFalse);
+    });
+
     test('only a 1-of-1 miss is corrected by the ring tap', () {
       final missed = expireIfDue(gym(), nextWeek)!;
       expect(canCorrectMiss(missed), isFalse);
