@@ -36,7 +36,7 @@ void main() {
       (await db.select(db.lenses).get()).length,
       5,
     ); // + daily habits · outcomes
-    expect((await db.select(db.templates).get()).length, 5);
+    expect((await db.select(db.templates).get()).length, 6);
     // Settings survived the wipe.
     final settings = await db.select(db.appSettings).getSingle();
     expect(settings.debugMenu, isTrue);
@@ -71,12 +71,22 @@ void main() {
     final stretchStats = computeStats(await repo.tasksForTemplate(stretch.id));
     expect(stretchStats.currentStreak, 3); // today + 2, then a miss behind
     expect(stretchStats.missed, 1);
+
+    // The counter: 1 of 2 (missed), 3 of 3, 2 of 2–3 → two met weeks; this
+    // Monday afternoon it already has the morning's check-in.
+    final gym = templates.firstWhere((t) => t.name == l10n.demoGym);
+    final gymTasks = await repo.tasksForTemplate(gym.id);
+    final gymStats = computeStats(gymTasks);
+    expect(gymStats.currentStreak, 2);
+    expect((gymStats.done, gymStats.missed), (7, 1)); // 1+3+2 + this week's 1
+    final current = gymTasks.singleWhere((t) => t.isOpen);
+    expect((current.count, current.isMet), (1, false));
   });
 
   test('is idempotent — loading twice leaves one clean suite', () async {
     await loadDemoData(db, now, l10n);
     await loadDemoData(db, now, l10n);
     expect((await db.select(db.views).get()).length, 3);
-    expect((await db.select(db.templates).get()).length, 5);
+    expect((await db.select(db.templates).get()).length, 6);
   });
 }

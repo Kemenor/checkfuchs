@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/goal.dart';
 import '../../domain/lens.dart';
 import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
@@ -14,8 +15,9 @@ import '../repositories/view_repository.dart';
 /// The demo suite (debug menu / store screenshots): **wipes all content** and
 /// seeds a realistic, feature-covering dataset — three Views, four Lenses
 /// with real dials (one lens shared across two Views with different status
-/// filters, a periodic chip-away lens, a capped backlog), five habits with
-/// fabricated history (streak, mixed record, an avoidance case) and six
+/// filters, a periodic chip-away lens, a capped backlog), six habits with
+/// fabricated history (streak, mixed record, an avoidance case, a 2–3×-a-week
+/// counter) and six
 /// to-dos (dated with reminders + backlog). Names come from l10n, so the
 /// suite doubles as screenshot content in all four languages.
 ///
@@ -180,6 +182,18 @@ Future<void> loadDemoData(
       const UntilNextOccurrence(),
       {weeklyLens},
     );
+    // A counter (§3.7): gym 2–3× a week, never twice a day.
+    const gymGoal = Goal(min: 2, max: 3, oncePerDay: true);
+    final firstGymWeek = DateTime(monday.year, monday.month, monday.day - 21);
+    final gym = await repo.createTemplate(
+      Template(
+        name: l10n.demoGym,
+        recurrence: Recurrence.weekly(firstGymWeek, on: {Weekday.mon}),
+        createdAt: firstGymWeek,
+        goal: gymGoal,
+      ),
+      lensIds: {dailyLens, dailyOutcomesLens},
+    );
 
     // --- fabricated history (drives streaks, breakdowns, avoidance) ----------
     Future<void> instance(
@@ -189,9 +203,11 @@ Future<void> loadDemoData(
       DateTime start,
       DateTime end,
       TaskStatus status,
-      DateTime resolvedAt,
-      Set<int> lensIds,
-    ) => repo.createTask(
+      DateTime? resolvedAt,
+      Set<int> lensIds, {
+      Goal goal = Goal.single,
+      List<DateTime> checkIns = const [],
+    }) => repo.createTask(
       Task(
         templateId: templateId,
         name: name,
@@ -201,6 +217,8 @@ Future<void> loadDemoData(
         status: status,
         createdAt: occ,
         resolvedAt: resolvedAt,
+        goal: goal,
+        checkIns: checkIns,
       ),
       lensIds: lensIds,
     );
@@ -280,6 +298,50 @@ Future<void> loadDemoData(
       TaskStatus.done,
       at(day(5), 16),
       {weeklyLens},
+    );
+
+    // Gym: three weeks back — 1 of 2 (missed), 3 of 3, 2 of 2–3 — so the
+    // streak reads "2 weeks in a row"; this week, one check-in Monday
+    // morning when the demo runs later that day (else none yet).
+    DateTime weekOf(int weeksAgo) =>
+        DateTime(monday.year, monday.month, monday.day - 7 * weeksAgo);
+    DateTime nextWeek(DateTime week) =>
+        DateTime(week.year, week.month, week.day + 7);
+    DateTime on(DateTime week, int weekday, int hour) =>
+        DateTime(week.year, week.month, week.day + weekday - 1, hour);
+    final gymWeeks = [
+      (weekOf(3), TaskStatus.missed, [1]), // Tue only
+      (weekOf(2), TaskStatus.done, [2, 4, 6]), // Tue, Thu, Sat: capped
+      (weekOf(1), TaskStatus.done, [3, 5]), // Wed, Fri: met at week end
+    ];
+    for (final (week, status, days) in gymWeeks) {
+      final ins = [for (final d in days) on(week, d, 18)];
+      final end = nextWeek(week);
+      await instance(
+        gym,
+        l10n.demoGym,
+        week,
+        week,
+        end,
+        status,
+        status == TaskStatus.missed ? end : ins.last,
+        {dailyLens, dailyOutcomesLens},
+        goal: gymGoal,
+        checkIns: ins,
+      );
+    }
+    final thisWeekIn = on(monday, 1, 7);
+    await instance(
+      gym,
+      l10n.demoGym,
+      monday,
+      monday,
+      nextWeek(monday),
+      TaskStatus.open,
+      null,
+      {dailyLens, dailyOutcomesLens},
+      goal: gymGoal,
+      checkIns: thisWeekIn.isBefore(now) ? [thisWeekIn] : const [],
     );
 
     // --- one-offs -------------------------------------------------------------

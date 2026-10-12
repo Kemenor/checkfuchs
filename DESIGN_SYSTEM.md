@@ -49,6 +49,14 @@ Material Symbols Rounded, one coherent set:
 | Pending | `schedule` | muted |
 | Focus | `center_focus_strong` (filled) | indigo |
 | Dormant | `bedtime` | taupe |
+| Counter (below min) | **segmented ring** — one arc per check-in slot, filled ones solid | orange |
+| Counter (met) | segmented ring; past a no-limit minimum, the full ring carries the count | emerald |
+| Counter (at max) | `check_circle` (filled) — the ordinary Done | emerald |
+
+The segmented ring (`GoalRing`, `lib/ui/goal_ring.dart`, mockup
+`examples/ui/10-counter.html`) is the one marker that isn't a Material Symbol: it has to
+show *how far* a cycle got. Slots = `max` (or `min` with no limit); more than 12 read as
+a smooth arc. A 1-of-1 habit never wears it.
 
 ## 3. Components (checkfuchs surfaces)
 
@@ -61,6 +69,12 @@ screens use them.
 - **Swipe** reveals actions — continuous lens: **Done · Skip**; periodic lens: **Done ·
   Skip · Pass**. `Pass` = `arrow_forward` (indigo). **Never a destructive action on swipe.**
 - `Missed` row: faded ring + struck taupe name.
+- **Counter rows** (concept §3.7): the segmented ring, and the trailing slot shows
+  progress instead of the deadline — "1 / 2" orange below min, "2 / 2–3" emerald once
+  met, "9 · NO LIMIT" past a no-limit minimum. Tap the ring = **+1** check-in; the swipe
+  reads **+1** and only offers what would act (no Skip once met). A *missed* counter's
+  ring opens the detail sheet — a forgotten check-in needs a time. A met row stays in
+  the list but counts as **done** in the lens header (it can no longer Miss).
 
 ### 3.2 Lens card → `examples/ui/04-lens-view.html`
 - A `lg`(20) card. Header = lens name + the **text-breakdown summary**
@@ -128,6 +142,23 @@ screens use them.
   month + day; the **Starts** (anchor) row.
 - **Live plain-English summary banner** (tangerine tint) at top, restated on every change.
 - Ordinal-weekday ("2nd Tuesday") intentionally **out** for v1 (concept §11).
+- An **Ends** row under Starts (optional end date; "Never" until picked, ✕ clears).
+
+### 3.5a Times section (goal) → `examples/ui/10-counter.html`
+- Sits between **Repeat** and **Active window** on the create sheet; a **Times** row in
+  the detail sheet's series rows opens the same editor as a sheet.
+- **Progressive disclosure** — collapsed to *one* stepper by default (a fixed goal,
+  at least = at most; at 1 it's an ordinary habit and the banner stays silent). A
+  **Range…** chip splits it into **At least / At most** + **No limit**; tapping
+  **Range** again folds it back (at most snaps to at least). The chips sit on their own
+  line under the steppers, so long translations never squeeze them.
+- **Once a day** appears only when the goal is above 1 *and* the window spans more than
+  a day; **Remind until** (Minimum · Maximum) only in range mode, where the ends differ.
+- The repeat banner echoes the goal: "Every week, 2–3 times, once a day".
+- Detail sheet: the status line leads with progress ("1 of 2–3 · Open until Sunday"),
+  the primary button reads **Check in**, and a **Check-ins** list shows the cycle's
+  check-ins (✕ removes) with **Add a forgotten check-in** (day, then time, clamped into
+  the window).
 
 ### 3.6 Pills & FAB
 - Status pill = uppercase `labelSmall`, `full` radius, tinted fill (§1). NOW/ACTIVE
