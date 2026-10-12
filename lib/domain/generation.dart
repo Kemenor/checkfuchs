@@ -86,12 +86,16 @@ ReconcileResult reconcileTemplate(
         final at = open.start != null && open.start!.isAfter(v.start)
             ? open.start!
             : v.start;
-        final skipped = open.copyWith(
-          status: TaskStatus.skipped,
-          resolvedAt: at,
-        );
-        working[i] = skipped;
-        changed.add(skipped);
+        // A met counter can't fail, so there is nothing to Skip: it resolves
+        // Done on its check-ins instead (§3.7).
+        final settled = open.isMet
+            ? open.copyWith(
+                status: TaskStatus.done,
+                resolvedAt: open.checkIns.last,
+              )
+            : open.copyWith(status: TaskStatus.skipped, resolvedAt: at);
+        working[i] = settled;
+        changed.add(settled);
         continue;
       }
     }

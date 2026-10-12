@@ -1,4 +1,5 @@
 import 'package:checkfuchs/domain/generation.dart';
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/task.dart';
 import 'package:checkfuchs/domain/template.dart';
@@ -327,6 +328,30 @@ void main() {
         ); // max(window start, v.start)
       },
     );
+
+    test('vacation start resolves a met counter Done instead of Skipping', () {
+      // Gym 2–3 in the week of 06-22; checked in Tue + Wed; a vacation from
+      // Sat 06-27 swallows the week's end — the cycle was already met.
+      final gym = Template(
+        id: 1,
+        name: 'Gym',
+        recurrence: Recurrence.weekly(d(2026, 6, 22), on: {Weekday.mon}),
+        createdAt: d(2026, 6, 22),
+        goal: const Goal(min: 2, max: 3),
+      );
+      final open = gym
+          .materialize(d(2026, 6, 22), d(2026, 6, 29), now: d(2026, 6, 22))
+          .copyWith(id: 7, checkIns: [d(2026, 6, 23, 18), d(2026, 6, 24, 7)]);
+      final r = reconcileTemplate(
+        gym,
+        [open],
+        d(2026, 6, 27, 9),
+        vacations: [(start: d(2026, 6, 27), end: d(2026, 7, 5, 23, 59))],
+      );
+      final done = only(r);
+      expect(done.status, TaskStatus.done);
+      expect(done.resolvedAt, d(2026, 6, 24, 7));
+    });
 
     test('a vacation the window outlasts leaves the instance open', () {
       // Window 06-27 → 07-04 (weekly-style FixedDuration); vacation 06-28…06-30

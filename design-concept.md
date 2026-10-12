@@ -73,7 +73,7 @@ status, and the **only** source of analytics.
 | *(membership)* | join | Lens membership lives on the `Task↔Lens` join (§4), not here |
 | `createdAt` | datetime | when the instance came into being |
 | `resolvedAt` | datetime? | when it went terminal; null while Open — **required for analytics** |
-| `goal` | `{min, max?, oncePerDay}` | stamped from the Template (§3.7); `1 of 1` for every other Task |
+| `goal` | `{min, max?, oncePerDay, remindTill}` | stamped from the Template (§3.7); `1 of 1` for every other Task |
 | `checkIns` | datetime[] | the check-ins toward the goal (§3.7); for a 1-of-1 Task, its single Done |
 
 *(Deferred:* `checklist: [{label, status}]` *— additive, no per-item logic, no per-item
@@ -261,8 +261,12 @@ goal: {
 | water, at least 8, log every glass | daily, `min 8, max null` |
 
 **Stamped, like every default (§3.2).** Each generated Task carries its own copy of the
-goal, so a Task resolves itself and a goal edit reaches *future* cycles only (§5).
-Template-generated Tasks only — a counting one-off is deferred (§11).
+goal (all four fields — the reminder scheduler only ever sees Tasks), so a Task resolves
+itself. A goal edit reaches the **running** instance too, like every series edit (§5),
+and re-resolves it at once: raising `min` past the count un-meets it, lowering `max` to
+the count makes it Done (extra check-ins stay on the record). Finished cycles keep the
+goal they were judged by. Template-generated Tasks only — a counting one-off is
+deferred (§11).
 
 **Check-ins.** The Task records a list of check-in timestamps (`checkIns`, §2.1).
 `count = checkIns.length`. A check-in is allowed while the Task is **Active** and
@@ -385,9 +389,12 @@ just the View opened first.
 
 - **Edit this instance** — change the materialized Task directly. Because a stored Task
   wins over the projection (§3.4), the edit survives future Template edits automatically.
-- **Edit the series** — change the Template. Applies to *future* generated instances only;
-  the currently-running instance is untouched. Virtual future occurrences simply recompute
-  against the new definition.
+- **Edit the series** — change the Template. Future instances follow it, and so does the
+  **running** (open) instance: a new note, reminders, window hours or goal should not wait
+  a cycle to take effect ("morning → evening" moves today's row). Its occurrence day and
+  status history stay. **Terminal instances are history and are never rewritten** — the
+  one exception is a rename, which reaches every instance (a habit is one thing across
+  its history). Virtual future occurrences simply recompute against the new definition.
 - No `is_exception` flag — *existence of a stored Task for a slot is itself the override.*
 
 ---

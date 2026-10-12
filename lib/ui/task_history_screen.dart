@@ -92,7 +92,10 @@ class TaskHistoryScreen extends ConsumerWidget {
                                 icon: const Icon(Symbols.undo_rounded),
                                 onPressed: () => ref
                                     .read(taskRepositoryProvider)
-                                    .reopenTask(t),
+                                    .reopenTask(
+                                      t,
+                                      ref.read(clockProvider).now(),
+                                    ),
                               )
                             : canCorrectMiss(t)
                             ? IconButton(

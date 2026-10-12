@@ -209,8 +209,8 @@ class TaskRepository {
   /// currently completable), persists, then reconciles so the next instance is
   /// generated immediately.
   Future<void> completeTask(domain.Task task, DateTime now) async {
-    if (task.id == null || !domain.canComplete(task, now)) return;
-    final done = domain.complete(task, now);
+    if (task.id == null || !domain.canCheckIn(task, now)) return;
+    final done = domain.checkIn(task, now);
     await _writeStatus(task.id!, done.status, done.resolvedAt);
     await reconcileAll(now);
   }
@@ -224,9 +224,9 @@ class TaskRepository {
 
   /// Undo a Done/Skip: the instance is open again (the next reconcile will
   /// still Miss it if its window has meanwhile passed — that's truthful).
-  Future<void> reopenTask(domain.Task task) async {
+  Future<void> reopenTask(domain.Task task, DateTime now) async {
     if (!domain.canReopen(task) || task.id == null) return;
-    final open = domain.reopen(task);
+    final open = domain.reopen(task, now);
     await _writeStatus(task.id!, open.status, open.resolvedAt);
   }
 

@@ -1,3 +1,4 @@
+import 'goal.dart';
 import 'notification.dart';
 import 'recurrence.dart';
 import 'task.dart';
@@ -17,6 +18,7 @@ class Template {
     this.resumeOn,
     required this.createdAt,
     this.notifications = const [],
+    this.goal = Goal.single,
   });
 
   final int? id;
@@ -40,6 +42,9 @@ class Template {
   /// Default reminders (§2.4) — stamped onto every generated instance, where
   /// they resolve against that instance's own window.
   final List<TaskNotification> notifications;
+
+  /// Check-ins per cycle (§3.7) — stamped onto every generated instance.
+  final Goal goal;
 
   /// Whether the template should generate at [now] — paused unless a resume date
   /// has arrived. (Global Vacation is checked separately, at the engine level.)
@@ -67,6 +72,7 @@ class Template {
       createdAt: now,
       notifications: notifications,
       bands: windowRule.bands,
+      goal: goal,
     );
   }
 }

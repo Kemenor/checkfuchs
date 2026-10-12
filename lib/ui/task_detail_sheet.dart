@@ -500,7 +500,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
                 onDone: () => _act((r, now) => r.completeTask(_task, now)),
                 onSkip: () => _act((r, now) => r.skipTask(_task, now)),
                 onCorrectMiss: () => _act((r, _) => r.correctMissedTask(_task)),
-                onReopen: () => _act((r, _) => r.reopenTask(_task)),
+                onReopen: () => _act((r, now) => r.reopenTask(_task, now)),
               ),
               if (_stats?.hasData ?? false) ...[
                 const SizedBox(height: 14),
@@ -891,7 +891,7 @@ class _StatusBlock extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            if (canComplete(task, now))
+            if (canCheckIn(task, now))
               Expanded(
                 child: FilledButton.icon(
                   onPressed: onDone,
@@ -899,7 +899,7 @@ class _StatusBlock extends StatelessWidget {
                   label: Text(l10n.swipeDone),
                 ),
               ),
-            if (canComplete(task, now) && canSkip(task, now))
+            if (canCheckIn(task, now) && canSkip(task, now))
               const SizedBox(width: 8),
             if (canSkip(task, now))
               Expanded(

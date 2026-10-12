@@ -1,3 +1,4 @@
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/task.dart';
 import 'package:checkfuchs/domain/template.dart';
@@ -76,6 +77,19 @@ void main() {
       final t = habit.materialize(occ, next, now: d(2026, 6, 27));
       expect(t.start, d(2026, 6, 27));
       expect(t.end, d(2026, 6, 28));
+    });
+
+    test('stamps the goal; an ordinary habit is 1 of 1', () {
+      expect(daily.materialize(occ, next, now: occ).goal, Goal.single);
+      const gym = Goal(min: 2, max: 3, oncePerDay: true);
+      final t = Template(
+        name: 'Gym',
+        recurrence: Recurrence.weekly(occ),
+        createdAt: d(2026, 6, 1),
+        goal: gym,
+      ).materialize(occ, d(2026, 7, 4), now: occ);
+      expect(t.goal, gym);
+      expect(t.checkIns, isEmpty);
     });
   });
 

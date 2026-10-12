@@ -1,3 +1,4 @@
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/task.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -48,12 +49,12 @@ void main() {
     final unbounded = taskWith();
 
     test('Done only while active+open', () {
-      expect(canComplete(active, morning), isTrue);
-      expect(canComplete(pending, morning), isFalse); // pending
-      expect(canComplete(expired, dt(2026, 6, 27, 13)), isFalse); // expired
-      expect(canComplete(unbounded, morning), isTrue);
+      expect(canCheckIn(active, morning), isTrue);
+      expect(canCheckIn(pending, morning), isFalse); // pending
+      expect(canCheckIn(expired, dt(2026, 6, 27, 13)), isFalse); // expired
+      expect(canCheckIn(unbounded, morning), isTrue);
       expect(
-        canComplete(active.copyWith(status: TaskStatus.done), morning),
+        canCheckIn(active.copyWith(status: TaskStatus.done), morning),
         isFalse, // terminal
       );
     });
@@ -102,9 +103,9 @@ void main() {
   });
 
   group('transitions', () {
-    test('complete → Done with resolvedAt = now', () {
+    test('a 1-of-1 check-in → Done with resolvedAt = now', () {
       final t = taskWith(start: dt(2026, 6, 27), end: dt(2026, 6, 27, 12));
-      final done = complete(t, morning);
+      final done = checkIn(t, morning);
       expect(done.status, TaskStatus.done);
       expect(done.resolvedAt, morning);
     });
@@ -202,9 +203,166 @@ void main() {
       expect(canReopen(done.copyWith(status: TaskStatus.skipped)), isTrue);
       expect(canReopen(done.copyWith(status: TaskStatus.open)), isFalse);
       expect(canReopen(done.copyWith(status: TaskStatus.missed)), isFalse);
-      final back = reopen(done);
+      final back = reopen(done, DateTime(2026, 9, 8, 8));
       expect(back.status, TaskStatus.open);
       expect(back.resolvedAt, isNull);
+    });
+
+    test('a 1-of-1 Done gives back its check-in when reopened', () {
+      final t = taskWith(start: dt(2026, 6, 27), end: dt(2026, 6, 27, 12));
+      final done = checkIn(t, morning);
+      expect(done.checkIns, [morning]);
+      final back = reopen(done, morning);
+      expect(back.status, TaskStatus.open);
+      expect(back.checkIns, isEmpty);
+    });
+  });
+
+  group('counting habits (§3.7)', () {
+    // Gym, 2–3× in the week of Mon 12 Oct 2026, never twice a day.
+    Task gym({Goal goal = const Goal(min: 2, max: 3, oncePerDay: true)}) =>
+        Task(
+          id: 1,
+          templateId: 4,
+          name: 'Gym',
+          start: dt(2026, 10, 12),
+          end: dt(2026, 10, 19),
+          occurrence: dt(2026, 10, 12),
+          createdAt: dt(2026, 10, 12),
+          goal: goal,
+        );
+    final tue = dt(2026, 10, 13, 18);
+    final wed = dt(2026, 10, 14, 7);
+    final thu = dt(2026, 10, 15, 19);
+    final nextWeek = dt(2026, 10, 19, 9);
+
+    test('below min stays open, can still be skipped', () {
+      final t = checkIn(gym(), tue);
+      expect(t.status, TaskStatus.open);
+      expect(t.count, 1);
+      expect(t.isMet, isFalse);
+      expect(canSkip(t, tue), isTrue);
+    });
+
+    test('once a day blocks a second check-in on the same day only', () {
+      final t = checkIn(gym(), tue);
+      expect(canCheckIn(t, tue.add(const Duration(hours: 2))), isFalse);
+      expect(canCheckIn(t, wed), isTrue);
+      final free = checkIn(gym(goal: const Goal(min: 2, max: 3)), tue);
+      expect(canCheckIn(free, tue.add(const Duration(hours: 2))), isTrue);
+    });
+
+    test('met stays open, takes +1, but can no longer be skipped', () {
+      final t = checkIn(checkIn(gym(), tue), wed);
+      expect(t.status, TaskStatus.open);
+      expect(t.isMet, isTrue);
+      expect(canCheckIn(t, thu), isTrue);
+      expect(canSkip(t, thu), isFalse);
+    });
+
+    test('reaching max is Done, resolved at that check-in', () {
+      final t = checkIn(checkIn(checkIn(gym(), tue), wed), thu);
+      expect(t.status, TaskStatus.done);
+      expect(t.resolvedAt, thu);
+      expect(canCheckIn(t, dt(2026, 10, 16, 8)), isFalse);
+    });
+
+    test('a met cycle resolves Done when the window closes', () {
+      final t = expireIfDue(checkIn(checkIn(gym(), tue), wed), nextWeek)!;
+      expect(t.status, TaskStatus.done);
+      expect(t.resolvedAt, wed); // the last check-in, not the window end
+      expect(t.doneUnits, 2);
+      expect(t.missedUnits, 0);
+    });
+
+    test('a cycle short of min is Missed, one unit per missing check-in', () {
+      final one = expireIfDue(checkIn(gym(), tue), nextWeek)!;
+      expect(one.status, TaskStatus.missed);
+      expect(one.resolvedAt, dt(2026, 10, 19));
+      expect((one.doneUnits, one.missedUnits), (1, 1));
+      final none = expireIfDue(gym(), nextWeek)!;
+      expect((none.doneUnits, none.missedUnits), (0, 2));
+    });
+
+    test('no limit: met stays open past min, Done at window end', () {
+      var water = Task(
+        templateId: 2,
+        name: 'Water',
+        start: dt(2026, 10, 12),
+        end: dt(2026, 10, 13),
+        createdAt: dt(2026, 10, 12),
+        goal: const Goal(min: 8, max: null),
+      );
+      for (var h = 7; h < 17; h++) {
+        water = checkIn(water, dt(2026, 10, 12, h));
+      }
+      expect(water.count, 10);
+      expect(water.status, TaskStatus.open);
+      expect(canCheckIn(water, dt(2026, 10, 12, 20)), isTrue);
+      expect(expireIfDue(water, dt(2026, 10, 13, 1))!.status, TaskStatus.done);
+    });
+
+    test('removing a check-in re-resolves', () {
+      final full = checkIn(checkIn(checkIn(gym(), tue), wed), thu);
+      // Window still open: back to met.
+      final back = removeCheckIn(full, thu, dt(2026, 10, 16));
+      expect(back.status, TaskStatus.open);
+      expect(back.isMet, isTrue);
+      // Window closed and below min: Missed.
+      final done = expireIfDue(checkIn(checkIn(gym(), tue), wed), nextWeek)!;
+      final short = removeCheckIn(done, wed, nextWeek);
+      expect(short.status, TaskStatus.missed);
+      expect(short.resolvedAt, dt(2026, 10, 19));
+    });
+
+    test('a forgotten check-in fixes a Missed cycle', () {
+      final missed = expireIfDue(checkIn(gym(), tue), nextWeek)!;
+      expect(canAddCheckIn(missed, thu, nextWeek), isTrue);
+      final fixed = addCheckIn(missed, thu, nextWeek);
+      expect(fixed.status, TaskStatus.done);
+      expect(fixed.checkIns, [tue, thu]);
+    });
+
+    test('a forgotten check-in must sit inside the window, in the past', () {
+      final t = checkIn(gym(), tue);
+      expect(canAddCheckIn(t, dt(2026, 10, 11, 9), wed), isFalse); // before
+      expect(canAddCheckIn(t, dt(2026, 10, 20), nextWeek), isFalse); // after
+      expect(canAddCheckIn(t, thu, wed), isFalse); // in the future
+      expect(canAddCheckIn(t, tue.add(const Duration(hours: 1)), wed), isFalse);
+      expect(canAddCheckIn(t.copyWith(templateId: null), wed, thu), isFalse);
+    });
+
+    test('reopening a counter at max takes back its latest check-in', () {
+      final full = checkIn(checkIn(checkIn(gym(), tue), wed), thu);
+      final back = reopen(full, dt(2026, 10, 16));
+      expect(back.status, TaskStatus.open);
+      expect(back.checkIns, [tue, wed]);
+    });
+
+    test('a Done from before check-ins counts one unit and reopens', () {
+      final legacy = taskWith(
+        start: dt(2026, 6, 27),
+        end: dt(2026, 6, 27, 12),
+        status: TaskStatus.done,
+      );
+      expect(legacy.doneUnits, 1);
+      expect(reopen(legacy, morning).status, TaskStatus.open);
+    });
+
+    test('a goal edit re-resolves the running instance', () {
+      final two = checkIn(checkIn(gym(), tue), wed);
+      final raised = applyGoal(two, const Goal(min: 3, max: 4), thu)!;
+      expect((raised.status, raised.isMet), (TaskStatus.open, false));
+      final capped = applyGoal(two, const Goal(min: 1, max: 2), thu)!;
+      expect(capped.status, TaskStatus.done);
+      expect(capped.resolvedAt, wed); // the check-in that reaches the new cap
+      expect(applyGoal(capped, const Goal(min: 2, max: 3), thu), isNull);
+    });
+
+    test('only a 1-of-1 miss is corrected by the ring tap', () {
+      final missed = expireIfDue(gym(), nextWeek)!;
+      expect(canCorrectMiss(missed), isFalse);
+      expect(canCorrectMiss(missed.copyWith(goal: Goal.single)), isTrue);
     });
   });
 }

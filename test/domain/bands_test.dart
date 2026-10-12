@@ -122,7 +122,7 @@ void main() {
       expect(phaseOf(task, d(2026, 7, 6, 14)), TaskPhase.pending); // the gap
       expect(phaseOf(task, d(2026, 7, 6, 20)), TaskPhase.active);
       expect(phaseOf(task, d(2026, 7, 7, 0, 1)), TaskPhase.expired);
-      expect(canComplete(task, d(2026, 7, 6, 14)), isFalse);
+      expect(canCheckIn(task, d(2026, 7, 6, 14)), isFalse);
       expect(canSkip(task, d(2026, 7, 6, 14)), isTrue);
     });
 
