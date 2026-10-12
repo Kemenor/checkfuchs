@@ -243,7 +243,36 @@ class TaskRepository {
           ? domain.removeCheckIn(t, at, now)
           : null,
     );
-    if (applied) await reconcileAll(now);
+    if (applied) {
+      await _dropUntouchedSuccessors(task.id!);
+      await reconcileAll(now);
+    }
+  }
+
+  /// A habit instance that opens again (a Done reopened, a check-in taken
+  /// back below the cap) is the series' running instance once more — the
+  /// successor its Done generated must not linger beside it as a second open
+  /// row. Only an *untouched* successor goes (open, no check-ins); one the
+  /// user already acted on is real and stays.
+  Future<void> _dropUntouchedSuccessors(int taskId) async {
+    final row = await (db.select(
+      db.tasks,
+    )..where((t) => t.id.equals(taskId))).getSingleOrNull();
+    final tid = row?.templateId;
+    final occ = row?.occurrence;
+    if (row == null || tid == null || occ == null) return;
+    if (row.status != domain.TaskStatus.open) return;
+    final later =
+        await (db.select(db.tasks)..where(
+              (t) =>
+                  t.templateId.equals(tid) &
+                  t.status.equals(domain.TaskStatus.open.index) &
+                  t.occurrence.isBiggerThanValue(occ),
+            ))
+            .get();
+    for (final r in later) {
+      if (r.checkIns.isEmpty) await deleteTask(r.id);
+    }
   }
 
   /// Missed → Done on a 1-of-1 habit instance (logging correction, §11 q7).
@@ -255,10 +284,13 @@ class TaskRepository {
   /// Undo a Done/Skip: a Done gives back its latest check-in, a Skip
   /// reopens; either re-resolves (Missed if the window has meanwhile passed
   /// — that's truthful).
-  Future<void> reopenTask(domain.Task task, DateTime now) => _transition(
-    task.id,
-    (t) => domain.canReopen(t) ? domain.reopen(t, now) : null,
-  );
+  Future<void> reopenTask(domain.Task task, DateTime now) async {
+    final applied = await _transition(
+      task.id,
+      (t) => domain.canReopen(t) ? domain.reopen(t, now) : null,
+    );
+    if (applied) await _dropUntouchedSuccessors(task.id!);
+  }
 
   Future<void> skipTask(domain.Task task, DateTime now) async {
     final applied = await _transition(

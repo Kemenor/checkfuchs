@@ -564,10 +564,30 @@ void main() {
       for (final at in [tue, wed, thu]) {
         await repo.checkInTask(await current(), at);
       }
+      // Done at 3/3 generated next week's instance…
+      expect((await repo.allTasks()).where((t) => t.isOpen), hasLength(1));
       await repo.removeCheckIn(await current(), thu, d(2026, 10, 16, 9));
       final t = await current();
       expect(t.status, TaskStatus.open);
       expect(t.checkIns, [tue, wed]);
+      // …which goes again: this week is the running one once more.
+      final open = (await repo.allTasks()).where((t) => t.isOpen).toList();
+      expect(open.map((t) => t.occurrence), [d(2026, 10, 12)]);
+    });
+
+    test('reopening a Done habit drops its untouched successor', () async {
+      await seedDailyHabit();
+      await repo.reconcileAll(d(2026, 6, 27, 8));
+      final today = (await repo.allTasks()).single;
+      await repo.checkInTask(today, d(2026, 6, 27, 8)); // tomorrow appears
+      expect(await repo.allTasks(), hasLength(2));
+      await repo.reopenTask(
+        (await repo.allTasks()).firstWhere((t) => t.id == today.id),
+        d(2026, 6, 27, 9),
+      );
+      final tasks = await repo.allTasks();
+      expect(tasks, hasLength(1));
+      expect(tasks.single.isOpen, isTrue);
     });
 
     test('a forgotten check-in turns a missed week Done', () async {
