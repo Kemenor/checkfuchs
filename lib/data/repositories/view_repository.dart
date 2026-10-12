@@ -577,7 +577,10 @@ class ViewRepository {
       };
 
       // Header counts scope to the same current slots — "1 done · 2 left" is
-      // a statement about NOW, not an ever-growing all-time tally.
+      // a statement about NOW, not an ever-growing all-time tally. A met
+      // counter (§3.7) counts as done: it can no longer Miss, even while it
+      // stays in the list taking +1s.
+      bool metOpen(domain.Task t) => t.isOpen && t.isMet;
       sections.add(
         LensSection(
           lens: entry.value,
@@ -587,8 +590,9 @@ class ViewRepository {
           doneCount: ms
               .where(
                 (m) =>
-                    m.task.status == domain.TaskStatus.done &&
-                    isCurrentTerminal(m.task),
+                    (m.task.status == domain.TaskStatus.done &&
+                        isCurrentTerminal(m.task)) ||
+                    metOpen(m.task),
               )
               .length,
           missedCount: ms
@@ -602,6 +606,7 @@ class ViewRepository {
               .where(
                 (m) =>
                     m.task.isOpen &&
+                    !metOpen(m.task) &&
                     domain.phaseOf(m.task, now) != domain.TaskPhase.pending,
               )
               .length,
@@ -609,6 +614,7 @@ class ViewRepository {
               .where(
                 (m) =>
                     m.task.isOpen &&
+                    !metOpen(m.task) &&
                     domain.phaseOf(m.task, now) == domain.TaskPhase.pending,
               )
               .length,

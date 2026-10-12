@@ -2,6 +2,7 @@ import 'package:checkfuchs/data/db/database.dart';
 import 'package:checkfuchs/data/repositories/task_repository.dart';
 import 'package:checkfuchs/data/repositories/view_repository.dart';
 import 'package:checkfuchs/domain/clock.dart';
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/lens.dart';
 import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/task.dart' as domain;
@@ -104,6 +105,35 @@ void main() {
         .first)!;
     // today done; tomorrow's pending instance is the new open one.
     expect(state.sections.single.doneCount, 1);
+  });
+
+  test('a met counter stays shown but counts as done', () async {
+    await viewRepo.seedDefaults();
+    await taskRepo.createTemplate(
+      Template(
+        name: 'Gym',
+        recurrence: Recurrence.weekly(d(2026, 10, 12), on: {Weekday.mon}),
+        createdAt: d(2026, 10, 12),
+        goal: const Goal(min: 2, max: 3),
+      ),
+    );
+    await taskRepo.reconcileAll(d(2026, 10, 12, 8));
+    Future<domain.Task> gym() async => (await taskRepo.allTasks()).single;
+    await taskRepo.checkInTask(await gym(), d(2026, 10, 13, 18));
+
+    final home = (await viewRepo.watchViews().first).single;
+    Future<LensSection> section(DateTime now) async =>
+        (await viewRepo.watchViewState(home.id, FixedClock(now)).first)!
+            .sections
+            .single;
+
+    var s = await section(d(2026, 10, 13, 19)); // 1 of 2: still open
+    expect((s.doneCount, s.openCount), (0, 1));
+
+    await taskRepo.checkInTask(await gym(), d(2026, 10, 14, 7));
+    s = await section(d(2026, 10, 14, 8)); // 2 of 2–3: met
+    expect((s.doneCount, s.openCount), (1, 0));
+    expect(s.shown.map((t) => t.name), ['Gym']); // still in the list
   });
 
   group('lens dial editing (Phase 4 UI)', () {
