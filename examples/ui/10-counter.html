@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkfuchs — counting habits (goal)</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+  :root{--bg:#faf7f4;--card:#fff;--ink:#221d1a;--muted:#7a6f68;--line:#ece4dd;--field:#f3eee9;
+    --orange:#ea7a24;--emerald:#1fa85d;--indigo:#8559d0;--missed:#a8988c;--amber:#e0a33b;--red:#c0473a;
+    --sh:0 12px 30px -24px rgba(0,0,0,.4);}
+  body.dark{--bg:#161311;--card:#211c19;--ink:#f3ede9;--muted:#a99e96;--line:#322a25;--field:#2a2420;
+    --orange:#f39c4e;--emerald:#37ce78;--indigo:#a98cee;--missed:#b6a79b;--amber:#edb45a;--red:#e0796b;
+    --sh:0 12px 30px -22px rgba(0,0,0,.7);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{font-size:1.3rem;margin:0;letter-spacing:-.02em}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;flex:none}
+  .ms{font-family:'Material Symbols Rounded';font-size:22px;line-height:1;font-variation-settings:'opsz' 24,'wght' 400,'GRAD' 0,'FILL' 0;flex:none}
+  .ms.fill{font-variation-settings:'opsz' 24,'wght' 500,'GRAD' 0,'FILL' 1}
+  .stage{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:18px}
+  @media(max-width:1100px){.stage{grid-template-columns:1fr 1fr}}
+  @media(max-width:760px){.stage{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+  .cap{font-weight:700;margin:0 0 8px;font-size:.92rem}.cap small{color:var(--muted);font-weight:500}
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:26px;padding:16px 14px;position:relative;overflow:hidden;min-height:640px;box-shadow:var(--sh)}
+  .date{color:var(--muted);font-size:.82rem;margin:0 2px 12px;font-weight:500}
+
+  /* lens cards + rows */
+  .lcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:2px 14px 6px;margin-bottom:12px}
+  .lhead{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:12px 0 6px;display:flex;justify-content:space-between;gap:8px}
+  .lhead .m{color:var(--missed)}
+  .row{display:flex;align-items:center;gap:12px;min-height:56px}
+  .lcard .row+.row{border-top:1px solid var(--line)}
+  .name{flex:1;font-weight:600;font-size:.95rem}
+  .hint{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .missed .name{color:var(--missed);text-decoration:line-through}
+  .pill{font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pill.prog{color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,transparent)}
+  .pill.met{color:var(--emerald);background:color-mix(in srgb,var(--emerald) 15%,transparent)}
+  .pill.due{color:var(--amber);background:color-mix(in srgb,var(--amber) 18%,transparent)}
+  .ring{width:24px;height:24px;flex:none;display:block}
+
+  /* state ladder */
+  .ladder{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 14px;margin-top:4px}
+  .ladder .row{min-height:48px}
+  .ladder .what{flex:1;font-size:.84rem}
+  .ladder .what b{display:block;font-size:.9rem}
+  .ladder .what span{color:var(--muted)}
+
+  /* sheets */
+  .sheet{background:var(--card);border-radius:28px 28px 0 0;padding:8px 16px 16px;margin:-16px -14px 0;min-height:640px}
+  .handle{width:36px;height:4px;border-radius:999px;background:var(--line);margin:8px auto 10px}
+  .titlerow{display:flex;align-items:center;gap:8px}
+  .titlerow h2{flex:1;font-size:1.25rem;margin:0;letter-spacing:-.01em}
+  .seg{display:flex;background:var(--field);border-radius:12px;padding:3px;margin:10px 0 12px;flex:1}
+  .seg>span{flex:1;text-align:center;font-size:.8rem;font-weight:700;padding:7px 4px;border-radius:9px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:5px}
+  .seg>span .ms{font-size:17px}
+  .seg>span.on{background:var(--card);color:var(--ink);box-shadow:0 2px 6px -3px rgba(0,0,0,.3)}
+  .field{border:1px solid var(--line);border-radius:6px;padding:9px 12px;margin-bottom:10px}
+  .field b{display:block;font-size:.7rem;color:var(--muted);font-weight:600}
+  .field span{font-size:.95rem}
+  .sec{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+  .banner{display:flex;gap:10px;align-items:center;padding:11px 14px;border-radius:14px;background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange);font-weight:700;font-size:.88rem}
+  .step{display:flex;align-items:center;gap:10px;min-height:46px}
+  .step .lbl{font-weight:600;font-size:.9rem;min-width:66px}
+  .btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink)}
+  .btn .ms{font-size:18px}
+  .btn.off{opacity:.35}
+  .val{width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+  .unit{color:var(--muted);font-size:.85rem}
+  .chip{font-size:.76rem;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--field);color:var(--ink);border:1px solid transparent;white-space:nowrap}
+  .chip.on{background:color-mix(in srgb,var(--orange) 18%,transparent);color:var(--orange)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .sw{display:flex;align-items:center;gap:12px;min-height:52px}
+  .sw .t{flex:1}.sw .t b{display:block;font-size:.9rem}.sw .t span{color:var(--muted);font-size:.8rem}
+  .toggle-sw{width:44px;height:26px;border-radius:99px;background:var(--orange);position:relative;flex:none}
+  .toggle-sw:after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+  .note{font-size:.76rem;color:var(--muted);margin:2px 0 0}
+  .save{margin-top:16px;width:100%;background:var(--orange);color:#fff;font-weight:700;border:none;border-radius:999px;padding:13px;font-family:inherit;font-size:.95rem}
+  body.dark .save{color:#1a1411}
+
+  /* detail */
+  .status{border-radius:16px;background:var(--field);padding:12px 14px;margin:6px 0 4px}
+  .status .l1{display:flex;align-items:center;gap:10px;font-weight:700}
+  .status .l2{color:var(--muted);font-size:.82rem;margin:2px 0 10px 34px}
+  .acts{display:flex;gap:8px;margin-left:34px}
+  .pbtn{border-radius:999px;padding:7px 14px;font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:5px;border:none;font-family:inherit}
+  .pbtn .ms{font-size:18px}
+  .pbtn.fill{background:var(--orange);color:#fff}
+  body.dark .pbtn.fill{color:#1a1411}
+  .pbtn.text{background:transparent;color:var(--muted)}
+  .streak{display:flex;align-items:center;gap:6px;margin:12px 2px 2px;font-size:.88rem}
+  .streak .ms{color:var(--orange);font-size:18px}
+  .streak b{font-weight:600}.streak span{color:var(--muted);margin-left:8px}
+  .prop{display:flex;align-items:center;gap:14px;padding:11px 2px;min-height:52px}
+  .prop+.prop{border-top:1px solid var(--line)}
+  .prop>.ms{color:var(--muted)}
+  .plabel{flex:1}.plabel b{display:block;font-size:.9rem;font-weight:600}
+  .plabel span{color:var(--muted);font-size:.82rem}
+  .chev{color:var(--muted)}
+  .ci{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 2px}
+  .ci .ms.dot{color:var(--emerald);font-size:20px}
+  .ci .when{flex:1;font-size:.9rem;font-variant-numeric:tabular-nums}
+  .ci .x{color:var(--muted);font-size:20px}
+  .add{color:var(--orange);font-weight:700;font-size:.86rem;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 2px}
+  .add .ms{font-size:20px}
+  .legend{font-size:.8rem;color:var(--muted);margin-top:10px}
+  .frags{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+  @media(max-width:1100px){.frags{grid-template-columns:1fr 1fr}}
+  @media(max-width:760px){.frags{grid-template-columns:1fr;max-width:400px;margin-inline:auto}}
+  .frag{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--sh)}
+  .frag .banner{margin-bottom:6px}
+  .fcap{font-weight:700;font-size:.86rem;margin:0 0 10px}.fcap small{color:var(--muted);font-weight:500}
+  .frag .note{margin-top:8px}
+  .notes{margin-top:26px;font-size:.86rem;max-width:860px}
+  .notes li{margin-bottom:6px}
+</style></head>
+<body><div class="wrap">
+  <header><h1>🦊 Counting habits — a goal on a habit</h1>
+  <button class="toggle" onclick="document.body.classList.toggle('dark')">◐ Light / dark</button></header>
+
+  <div class="stage">
+
+    <!-- 1 · rows in lens cards -->
+    <div>
+      <p class="cap">Rows <small>· tap the ring = +1 check-in</small></p>
+      <div class="phone">
+        <p class="date">Thursday, 15 October</p>
+        <div class="lcard">
+          <div class="lhead"><span>Daily habits</span><span>1 done · 2 open</span></div>
+          <div class="row"><span class="ring" data-n="1" data-min="2" data-max="2"></span><span class="name">Brush teeth</span><span class="pill prog">1 / 2</span></div>
+          <div class="row"><span class="ring" data-n="9" data-min="8"></span><span class="name">Water</span><span class="pill met">9 · NO LIMIT</span></div>
+          <div class="row"><span class="ms" style="color:var(--orange)">radio_button_unchecked</span><span class="name">Floss</span><span class="pill due">TODAY</span></div>
+        </div>
+        <div class="lcard">
+          <div class="lhead"><span>This week</span><span>2 done · 1 open</span></div>
+          <div class="row"><span class="ring" data-n="1" data-min="2" data-max="3"></span><span class="name">Gym</span><span class="pill prog">1 / 2–3</span></div>
+          <div class="row"><span class="ring" data-n="2" data-min="2" data-max="3"></span><span class="name">Run</span><span class="pill met">2 / 2–3</span></div>
+          <div class="row"><span class="ms fill" style="color:var(--emerald)">check_circle</span><span class="name">Climbing</span><span class="hint">3 / 3</span></div>
+        </div>
+        <p class="legend"><b>Water</b> is met (8 reached) but has no limit, so it stays and keeps taking +1 until the day ends. <b>Run</b> is met but can still go to 3. <b>Climbing</b> hit its max: Done, exactly like a 1-of-1 habit. The header counts met rows as <i>done</i> — they can no longer Miss.</p>
+      </div>
+    </div>
+
+    <!-- 2 · create sheet -->
+    <div>
+      <p class="cap">Create sheet <small>· the default: one Times line</small></p>
+      <div class="phone">
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="titlerow"><h2>New task</h2><span class="ms" style="color:var(--muted)">close</span></div>
+          <div class="seg"><span class="on"><span class="ms">event_repeat</span>Habit</span><span><span class="ms">check_circle</span>To-do</span></div>
+          <div class="field"><b>Name</b><span>Floss</span></div>
+          <div class="sec">Repeat</div>
+          <div class="banner"><span class="ms">event_repeat</span>Every day</div>
+          <div class="seg" style="margin-top:12px"><span class="on">Day</span><span>Week</span><span>Month</span><span>Year</span></div>
+          <div class="sec">Times</div>
+          <div class="step"><span class="lbl">Times</span><span class="btn off"><span class="ms">remove</span></span><span class="val">1</span><span class="btn"><span class="ms">add</span></span><span class="unit">a day</span><span class="chip" style="margin-left:auto">Range…</span></div>
+          <div class="sec">Active window</div>
+          <div class="chips"><span class="chip on">All day</span><span class="chip">Morning</span><span class="chip">Evening</span><span class="chip">Custom…</span></div>
+          <button class="save">Save</button>
+          <p class="note" style="margin-top:12px">Every habit gets exactly <b>one extra line</b>. At 1 it is an ordinary habit and the banner says nothing about times. How the section unfolds is shown below the phones.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 · detail sheet -->
+    <div>
+      <p class="cap">Detail sheet <small>· check-ins are listed, removable, addable</small></p>
+      <div class="phone">
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="titlerow"><div class="seg" style="margin:0"><span class="on"><span class="ms">event_repeat</span>Habit</span><span><span class="ms">check_circle</span>To-do</span></div><span class="ms" style="color:var(--muted)">close</span></div>
+          <div style="font-size:1.3rem;font-weight:700;margin:12px 2px 6px">Gym</div>
+          <div class="status">
+            <div class="l1"><span class="ring" data-n="1" data-min="2" data-max="3"></span>1 of 2–3 this week</div>
+            <div class="l2">Open until Sunday · one more meets it</div>
+            <div class="acts"><button class="pbtn fill"><span class="ms">add</span>Check in</button><button class="pbtn text">Skip</button></div>
+          </div>
+          <div class="streak"><span class="ms fill">local_fire_department</span><b>3 weeks in a row</b><span>82 % done</span></div>
+          <div class="sec">Check-ins this week</div>
+          <div class="ci"><span class="ms fill dot">check_circle</span><span class="when">Tue 13 Oct · 18:10</span><span class="ms x">close</span></div>
+          <div class="add"><span class="ms">add_circle</span>Add a forgotten check-in</div>
+          <div style="height:6px"></div>
+          <div class="prop"><span class="ms">history</span><span class="plabel"><b>History</b></span><span class="ms chev">chevron_right</span></div>
+          <div class="prop"><span class="ms">event_repeat</span><span class="plabel"><b>Repeat</b><span>Every week</span></span><span class="ms chev">chevron_right</span></div>
+          <div class="prop"><span class="ms">tag</span><span class="plabel"><b>Times</b><span>2–3 a week, once a day · remind until 2</span></span><span class="ms chev">chevron_right</span></div>
+          <div class="prop"><span class="ms">schedule</span><span class="plabel"><b>Active window</b><span>All week</span></span><span class="ms chev">chevron_right</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Times: progressive disclosure -->
+  <p class="cap" style="margin-top:28px">The Times section, unfolding <small>· gym, weekly, window = the whole week</small></p>
+  <div class="frags">
+    <div class="frag">
+      <p class="fcap">1 · ordinary habit <small>(default)</small></p>
+      <div class="banner"><span class="ms">event_repeat</span>Every week</div>
+      <div class="step"><span class="lbl">Times</span><span class="btn off"><span class="ms">remove</span></span><span class="val">1</span><span class="btn"><span class="ms">add</span></span><span class="unit">a week</span><span class="chip" style="margin-left:auto">Range…</span></div>
+      <p class="note">One line, nothing else. The stepper sets a fixed goal (at least = at most).</p>
+    </div>
+    <div class="frag">
+      <p class="fcap">Fixed · 2 a week</p>
+      <div class="banner"><span class="ms">event_repeat</span>Every week, 2 times, once a day</div>
+      <div class="step"><span class="lbl">Times</span><span class="btn"><span class="ms">remove</span></span><span class="val">2</span><span class="btn"><span class="ms">add</span></span><span class="unit">a week</span><span class="chip" style="margin-left:auto">Range…</span></div>
+      <div class="sw"><span class="t"><b>Once a day</b><span>A second check-in on the same day doesn't count</span></span><span class="toggle-sw"></span></div>
+      <p class="note">Above 1 it's a counter. <i>Once a day</i> appears because the window spans more than a day — on a daily habit ("brush twice") it never shows.</p>
+    </div>
+    <div class="frag">
+      <p class="fcap">Range · 2–3 a week</p>
+      <div class="banner"><span class="ms">event_repeat</span>Every week, 2–3 times, once a day</div>
+      <div class="step"><span class="lbl">At least</span><span class="btn"><span class="ms">remove</span></span><span class="val">2</span><span class="btn"><span class="ms">add</span></span><span class="unit">a week</span><span class="chip on" style="margin-left:auto">Range</span></div>
+      <div class="step"><span class="lbl">At most</span><span class="btn"><span class="ms">remove</span></span><span class="val">3</span><span class="btn"><span class="ms">add</span></span><span class="chip">No limit</span></div>
+      <div class="sw"><span class="t"><b>Once a day</b><span>A second check-in on the same day doesn't count</span></span><span class="toggle-sw"></span></div>
+      <div class="sw" style="flex-wrap:wrap;gap:6px 12px"><span class="t"><b>Remind until</b><span>Reminders stop once this is reached</span></span><div class="seg" style="margin:0 0 4px;flex:1 1 100%"><span class="on">Minimum</span><span>Maximum</span></div></div>
+      <p class="note"><i>Range…</i> splits the stepper; tapping <i>Range</i> again folds it back (at most snaps to at least). <i>Remind until</i> only exists here, where the two ends differ. <i>No limit</i> + <i>Maximum</i> = reminders until the window closes.</p>
+    </div>
+  </div>
+
+  <!-- state ladder -->
+  <p class="cap" style="margin-top:28px">One cycle, step by step <small>· gym, at least 2, at most 3</small></p>
+  <div class="ladder" style="max-width:560px">
+    <div class="row"><span class="ring" data-n="0" data-min="2" data-max="3"></span><span class="what"><b>0 / 2–3 · Open</b><span>Monday, nothing yet</span></span></div>
+    <div class="row"><span class="ring" data-n="1" data-min="2" data-max="3"></span><span class="what"><b>1 / 2–3 · Open</b><span>can still Miss</span></span></div>
+    <div class="row"><span class="ring" data-n="2" data-min="2" data-max="3"></span><span class="what"><b>2 / 2–3 · Met</b><span>done colour, stays in the list, takes +1 · reminders stop here if set to <i>Minimum</i></span></span></div>
+    <div class="row"><span class="ms fill" style="color:var(--emerald)">check_circle</span><span class="what"><b>3 / 3 · Done</b><span>leaves the list, like any finished habit</span></span></div>
+    <div class="row"><span class="ms fill" style="color:var(--emerald)">check_circle</span><span class="what"><b>Week ends at 2 · Done</b><span>a met cycle resolves quietly · stats: 2 done</span></span></div>
+    <div class="row missed"><span class="ring" data-n="1" data-min="2" data-max="3" data-missed="1"></span><span class="what"><b class="name" style="flex:none">Week ends at 1 · Missed</b><span>shown as “1 of 2” · stats: 1 done + 1 missed (0 of 2 = 2 missed)</span></span></div>
+  </div>
+
+  <ul class="notes">
+    <li><b>Ring:</b> one segment per check-in up to <i>max</i> (or <i>min</i> when there's no limit). Below min the filled segments are fox orange; once met they turn emerald; at max the ring becomes the ordinary Done check.</li>
+    <li><b>Pill:</b> progress in tabular figures — <i>1 / 2</i> for a fixed goal, <i>1 / 2–3</i> for a range, <i>9 · NO LIMIT</i> past the minimum. Orange below min, emerald once met.</li>
+    <li><b>Swipe:</b> the Done action reads <b>+1</b> on a counter; Skip shows only below min.</li>
+    <li><b>Removing a check-in</b> re-resolves: Done at 3/3 → back to met while the week is open; a closed week that drops below 2 becomes Missed.</li>
+  </ul>
+</div>
+
+<script>
+  // Segmented progress ring: one arc per check-in slot.
+  for (const el of document.querySelectorAll('.ring')) {
+    const n = +el.dataset.n, min = +el.dataset.min;
+    const max = el.dataset.max ? +el.dataset.max : null;
+    const missed = el.dataset.missed === '1';
+    const slots = max ?? min, met = n >= min;
+    const colour = missed ? 'var(--missed)' : met ? 'var(--emerald)' : 'var(--orange)';
+    const r = 9.5, c = 12, gap = slots > 1 ? 0.32 : 0;
+    const arc = (a0, a1) => {
+      const p = a => [c + r * Math.sin(a), c - r * Math.cos(a)];
+      const [x0, y0] = p(a0), [x1, y1] = p(a1);
+      return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+    };
+    let paths = '';
+    for (let i = 0; i < slots; i++) {
+      const a0 = (i / slots) * 2 * Math.PI + gap / 2;
+      const a1 = ((i + 1) / slots) * 2 * Math.PI - gap / 2;
+      const on = i < Math.min(n, slots);
+      paths += slots === 1
+        ? `<circle cx="12" cy="12" r="${r}" fill="none" stroke="${colour}" stroke-width="${on ? 3.2 : 2}" opacity="${on ? 1 : .45}"/>`
+        : `<path d="${arc(a0, a1)}" fill="none" stroke="${colour}" stroke-linecap="round" stroke-width="${on ? 3.2 : 2}" opacity="${on ? 1 : .35}"/>`;
+    }
+    // No limit and past the minimum: the full ring plus the count inside.
+    const label = max === null && met
+      ? `<text x="12" y="15.4" text-anchor="middle" font-size="9" font-weight="800" fill="${colour}" font-family="Figtree">${n}</text>` : '';
+    el.innerHTML = `<svg viewBox="0 0 24 24" class="ring">${paths}${label}</svg>`;
+  }
+</script>
+</body></html>

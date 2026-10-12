@@ -19,6 +19,7 @@ as intended.
 | `07-window-reminders.html` | Active window as a multi-select set (Night/Morning/Afternoon/Evening, "Custom…" appends a band), reminders as inline rows: day-offset stepper + time |
 | `08-onboarding-intro.html` | First-launch pager: Task → Lens → View, then the carrier-habit sheet |
 | `09-stats.html` | Stats view built from user-selectable tiles (completion, week strip, streaks, insight, habit grid, by window, misses by weekday) + Edit tiles + Settings "Stats tab" switch |
+| `10-counter.html` | Counting habits (goal): segmented progress ring + pill on rows (open / met / done), the create sheet's Times section, the detail sheet's check-in list, and one cycle's state ladder |
 
 > These are throwaway HTML for *design decisions*, not production code. When a widget is
 > built, conform it to the relevant file and add a `file:line` pointer in the design system.

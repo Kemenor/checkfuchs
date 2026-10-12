@@ -73,6 +73,8 @@ status, and the **only** source of analytics.
 | *(membership)* | join | Lens membership lives on the `Task↔Lens` join (§4), not here |
 | `createdAt` | datetime | when the instance came into being |
 | `resolvedAt` | datetime? | when it went terminal; null while Open — **required for analytics** |
+| `goal` | `{min, max?, oncePerDay}` | stamped from the Template (§3.7); `1 of 1` for every other Task |
+| `checkIns` | datetime[] | the check-ins toward the goal (§3.7); for a 1-of-1 Task, its single Done |
 
 *(Deferred:* `checklist: [{label, status}]` *— additive, no per-item logic, no per-item
 windows. Multiple windows ⇒ multiple Tasks. Not in v1.)*
@@ -235,6 +237,72 @@ A one-off (`templateId = null`) becomes recurring by: pick a recurrence → crea
 Template, copy the task's window/notification/lens settings into its defaults → set the
 task's `templateId`. The engine takes over from the next occurrence.
 
+### 3.7 Goal — counting habits ("gym 2–3× a week")
+Not a third kind of thing: **every habit has a goal; an ordinary habit's is 1 of 1.** A
+counter is a habit whose cycle wants *several* check-ins — gym twice or three times a
+week, on whichever days, or water at least eight times a day. The cycle is the existing
+recurrence + window, so end date, pause, vacation, reminders and lenses come for free.
+Multiple weekly Templates can't express this: each pins a weekday ("Wed" Misses if you
+went Thursday) and none can say "2 to 3".
+
+```
+goal: {
+  min:        int ≥ 1          // check-ins that meet the cycle (default 1)
+  max:        int? ≥ min       // the cap; null = no limit (default = min)
+  oncePerDay: bool             // at most one check-in per calendar day (default false)
+  remindTill: min | max        // when pending reminders stop (default min)
+}
+```
+| Want | Encodes as |
+|---|---|
+| ordinary habit | `min 1, max 1` |
+| gym 2–3× a week, never twice a day | weekly, window = the week, `min 2, max 3, oncePerDay` |
+| brush teeth twice a day | daily, `min 2, max 2` |
+| water, at least 8, log every glass | daily, `min 8, max null` |
+
+**Stamped, like every default (§3.2).** Each generated Task carries its own copy of the
+goal, so a Task resolves itself and a goal edit reaches *future* cycles only (§5).
+Template-generated Tasks only — a counting one-off is deferred (§11).
+
+**Check-ins.** The Task records a list of check-in timestamps (`checkIns`, §2.1).
+`count = checkIns.length`. A check-in is allowed while the Task is **Active** and
+`count < max` (and, with `oncePerDay`, no check-in yet on that calendar day). Tapping the
+ring — the 80 % action (DESIGN_SYSTEM §3.1) — adds one check-in at *now*.
+
+**Status follows the count** — `met` is *derived*, never stored (like Pending/Active):
+
+| Situation | Status | Shown as |
+|---|---|---|
+| `count < min` | Open | in the list, partial ring (1/2), can still Miss |
+| `min ≤ count < max` (or no max) | Open, **met** | in the list, done colour, still takes +1, can no longer Miss |
+| `count = max` | **Done** (`resolvedAt` = that check-in) | leaves the list like any finished habit |
+| window ends while met | **Done** (automatic, `resolvedAt` = last check-in) | — |
+| window ends below `min` | **Missed** | struck, with its count ("1 of 2") |
+
+`min = max = 1` goes straight Open → Done on the first check-in: today's behaviour,
+unchanged. *No limit* means the met Task stays in the list, taking +1s, until its window
+closes. This softens §2.2 in one place: a met counter is the one **automatic Done**.
+
+**Corrections (detail sheet).** The check-ins are listed and each can be removed; a
+forgotten one can be added with a past time **inside the window** (same rule as §11 q7 —
+a logging fix on a habit). Every change re-resolves the Task: removing one below `max`
+reopens a Done (if the window is still open), or turns an expired Done into Missed when
+it drops below `min`; adding one to a Missed Task can make it Done.
+
+**Skip** is allowed while Open and **below `min`** (a met cycle can't fail, so there is
+nothing to decline). The check-ins already made stay on the record. On vacation (§6)
+the auto-Skip applies only below `min`; a met instance resolves Done instead.
+
+**Reminders** (§2.4) follow `remindTill`: with `min` (the default) pending pings cancel
+once the Task is **met** — the reminder's job, don't Miss, is done; with `max` they keep
+firing until the Task reaches its cap and goes Done. With no limit and `max`, they run
+until the window closes. The choice only shows when `max ≠ min` — for a fixed goal both
+mean the same moment.
+
+**Validation (§7).** `max ≥ min`. `oncePerDay` only makes sense when the window spans more
+than one day, and needs `min ≤` the days in the window — "3× a day, once a day" and "5×
+in a weekend, once a day" are rejected at configuration time.
+
 ---
 
 ## 4. Lens — pure presentation
@@ -361,6 +429,14 @@ Validate at configuration time, not silently at runtime:
   automatic `Missed` breaks the run but is shown as **neutral data, not red**.
 - **Avoidance surfacing:** beyond a threshold of consecutive misses, render the item
   *differently* (e.g. colour) as **information, not a command**. **(visualization)**
+- **Counters (§3.7) count in check-ins, not cycles.** Every check-in is one *done*; every
+  check-in short of `min` when the cycle closes is one *missed* — gym at 1 of 2 is 1 done +
+  1 missed, at 0 of 2 it is 2 missed, at 3 of 2–3 it is 3 done. Completion rate is
+  `done / (done + missed)` over those units. The Task still holds one status; the missed
+  units are derived (`min − count`), never stored.
+- **Streaks** count consecutive **met cycles** ("3 weeks in a row"); a Skipped cycle is
+  neutral, as everywhere. Day-level views (heatmap, week strip) place each check-in on its
+  own day, so the gym days show where they happened.
 
 ---
 
@@ -393,6 +469,9 @@ Validate at configuration time, not silently at runtime:
 | **Recurrence** | Template rule for when a new Task is generated (RRULE-shaped subset). |
 | **Period** | A Lens's refill cadence (`none` = continuous; otherwise a calendar cadence). |
 | **Vacation** | App-level list of `{start,end}` periods that gates generation (treadmill only). |
+| **Goal** | A habit's check-ins per cycle: `min`, optional `max`, `oncePerDay`, and `remindTill` (min/max). Ordinary habits are 1 of 1. |
+| **Check-in** | One timestamped tick toward a goal. A Task with enough is **met**; at `max` it is Done. |
+| **Met** | Derived: an Open counter whose check-ins reached `min` — can no longer Miss, still takes +1. |
 
 ---
 
@@ -414,3 +493,6 @@ Validate at configuration time, not silently at runtime:
 8. **Ordinal-weekday recurrence** ("2nd Tuesday", "last Friday of the month") — RRULE's
    `BYSETPOS`, intentionally excluded from v1 to keep the recurrence editor lean. Adding it
    later means one extra field on the recurrence struct + a mode in the Monthly editor.
+9. **Counting one-offs** ("read 3 chapters by Friday") — the §3.7 goal on a template-less
+   Task. The model allows it (the goal is stamped per Task); deferred until a habit
+   counter has proven itself.
