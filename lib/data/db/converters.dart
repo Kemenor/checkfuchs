@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../domain/goal.dart';
 import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/window_rule.dart';
@@ -35,6 +36,50 @@ class NotificationListConverter
         'at': n.at?.millisecondsSinceEpoch,
       },
   ]);
+}
+
+/// Stores a [Goal] as a JSON text column. Missing keys take the 1-of-1
+/// defaults, so the column default `'{}'` is an ordinary habit; `max` is
+/// told apart from "no limit" by the key's presence (`"max": null`).
+class GoalConverter extends TypeConverter<Goal, String> {
+  const GoalConverter();
+
+  @override
+  Goal fromSql(String fromDb) {
+    final m = jsonDecode(fromDb) as Map<String, dynamic>;
+    final min = (m['min'] as int?) ?? 1;
+    return Goal(
+      min: min,
+      max: m.containsKey('max') ? m['max'] as int? : min,
+      oncePerDay: (m['oncePerDay'] as bool?) ?? false,
+      remindTill: RemindTill.values[(m['remindTill'] as int?) ?? 0],
+    );
+  }
+
+  @override
+  String toSql(Goal value) => value == Goal.single
+      ? '{}'
+      : jsonEncode({
+          'min': value.min,
+          'max': value.max,
+          'oncePerDay': value.oncePerDay,
+          'remindTill': value.remindTill.index,
+        });
+}
+
+/// Stores a Task's check-ins as a JSON list of epoch milliseconds.
+class CheckInListConverter extends TypeConverter<List<DateTime>, String> {
+  const CheckInListConverter();
+
+  @override
+  List<DateTime> fromSql(String fromDb) => [
+    for (final ms in (jsonDecode(fromDb) as List).cast<int>())
+      DateTime.fromMillisecondsSinceEpoch(ms),
+  ];
+
+  @override
+  String toSql(List<DateTime> value) =>
+      jsonEncode([for (final d in value) d.millisecondsSinceEpoch]);
 }
 
 /// Stores a [Recurrence] as a JSON text column.

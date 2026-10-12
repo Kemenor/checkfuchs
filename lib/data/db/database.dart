@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../../domain/goal.dart';
 import '../../domain/lens.dart';
 import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
@@ -27,6 +28,10 @@ class Templates extends Table {
   TextColumn get notifications => text()
       .map(const NotificationListConverter())
       .withDefault(const Constant('[]'))();
+
+  /// Check-ins per cycle (§3.7), JSON. '{}' = 1 of 1, an ordinary habit (v15).
+  TextColumn get goal =>
+      text().map(const GoalConverter()).withDefault(const Constant('{}'))();
 
   /// The Lens generated instances join by default (§4.2 stamping). Set to null
   /// if its lens is deleted.
@@ -76,6 +81,16 @@ class Tasks extends Table {
   /// Per-instance reminders (§2.4), JSON list.
   TextColumn get notifications => text()
       .map(const NotificationListConverter())
+      .withDefault(const Constant('[]'))();
+
+  /// The goal stamped from the template (§3.7), JSON; '{}' = 1 of 1 (v15).
+  TextColumn get goal =>
+      text().map(const GoalConverter()).withDefault(const Constant('{}'))();
+
+  /// Check-ins toward the goal, JSON list of epoch milliseconds (v15). Rows
+  /// resolved before v15 have none — the domain counts such a Done as one.
+  TextColumn get checkIns => text()
+      .map(const CheckInListConverter())
       .withDefault(const Constant('[]'))();
 }
 
@@ -208,7 +223,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : super(driftDatabase(name: 'checkfuchs'));
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   /// Whether [table].[column] already exists — migration steps are guarded on
   /// the *actual* schema, not just `from`. Two reasons: `m.createTable` in an
@@ -330,6 +345,14 @@ class AppDatabase extends _$AppDatabase {
         // Per-lens choice of header counts (all three = the old "left" split
         // into open + upcoming).
         await _addColumnIfMissing(m, lenses, lenses.headerCounts);
+      }
+      if (from < 15) {
+        // Counting habits: a goal on templates and tasks, check-ins on
+        // tasks. The defaults make every existing row an ordinary 1-of-1
+        // habit with no check-ins — no data is rewritten.
+        await _addColumnIfMissing(m, templates, templates.goal);
+        await _addColumnIfMissing(m, tasks, tasks.goal);
+        await _addColumnIfMissing(m, tasks, tasks.checkIns);
       }
     },
     // SQLite ships with foreign keys OFF; without this every onDelete

@@ -148,10 +148,7 @@ void main() {
     await db
         .into(db.appSettings)
         .insertOnConflictUpdate(
-          const AppSettingsCompanion(
-            id: Value(1),
-            onboardingDone: Value(true),
-          ),
+          const AppSettingsCompanion(id: Value(1), onboardingDone: Value(true)),
         );
     await loadDemoData(db, DateTime.now(), l10n);
     await settle(tester);

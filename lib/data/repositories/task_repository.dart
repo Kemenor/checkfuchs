@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/generation.dart';
+import '../../domain/goal.dart';
 import '../../domain/notification.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
@@ -8,6 +9,7 @@ import '../../domain/template.dart' as domain;
 import '../../domain/window_rule.dart';
 import '../db/converters.dart';
 import '../db/database.dart';
+import '../db/mappers.dart';
 
 /// Bridges the drift database and the pure domain engine: maps rows ⇄ domain
 /// objects, and persists `reconcileTemplate`'s output. The engine stays pure;
@@ -80,6 +82,7 @@ class TaskRepository {
             createdAt: t.createdAt,
             defaultLensId: Value(ids.firstOrNull),
             notifications: Value(t.notifications),
+            goal: Value(t.goal.fitTo(windowSpanDays(recurrence, t.windowRule))),
           ),
         );
     for (final lid in ids) {
@@ -205,37 +208,97 @@ class TaskRepository {
             ..where((m) => m.taskId.equals(taskId) & m.lensId.equals(lensId)))
           .write(TaskLensCompanion(passedAt: Value(now)));
 
-  /// Tap-the-ring / swipe Done. Applies the domain transition (no-op if not
-  /// currently completable), persists, then reconciles so the next instance is
-  /// generated immediately.
-  Future<void> completeTask(domain.Task task, DateTime now) async {
-    if (task.id == null || !domain.canCheckIn(task, now)) return;
-    final done = domain.checkIn(task, now);
-    await _writeStatus(task.id!, done.status, done.resolvedAt);
-    await reconcileAll(now);
+  /// Tap-the-ring / swipe Done: one check-in at [now] (§3.7). Applies the
+  /// domain transition (no-op if there's no room), persists, then reconciles
+  /// so a Done instance's successor is generated immediately.
+  Future<void> checkInTask(domain.Task task, DateTime now) async {
+    final applied = await _transition(
+      task.id,
+      (t) => domain.canCheckIn(t, now) ? domain.checkIn(t, now) : null,
+    );
+    if (applied) await reconcileAll(now);
   }
 
-  /// Missed → Done on a habit instance (logging correction, §11 q7).
-  Future<void> correctMissedTask(domain.Task task) async {
-    if (!domain.canCorrectMiss(task)) return;
-    final done = domain.correctMiss(task);
-    await _writeStatus(task.id!, done.status, done.resolvedAt);
+  /// A forgotten check-in at [at] (§3.7 corrections): inside the window, in
+  /// the past. Can turn a Missed cycle Done.
+  Future<void> addCheckIn(domain.Task task, DateTime at, DateTime now) async {
+    final applied = await _transition(
+      task.id,
+      (t) => domain.canAddCheckIn(t, at, now)
+          ? domain.addCheckIn(t, at, now)
+          : null,
+    );
+    if (applied) await reconcileAll(now);
   }
 
-  /// Undo a Done/Skip: the instance is open again (the next reconcile will
-  /// still Miss it if its window has meanwhile passed — that's truthful).
-  Future<void> reopenTask(domain.Task task, DateTime now) async {
-    if (!domain.canReopen(task) || task.id == null) return;
-    final open = domain.reopen(task, now);
-    await _writeStatus(task.id!, open.status, open.resolvedAt);
+  /// Take back the check-in at [at]; the instance re-resolves (§3.7).
+  Future<void> removeCheckIn(
+    domain.Task task,
+    DateTime at,
+    DateTime now,
+  ) async {
+    final applied = await _transition(
+      task.id,
+      (t) => domain.canRemoveCheckIn(t, at)
+          ? domain.removeCheckIn(t, at, now)
+          : null,
+    );
+    if (applied) await reconcileAll(now);
   }
+
+  /// Missed → Done on a 1-of-1 habit instance (logging correction, §11 q7).
+  Future<void> correctMissedTask(domain.Task task) => _transition(
+    task.id,
+    (t) => domain.canCorrectMiss(t) ? domain.correctMiss(t) : null,
+  );
+
+  /// Undo a Done/Skip: a Done gives back its latest check-in, a Skip
+  /// reopens; either re-resolves (Missed if the window has meanwhile passed
+  /// — that's truthful).
+  Future<void> reopenTask(domain.Task task, DateTime now) => _transition(
+    task.id,
+    (t) => domain.canReopen(t) ? domain.reopen(t, now) : null,
+  );
 
   Future<void> skipTask(domain.Task task, DateTime now) async {
-    if (task.id == null || !domain.canSkip(task, now)) return;
-    final skipped = domain.skip(task, now);
-    await _writeStatus(task.id!, skipped.status, skipped.resolvedAt);
-    await reconcileAll(now);
+    final applied = await _transition(
+      task.id,
+      (t) => domain.canSkip(t, now) ? domain.skip(t, now) : null,
+    );
+    if (applied) await reconcileAll(now);
   }
+
+  /// Read-modify-write one task's resolution against the *stored* row,
+  /// inside a transaction — the UI's Task may be stale, and a fast double tap
+  /// on a counter must land two check-ins, not one. [apply] returns null when
+  /// the action isn't allowed on the fresh row. Returns whether it applied.
+  Future<bool> _transition(
+    int? id,
+    domain.Task? Function(domain.Task fresh) apply,
+  ) async {
+    if (id == null) return false;
+    return db.transaction(() async {
+      final row = await (db.select(
+        db.tasks,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      final next = row == null ? null : apply(taskFromRow(row));
+      if (next == null) return false;
+      await _writeResolution(id, next);
+      return true;
+    });
+  }
+
+  /// Persist a resolution: status, `resolvedAt`, check-ins and goal — never
+  /// the whole row (see [_writeStatus]).
+  Future<void> _writeResolution(int id, domain.Task t) =>
+      (db.update(db.tasks)..where((x) => x.id.equals(id))).write(
+        TasksCompanion(
+          status: Value(t.status),
+          resolvedAt: Value(t.resolvedAt),
+          checkIns: Value(t.checkIns),
+          goal: Value(t.goal),
+        ),
+      );
 
   /// Status transitions write only `status` + `resolvedAt` — writing the full
   /// row from the in-memory Task would clobber a concurrent field edit (e.g. a
@@ -362,9 +425,13 @@ class TaskRepository {
   /// reconcile leaves the running instance and applies the change from the next.
   ///
   /// End date: an untouched open instance past a moved-in `until` is dropped
-  /// (that slot no longer exists). Reviving a series that had already ended
-  /// stamps the generation floor, like an unpause — the days it lay finished
-  /// are not back-filled as Misses.
+  /// (that slot no longer exists) — one with check-ins is kept, its record is
+  /// real. Reviving a series that had already ended stamps the generation
+  /// floor, like an unpause — the days it lay finished are not back-filled as
+  /// Misses.
+  ///
+  /// Goal: a new window that can't hold "once a day" any more (§3.7, §7)
+  /// drops it, on the series and its running instance.
   Future<void> updateTemplateConfig(
     int templateId,
     Recurrence recurrence,
@@ -380,6 +447,8 @@ class TaskRepository {
           !old.paused &&
           old.recurrence.hasEndedBy(now) &&
           !recurrence.hasEndedBy(now);
+      final goal = old?.goal.fitTo(windowSpanDays(recurrence, windowRule));
+      final goalChanged = goal != null && goal != old!.goal;
       await (db.update(
         db.templates,
       )..where((t) => t.id.equals(templateId))).write(
@@ -387,6 +456,7 @@ class TaskRepository {
           recurrence: Value(recurrence),
           windowRule: Value(windowRule),
           resumeOn: revived ? Value(now) : const Value.absent(),
+          goal: goalChanged ? Value(goal) : const Value.absent(),
         ),
       );
       // The running (open) instances take the new window too — editing
@@ -402,7 +472,7 @@ class TaskRepository {
       for (final r in open) {
         final occ = r.occurrence;
         if (occ == null) continue;
-        if (recurrence.endsBefore(occ)) {
+        if (recurrence.endsBefore(occ) && r.checkIns.isEmpty) {
           await deleteTask(r.id);
           continue;
         }
@@ -414,6 +484,39 @@ class TaskRepository {
             windowBands: Value(bandsToSql(windowRule.bands)),
           ),
         );
+        if (goalChanged) {
+          final regoaled = domain.applyGoal(taskFromRow(r), goal, now);
+          if (regoaled != null) await _writeResolution(r.id, regoaled);
+        }
+      }
+    });
+    await reconcileAll(now);
+  }
+
+  /// Edit a series' goal (§3.7). Fitted to the series' window ("once a day"
+  /// dropped where it can't hold), written to the template, and applied to
+  /// the running instance at once — raising `min` past its count un-meets
+  /// it, lowering `max` to its count makes it Done. Finished cycles keep the
+  /// goal they were judged by.
+  Future<void> setTemplateGoal(int templateId, Goal goal, DateTime now) async {
+    await db.transaction(() async {
+      final row = await (db.select(
+        db.templates,
+      )..where((t) => t.id.equals(templateId))).getSingleOrNull();
+      if (row == null) return;
+      final fitted = goal.fitTo(windowSpanDays(row.recurrence, row.windowRule));
+      await (db.update(db.templates)..where((t) => t.id.equals(templateId)))
+          .write(TemplatesCompanion(goal: Value(fitted)));
+      final open =
+          await (db.select(db.tasks)..where(
+                (t) =>
+                    t.templateId.equals(templateId) &
+                    t.status.equals(domain.TaskStatus.open.index),
+              ))
+              .get();
+      for (final r in open) {
+        final regoaled = domain.applyGoal(taskFromRow(r), fitted, now);
+        if (regoaled != null) await _writeResolution(r.id, regoaled);
       }
     });
     await reconcileAll(now);
@@ -473,15 +576,18 @@ class TaskRepository {
   Future<void> deleteVacation(int id) =>
       (db.delete(db.vacations)..where((v) => v.id.equals(id))).go();
 
-  Future<({Recurrence recurrence, WindowRule windowRule})?> templateConfig(
-    int templateId,
-  ) async {
+  Future<({Recurrence recurrence, WindowRule windowRule, Goal goal})?>
+  templateConfig(int templateId) async {
     final row = await (db.select(
       db.templates,
     )..where((t) => t.id.equals(templateId))).getSingleOrNull();
     return row == null
         ? null
-        : (recurrence: row.recurrence, windowRule: row.windowRule);
+        : (
+            recurrence: row.recurrence,
+            windowRule: row.windowRule,
+            goal: row.goal,
+          );
   }
 
   /// Run the pure engine over every template and persist the changes
@@ -512,6 +618,7 @@ class TaskRepository {
             await addMembership(newId, lid);
           }
         } else {
+          // Reconcile only ever changes a resolution, never check-ins.
           await _writeStatus(task.id!, task.status, task.resolvedAt);
         }
       }
@@ -552,35 +659,10 @@ class TaskRepository {
     resumeOn: r.resumeOn,
     createdAt: r.createdAt,
     notifications: r.notifications,
+    goal: r.goal,
   );
 
-  domain.Task _toTask(TaskRow r) => domain.Task(
-    id: r.id,
-    templateId: r.templateId,
-    occurrence: r.occurrence,
-    name: r.name,
-    note: r.note,
-    status: r.status,
-    start: r.windowStart,
-    end: r.windowEnd,
-    createdAt: r.createdAt,
-    resolvedAt: r.resolvedAt,
-    notifications: r.notifications,
-    bands: bandsFromSql(r.windowBands),
-  );
+  domain.Task _toTask(TaskRow r) => taskFromRow(r);
 
-  TasksCompanion _toCompanion(domain.Task t) => TasksCompanion(
-    id: t.id == null ? const Value.absent() : Value(t.id!),
-    templateId: Value(t.templateId),
-    occurrence: Value(t.occurrence),
-    name: Value(t.name),
-    note: Value(t.note),
-    status: Value(t.status),
-    windowStart: Value(t.start),
-    windowEnd: Value(t.end),
-    createdAt: Value(t.createdAt),
-    resolvedAt: Value(t.resolvedAt),
-    notifications: Value(t.notifications),
-    windowBands: Value(bandsToSql(t.bands)),
-  );
+  TasksCompanion _toCompanion(domain.Task t) => taskToCompanion(t);
 }

@@ -4,6 +4,9 @@
 /// reminder scheduler (which only sees Tasks) can read [remindTill].
 library;
 
+import 'recurrence.dart';
+import 'window_rule.dart';
+
 /// When a counter's pending reminders stop: once it is met (`min`), or only
 /// once it reaches its cap (`max` — with no limit, when the window closes).
 enum RemindTill { min, max }
@@ -45,6 +48,14 @@ class Goal {
   /// Whether [count] check-ins have reached the cap.
   bool capped(int count) => max != null && count >= max!;
 
+  /// This goal, valid for a window touching [spanDays] calendar days (§3.7,
+  /// §7): `oncePerDay` only makes sense across more than one day and needs
+  /// `min ≤ spanDays` — otherwise it is dropped rather than leaving a cycle
+  /// that can never be met.
+  Goal fitTo(int spanDays) => oncePerDay && (spanDays < 2 || min > spanDays)
+      ? copyWith(oncePerDay: false)
+      : this;
+
   static const _unset = Object();
 
   Goal copyWith({
@@ -74,4 +85,17 @@ class Goal {
   String toString() =>
       'Goal($min–${max ?? '∞'}${oncePerDay ? ', once a day' : ''}, '
       'remind till ${remindTill.name})';
+}
+
+/// How many calendar days one cycle's window touches — a daily all-day
+/// window 1, a weekly until-next window 7, Sat–Sun 2. Decides whether "once a
+/// day" is offered and what it allows ([Goal.fitTo]).
+int windowSpanDays(Recurrence r, WindowRule w) {
+  final occ = occurrenceOnOrAfter(r, r.anchor);
+  final win = w.resolve(occ, occurrenceAfter(r, occ));
+  // The end is exclusive: a window ending at midnight doesn't touch that day.
+  final last = win.end.subtract(const Duration(microseconds: 1));
+  final from = DateTime.utc(win.start.year, win.start.month, win.start.day);
+  final to = DateTime.utc(last.year, last.month, last.day);
+  return to.difference(from).inDays + 1;
 }

@@ -96,7 +96,7 @@ void main() {
     await taskRepo.reconcileAll(d(2026, 6, 27, 8));
 
     final today = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
-    await taskRepo.completeTask(today, d(2026, 6, 27, 8));
+    await taskRepo.checkInTask(today, d(2026, 6, 27, 8));
 
     final home = (await viewRepo.watchViews().first).single;
     final state = (await viewRepo
@@ -157,7 +157,7 @@ void main() {
       );
       await taskRepo.reconcileAll(d(2026, 6, 27, 8));
       final today = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
-      await taskRepo.completeTask(today, d(2026, 6, 27, 8));
+      await taskRepo.checkInTask(today, d(2026, 6, 27, 8));
 
       final home = (await viewRepo.watchViews().first).single;
       final clock = FixedClock(d(2026, 6, 27, 8));
@@ -191,7 +191,7 @@ void main() {
         );
         await taskRepo.reconcileAll(d(2026, 6, 27, 8));
         final today = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
-        await taskRepo.completeTask(today, d(2026, 6, 27, 8));
+        await taskRepo.checkInTask(today, d(2026, 6, 27, 8));
 
         final home = (await viewRepo.watchViews().first).single;
         final clock = FixedClock(d(2026, 6, 27, 9));
@@ -237,7 +237,7 @@ void main() {
       // Day 1: complete it.
       await taskRepo.reconcileAll(d(2026, 6, 27, 8));
       final day1 = (await taskRepo.allTasks()).firstWhere((t) => t.isOpen);
-      await taskRepo.completeTask(day1, d(2026, 6, 27, 8));
+      await taskRepo.checkInTask(day1, d(2026, 6, 27, 8));
 
       var state = (await viewRepo
           .watchViewState(home.id, FixedClock(d(2026, 6, 27, 9)))

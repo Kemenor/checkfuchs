@@ -1,4 +1,5 @@
 import 'package:checkfuchs/data/db/converters.dart';
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/window_rule.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +69,39 @@ void main() {
       );
       expect(legacy.until, isNull);
     });
+  });
+
+  group('GoalConverter', () {
+    const conv = GoalConverter();
+    Goal roundTrip(Goal g) => conv.fromSql(conv.toSql(g));
+
+    test('an ordinary habit is stored as {} and read back as 1 of 1', () {
+      expect(conv.toSql(Goal.single), '{}');
+      expect(conv.fromSql('{}'), Goal.single);
+    });
+
+    test('a range, no limit, once a day and remind-till survive', () {
+      const gym = Goal(
+        min: 2,
+        max: 3,
+        oncePerDay: true,
+        remindTill: RemindTill.max,
+      );
+      expect(roundTrip(gym), gym);
+      const water = Goal(min: 8, max: null);
+      expect(roundTrip(water), water);
+      expect(roundTrip(water).max, isNull); // "no limit", not "max = min"
+    });
+  });
+
+  test('CheckInListConverter round-trips to the millisecond', () {
+    const conv = CheckInListConverter();
+    final ins = [
+      DateTime(2026, 10, 13, 18, 10, 5, 250),
+      DateTime(2026, 10, 15),
+    ];
+    expect(conv.fromSql(conv.toSql(ins)), ins);
+    expect(conv.fromSql('[]'), isEmpty);
   });
 
   group('WindowRuleConverter round-trips', () {

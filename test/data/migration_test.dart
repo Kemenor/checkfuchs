@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:checkfuchs/data/db/database.dart';
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/lens.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +17,7 @@ void main() {
 
   test('a fresh database opens at the current schemaVersion', () async {
     await db.select(db.tasks).get(); // force the lazy open
-    expect(db.schemaVersion, 14);
+    expect(db.schemaVersion, 15);
   });
 
   test('PRAGMA foreign_keys is ON after open (beforeOpen ran)', () async {
@@ -75,7 +76,7 @@ void main() {
       expect(rows, hasLength(1));
       expect((rows.single.templateId, rows.single.lensId), (3, 7));
       final v = await v10.customSelect('PRAGMA user_version').getSingle();
-      expect(v.data.values.single, 14);
+      expect(v.data.values.single, 15);
     },
   );
 
@@ -151,6 +152,42 @@ void main() {
     addTearDown(v14.close);
     expect((await v14.select(v14.lenses).getSingle()).headerCounts, 7);
   });
+
+  test(
+    'v14 → v15 makes every existing habit and task a plain 1 of 1',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('checkfuchs-mig');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/v14.sqlite');
+      final v14 = AppDatabase(NativeDatabase(file));
+      await v14.select(v14.tasks).get();
+      await v14.customStatement('ALTER TABLE templates DROP COLUMN goal');
+      await v14.customStatement('ALTER TABLE tasks DROP COLUMN goal');
+      await v14.customStatement('ALTER TABLE tasks DROP COLUMN check_ins');
+      await v14.customStatement(
+        "INSERT INTO templates (id, name, recurrence, window_rule, paused, "
+        "created_at, notifications) "
+        "VALUES (3, 'Brush teeth', '{}', '{}', 0, 0, '[]')",
+      );
+      await v14.customStatement(
+        "INSERT INTO tasks (id, template_id, name, status, created_at, "
+        "resolved_at, notifications) "
+        "VALUES (9, 3, 'Brush teeth', 1, 0, 60, '[]')",
+      );
+      await v14.customStatement('PRAGMA user_version = 14');
+      await v14.close();
+
+      final v15 = AppDatabase(NativeDatabase(file));
+      addTearDown(v15.close);
+      final template = await v15
+          .customSelect('SELECT goal FROM templates')
+          .get();
+      expect(template.single.data['goal'], '{}');
+      final task = await v15.select(v15.tasks).getSingle();
+      expect(task.goal, Goal.single);
+      expect(task.checkIns, isEmpty);
+    },
+  );
 
   test('migration heals a half-migrated database (stale user_version over '
       'current-shape tables — the wedged-dogfood regression)', () async {

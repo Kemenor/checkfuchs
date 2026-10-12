@@ -1,5 +1,6 @@
 import 'package:checkfuchs/data/db/database.dart';
 import 'package:checkfuchs/data/repositories/task_repository.dart';
+import 'package:checkfuchs/domain/goal.dart';
 import 'package:checkfuchs/domain/lens.dart';
 import 'package:checkfuchs/domain/recurrence.dart';
 import 'package:checkfuchs/domain/task.dart';
@@ -58,7 +59,7 @@ void main() {
     expect(instance.name, 'Floss');
     expect(instance.note, 'after dinner');
     // The next generated instance carries the note too.
-    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    await repo.checkInTask(instance, d(2026, 6, 27, 8));
     final next = (await repo.allTasks()).firstWhere((t) => t.isOpen);
     expect(next.name, 'Floss');
     expect(next.note, 'after dinner');
@@ -137,7 +138,7 @@ void main() {
     await repo.reconcileAll(d(2026, 6, 27, 8));
     final today = (await repo.allTasks()).single;
 
-    await repo.completeTask(today, d(2026, 6, 27, 8));
+    await repo.checkInTask(today, d(2026, 6, 27, 8));
 
     final byOcc = {for (final t in await repo.allTasks()) t.occurrence: t};
     expect(byOcc[d(2026, 6, 27)]!.status, TaskStatus.done);
@@ -221,7 +222,7 @@ void main() {
     );
     expect(await repo.taskLensId(instance.id!), backlog);
 
-    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    await repo.checkInTask(instance, d(2026, 6, 27, 8));
     final next = (await repo.allTasks()).firstWhere(
       (t) => t.templateId == templateId && t.isOpen,
     );
@@ -277,7 +278,7 @@ void main() {
     // and the next generated instance follows the new set.
     await repo.setTemplateLenses(templateId, {fitness});
     expect(await repo.taskLensIds(instance.id!), {fitness});
-    await repo.completeTask(instance, d(2026, 6, 27, 8));
+    await repo.checkInTask(instance, d(2026, 6, 27, 8));
     final next = (await repo.allTasks()).firstWhere(
       (t) => t.templateId == templateId && t.isOpen,
     );
@@ -428,7 +429,7 @@ void main() {
     await repo.addVacation(d(2026, 6, 28), d(2026, 7, 2, 23, 59));
     await repo.reconcileAll(d(2026, 6, 27, 8));
     final today = (await repo.allTasks()).single;
-    await repo.completeTask(today, d(2026, 6, 27, 8));
+    await repo.checkInTask(today, d(2026, 6, 27, 8));
 
     // The day after the vacation ends.
     await repo.reconcileAll(d(2026, 7, 3, 8));
@@ -448,10 +449,7 @@ void main() {
       await seedDailyHabit();
       await repo.reconcileAll(d(2026, 6, 27, 8));
       // Completing today immediately materialises tomorrow's (06-28) instance…
-      await repo.completeTask(
-        (await repo.allTasks()).single,
-        d(2026, 6, 27, 8),
-      );
+      await repo.checkInTask((await repo.allTasks()).single, d(2026, 6, 27, 8));
       // …and only then is the vacation declared over it.
       await repo.addVacation(d(2026, 6, 28), d(2026, 7, 2, 23, 59));
 
@@ -495,11 +493,104 @@ void main() {
     await repo.reconcileAll(d(2026, 6, 27, 8));
     await repo.pauseTemplate(tid, true, d(2026, 6, 27, 8));
     final today = (await repo.allTasks()).single;
-    await repo.completeTask(today, d(2026, 6, 27, 8)); // reconciles, but paused
+    await repo.checkInTask(today, d(2026, 6, 27, 8)); // reconciles, but paused
 
     final tasks = await repo.allTasks();
     expect(tasks, hasLength(1));
     expect(tasks.single.status, TaskStatus.done); // no tomorrow generated
+  });
+
+  group('counting habits', () {
+    // Gym 2–3× a week (Mon 12 Oct 2026), never twice a day.
+    final tue = d(2026, 10, 13, 18);
+    final wed = d(2026, 10, 14, 7);
+    final thu = d(2026, 10, 15, 19);
+
+    Future<int> seedGym() => repo.createTemplate(
+      Template(
+        name: 'Gym',
+        recurrence: Recurrence.weekly(d(2026, 10, 12), on: {Weekday.mon}),
+        createdAt: d(2026, 10, 12),
+        goal: const Goal(min: 2, max: 3, oncePerDay: true),
+      ),
+    );
+    Future<Task> current() async => (await repo.allTasks()).firstWhere(
+      (t) => t.occurrence == d(2026, 10, 12),
+    );
+
+    test('the goal is stamped and check-ins persist', () async {
+      await seedGym();
+      await repo.reconcileAll(d(2026, 10, 12, 8));
+      final stale = await current(); // the UI's copy, never refreshed
+      expect(stale.goal, const Goal(min: 2, max: 3, oncePerDay: true));
+      await repo.checkInTask(stale, tue);
+      await repo.checkInTask(stale, wed); // must not overwrite Tuesday
+      final t = await current();
+      expect(t.checkIns, [tue, wed]);
+      expect((t.status, t.isMet), (TaskStatus.open, true));
+    });
+
+    test('reaching max is Done and generates next week', () async {
+      await seedGym();
+      await repo.reconcileAll(d(2026, 10, 12, 8));
+      for (final at in [tue, wed, thu]) {
+        await repo.checkInTask(await current(), at);
+      }
+      final tasks = await repo.allTasks();
+      expect((await current()).status, TaskStatus.done);
+      final next = tasks.singleWhere((t) => t.isOpen);
+      expect(next.occurrence, d(2026, 10, 19));
+      expect(next.checkIns, isEmpty);
+    });
+
+    test('a goal edit re-resolves the running week', () async {
+      final tid = await seedGym();
+      await repo.reconcileAll(d(2026, 10, 12, 8));
+      await repo.checkInTask(await current(), tue);
+      await repo.checkInTask(await current(), wed);
+
+      await repo.setTemplateGoal(tid, const Goal(min: 3, max: 4), thu);
+      expect((await current()).isMet, isFalse);
+
+      await repo.setTemplateGoal(tid, const Goal(min: 1, max: 2), thu);
+      expect((await current()).status, TaskStatus.done);
+      final cfg = await repo.templateConfig(tid);
+      expect(cfg!.goal, const Goal(min: 1, max: 2));
+    });
+
+    test('removing a check-in reopens a Done at max', () async {
+      await seedGym();
+      await repo.reconcileAll(d(2026, 10, 12, 8));
+      for (final at in [tue, wed, thu]) {
+        await repo.checkInTask(await current(), at);
+      }
+      await repo.removeCheckIn(await current(), thu, d(2026, 10, 16, 9));
+      final t = await current();
+      expect(t.status, TaskStatus.open);
+      expect(t.checkIns, [tue, wed]);
+    });
+
+    test('a forgotten check-in turns a missed week Done', () async {
+      await seedGym();
+      await repo.reconcileAll(d(2026, 10, 12, 8));
+      await repo.checkInTask(await current(), tue);
+      await repo.reconcileAll(d(2026, 10, 19, 9)); // the week closes at 1 of 2
+      expect((await current()).status, TaskStatus.missed);
+      await repo.addCheckIn(await current(), thu, d(2026, 10, 19, 9));
+      expect((await current()).status, TaskStatus.done);
+    });
+
+    test('a daily window drops an impossible once-a-day', () async {
+      final tid = await seedGym();
+      await repo.updateTemplateConfig(
+        tid,
+        Recurrence.daily(d(2026, 10, 12)),
+        const UntilNextOccurrence(),
+        d(2026, 10, 12, 8),
+      );
+      final cfg = await repo.templateConfig(tid);
+      expect(cfg!.goal, const Goal(min: 2, max: 3));
+    });
   });
 
   group('end date', () {
@@ -514,14 +605,11 @@ void main() {
     test('a finished course generates nothing after its last day', () async {
       await seedCourse(d(2026, 6, 28));
       await repo.reconcileAll(d(2026, 6, 27, 8));
-      await repo.completeTask(
-        (await repo.allTasks()).single,
-        d(2026, 6, 27, 8),
-      );
+      await repo.checkInTask((await repo.allTasks()).single, d(2026, 6, 27, 8));
       await repo.reconcileAll(d(2026, 6, 28, 8));
       final last = (await repo.allTasks()).firstWhere((t) => t.isOpen);
       expect(last.occurrence, d(2026, 6, 28));
-      await repo.completeTask(last, d(2026, 6, 28, 8));
+      await repo.checkInTask(last, d(2026, 6, 28, 8));
       await repo.reconcileAll(d(2026, 7, 10, 8)); // days later: still nothing
 
       final tasks = await repo.allTasks();
@@ -532,10 +620,7 @@ void main() {
     test('extending an ended course back-fills no Misses', () async {
       final tid = await seedCourse(d(2026, 6, 27));
       await repo.reconcileAll(d(2026, 6, 27, 8));
-      await repo.completeTask(
-        (await repo.allTasks()).single,
-        d(2026, 6, 27, 8),
-      );
+      await repo.checkInTask((await repo.allTasks()).single, d(2026, 6, 27, 8));
 
       // A week later the doctor says: three more days.
       final now = d(2026, 7, 4, 9);

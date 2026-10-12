@@ -784,6 +784,16 @@ class $TemplatesTable extends Templates
       ).withConverter<List<TaskNotification>>(
         $TemplatesTable.$converternotifications,
       );
+  @override
+  late final GeneratedColumnWithTypeConverter<Goal, String> goal =
+      GeneratedColumn<String>(
+        'goal',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      ).withConverter<Goal>($TemplatesTable.$convertergoal);
   static const VerificationMeta _defaultLensIdMeta = const VerificationMeta(
     'defaultLensId',
   );
@@ -809,6 +819,7 @@ class $TemplatesTable extends Templates
     resumeOn,
     createdAt,
     notifications,
+    goal,
     defaultLensId,
   ];
   @override
@@ -920,6 +931,12 @@ class $TemplatesTable extends Templates
           data['${effectivePrefix}notifications'],
         )!,
       ),
+      goal: $TemplatesTable.$convertergoal.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}goal'],
+        )!,
+      ),
       defaultLensId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_lens_id'],
@@ -938,6 +955,7 @@ class $TemplatesTable extends Templates
       const WindowRuleConverter();
   static TypeConverter<List<TaskNotification>, String> $converternotifications =
       const NotificationListConverter();
+  static TypeConverter<Goal, String> $convertergoal = const GoalConverter();
 }
 
 class TemplateRow extends DataClass implements Insertable<TemplateRow> {
@@ -953,6 +971,9 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
   /// Default reminders stamped onto generated instances (§2.4), JSON list.
   final List<TaskNotification> notifications;
 
+  /// Check-ins per cycle (§3.7), JSON. '{}' = 1 of 1, an ordinary habit (v15).
+  final Goal goal;
+
   /// The Lens generated instances join by default (§4.2 stamping). Set to null
   /// if its lens is deleted.
   final int? defaultLensId;
@@ -966,6 +987,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     this.resumeOn,
     required this.createdAt,
     required this.notifications,
+    required this.goal,
     this.defaultLensId,
   });
   @override
@@ -996,6 +1018,11 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
         $TemplatesTable.$converternotifications.toSql(notifications),
       );
     }
+    {
+      map['goal'] = Variable<String>(
+        $TemplatesTable.$convertergoal.toSql(goal),
+      );
+    }
     if (!nullToAbsent || defaultLensId != null) {
       map['default_lens_id'] = Variable<int>(defaultLensId);
     }
@@ -1015,6 +1042,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           : Value(resumeOn),
       createdAt: Value(createdAt),
       notifications: Value(notifications),
+      goal: Value(goal),
       defaultLensId: defaultLensId == null && nullToAbsent
           ? const Value.absent()
           : Value(defaultLensId),
@@ -1038,6 +1066,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       notifications: serializer.fromJson<List<TaskNotification>>(
         json['notifications'],
       ),
+      goal: serializer.fromJson<Goal>(json['goal']),
       defaultLensId: serializer.fromJson<int?>(json['defaultLensId']),
     );
   }
@@ -1054,6 +1083,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       'resumeOn': serializer.toJson<DateTime?>(resumeOn),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'notifications': serializer.toJson<List<TaskNotification>>(notifications),
+      'goal': serializer.toJson<Goal>(goal),
       'defaultLensId': serializer.toJson<int?>(defaultLensId),
     };
   }
@@ -1068,6 +1098,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     Value<DateTime?> resumeOn = const Value.absent(),
     DateTime? createdAt,
     List<TaskNotification>? notifications,
+    Goal? goal,
     Value<int?> defaultLensId = const Value.absent(),
   }) => TemplateRow(
     id: id ?? this.id,
@@ -1079,6 +1110,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     resumeOn: resumeOn.present ? resumeOn.value : this.resumeOn,
     createdAt: createdAt ?? this.createdAt,
     notifications: notifications ?? this.notifications,
+    goal: goal ?? this.goal,
     defaultLensId: defaultLensId.present
         ? defaultLensId.value
         : this.defaultLensId,
@@ -1100,6 +1132,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
       notifications: data.notifications.present
           ? data.notifications.value
           : this.notifications,
+      goal: data.goal.present ? data.goal.value : this.goal,
       defaultLensId: data.defaultLensId.present
           ? data.defaultLensId.value
           : this.defaultLensId,
@@ -1118,6 +1151,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           ..write('resumeOn: $resumeOn, ')
           ..write('createdAt: $createdAt, ')
           ..write('notifications: $notifications, ')
+          ..write('goal: $goal, ')
           ..write('defaultLensId: $defaultLensId')
           ..write(')'))
         .toString();
@@ -1134,6 +1168,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
     resumeOn,
     createdAt,
     notifications,
+    goal,
     defaultLensId,
   );
   @override
@@ -1149,6 +1184,7 @@ class TemplateRow extends DataClass implements Insertable<TemplateRow> {
           other.resumeOn == this.resumeOn &&
           other.createdAt == this.createdAt &&
           other.notifications == this.notifications &&
+          other.goal == this.goal &&
           other.defaultLensId == this.defaultLensId);
 }
 
@@ -1162,6 +1198,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
   final Value<DateTime?> resumeOn;
   final Value<DateTime> createdAt;
   final Value<List<TaskNotification>> notifications;
+  final Value<Goal> goal;
   final Value<int?> defaultLensId;
   const TemplatesCompanion({
     this.id = const Value.absent(),
@@ -1173,6 +1210,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     this.resumeOn = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.notifications = const Value.absent(),
+    this.goal = const Value.absent(),
     this.defaultLensId = const Value.absent(),
   });
   TemplatesCompanion.insert({
@@ -1185,6 +1223,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     this.resumeOn = const Value.absent(),
     required DateTime createdAt,
     this.notifications = const Value.absent(),
+    this.goal = const Value.absent(),
     this.defaultLensId = const Value.absent(),
   }) : name = Value(name),
        recurrence = Value(recurrence),
@@ -1200,6 +1239,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     Expression<DateTime>? resumeOn,
     Expression<DateTime>? createdAt,
     Expression<String>? notifications,
+    Expression<String>? goal,
     Expression<int>? defaultLensId,
   }) {
     return RawValuesInsertable({
@@ -1212,6 +1252,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
       if (resumeOn != null) 'resume_on': resumeOn,
       if (createdAt != null) 'created_at': createdAt,
       if (notifications != null) 'notifications': notifications,
+      if (goal != null) 'goal': goal,
       if (defaultLensId != null) 'default_lens_id': defaultLensId,
     });
   }
@@ -1226,6 +1267,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
     Value<DateTime?>? resumeOn,
     Value<DateTime>? createdAt,
     Value<List<TaskNotification>>? notifications,
+    Value<Goal>? goal,
     Value<int?>? defaultLensId,
   }) {
     return TemplatesCompanion(
@@ -1238,6 +1280,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
       resumeOn: resumeOn ?? this.resumeOn,
       createdAt: createdAt ?? this.createdAt,
       notifications: notifications ?? this.notifications,
+      goal: goal ?? this.goal,
       defaultLensId: defaultLensId ?? this.defaultLensId,
     );
   }
@@ -1278,6 +1321,11 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
         $TemplatesTable.$converternotifications.toSql(notifications.value),
       );
     }
+    if (goal.present) {
+      map['goal'] = Variable<String>(
+        $TemplatesTable.$convertergoal.toSql(goal.value),
+      );
+    }
     if (defaultLensId.present) {
       map['default_lens_id'] = Variable<int>(defaultLensId.value);
     }
@@ -1296,6 +1344,7 @@ class TemplatesCompanion extends UpdateCompanion<TemplateRow> {
           ..write('resumeOn: $resumeOn, ')
           ..write('createdAt: $createdAt, ')
           ..write('notifications: $notifications, ')
+          ..write('goal: $goal, ')
           ..write('defaultLensId: $defaultLensId')
           ..write(')'))
         .toString();
@@ -1438,6 +1487,26 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     defaultValue: const Constant('[]'),
   ).withConverter<List<TaskNotification>>($TasksTable.$converternotifications);
   @override
+  late final GeneratedColumnWithTypeConverter<Goal, String> goal =
+      GeneratedColumn<String>(
+        'goal',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      ).withConverter<Goal>($TasksTable.$convertergoal);
+  @override
+  late final GeneratedColumnWithTypeConverter<List<DateTime>, String> checkIns =
+      GeneratedColumn<String>(
+        'check_ins',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<DateTime>>($TasksTable.$convertercheckIns);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     templateId,
@@ -1451,6 +1520,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
     createdAt,
     resolvedAt,
     notifications,
+    goal,
+    checkIns,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1592,6 +1663,18 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
           data['${effectivePrefix}notifications'],
         )!,
       ),
+      goal: $TasksTable.$convertergoal.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}goal'],
+        )!,
+      ),
+      checkIns: $TasksTable.$convertercheckIns.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}check_ins'],
+        )!,
+      ),
     );
   }
 
@@ -1604,6 +1687,9 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, TaskRow> {
       const EnumIndexConverter<TaskStatus>(TaskStatus.values);
   static TypeConverter<List<TaskNotification>, String> $converternotifications =
       const NotificationListConverter();
+  static TypeConverter<Goal, String> $convertergoal = const GoalConverter();
+  static TypeConverter<List<DateTime>, String> $convertercheckIns =
+      const CheckInListConverter();
 }
 
 class TaskRow extends DataClass implements Insertable<TaskRow> {
@@ -1625,6 +1711,13 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
 
   /// Per-instance reminders (§2.4), JSON list.
   final List<TaskNotification> notifications;
+
+  /// The goal stamped from the template (§3.7), JSON; '{}' = 1 of 1 (v15).
+  final Goal goal;
+
+  /// Check-ins toward the goal, JSON list of epoch milliseconds (v15). Rows
+  /// resolved before v15 have none — the domain counts such a Done as one.
+  final List<DateTime> checkIns;
   const TaskRow({
     required this.id,
     this.templateId,
@@ -1638,6 +1731,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     required this.createdAt,
     this.resolvedAt,
     required this.notifications,
+    required this.goal,
+    required this.checkIns,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1674,6 +1769,14 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
         $TasksTable.$converternotifications.toSql(notifications),
       );
     }
+    {
+      map['goal'] = Variable<String>($TasksTable.$convertergoal.toSql(goal));
+    }
+    {
+      map['check_ins'] = Variable<String>(
+        $TasksTable.$convertercheckIns.toSql(checkIns),
+      );
+    }
     return map;
   }
 
@@ -1703,6 +1806,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ? const Value.absent()
           : Value(resolvedAt),
       notifications: Value(notifications),
+      goal: Value(goal),
+      checkIns: Value(checkIns),
     );
   }
 
@@ -1728,6 +1833,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       notifications: serializer.fromJson<List<TaskNotification>>(
         json['notifications'],
       ),
+      goal: serializer.fromJson<Goal>(json['goal']),
+      checkIns: serializer.fromJson<List<DateTime>>(json['checkIns']),
     );
   }
   @override
@@ -1748,6 +1855,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'resolvedAt': serializer.toJson<DateTime?>(resolvedAt),
       'notifications': serializer.toJson<List<TaskNotification>>(notifications),
+      'goal': serializer.toJson<Goal>(goal),
+      'checkIns': serializer.toJson<List<DateTime>>(checkIns),
     };
   }
 
@@ -1764,6 +1873,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     DateTime? createdAt,
     Value<DateTime?> resolvedAt = const Value.absent(),
     List<TaskNotification>? notifications,
+    Goal? goal,
+    List<DateTime>? checkIns,
   }) => TaskRow(
     id: id ?? this.id,
     templateId: templateId.present ? templateId.value : this.templateId,
@@ -1777,6 +1888,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     createdAt: createdAt ?? this.createdAt,
     resolvedAt: resolvedAt.present ? resolvedAt.value : this.resolvedAt,
     notifications: notifications ?? this.notifications,
+    goal: goal ?? this.goal,
+    checkIns: checkIns ?? this.checkIns,
   );
   TaskRow copyWithCompanion(TasksCompanion data) {
     return TaskRow(
@@ -1804,6 +1917,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
       notifications: data.notifications.present
           ? data.notifications.value
           : this.notifications,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      checkIns: data.checkIns.present ? data.checkIns.value : this.checkIns,
     );
   }
 
@@ -1821,7 +1936,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           ..write('windowBands: $windowBands, ')
           ..write('createdAt: $createdAt, ')
           ..write('resolvedAt: $resolvedAt, ')
-          ..write('notifications: $notifications')
+          ..write('notifications: $notifications, ')
+          ..write('goal: $goal, ')
+          ..write('checkIns: $checkIns')
           ..write(')'))
         .toString();
   }
@@ -1840,6 +1957,8 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
     createdAt,
     resolvedAt,
     notifications,
+    goal,
+    checkIns,
   );
   @override
   bool operator ==(Object other) =>
@@ -1856,7 +1975,9 @@ class TaskRow extends DataClass implements Insertable<TaskRow> {
           other.windowBands == this.windowBands &&
           other.createdAt == this.createdAt &&
           other.resolvedAt == this.resolvedAt &&
-          other.notifications == this.notifications);
+          other.notifications == this.notifications &&
+          other.goal == this.goal &&
+          other.checkIns == this.checkIns);
 }
 
 class TasksCompanion extends UpdateCompanion<TaskRow> {
@@ -1872,6 +1993,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> resolvedAt;
   final Value<List<TaskNotification>> notifications;
+  final Value<Goal> goal;
+  final Value<List<DateTime>> checkIns;
   const TasksCompanion({
     this.id = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -1885,6 +2008,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     this.createdAt = const Value.absent(),
     this.resolvedAt = const Value.absent(),
     this.notifications = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.checkIns = const Value.absent(),
   });
   TasksCompanion.insert({
     this.id = const Value.absent(),
@@ -1899,6 +2024,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     required DateTime createdAt,
     this.resolvedAt = const Value.absent(),
     this.notifications = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.checkIns = const Value.absent(),
   }) : name = Value(name),
        status = Value(status),
        createdAt = Value(createdAt);
@@ -1915,6 +2042,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? resolvedAt,
     Expression<String>? notifications,
+    Expression<String>? goal,
+    Expression<String>? checkIns,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1929,6 +2058,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (resolvedAt != null) 'resolved_at': resolvedAt,
       if (notifications != null) 'notifications': notifications,
+      if (goal != null) 'goal': goal,
+      if (checkIns != null) 'check_ins': checkIns,
     });
   }
 
@@ -1945,6 +2076,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
     Value<DateTime>? createdAt,
     Value<DateTime?>? resolvedAt,
     Value<List<TaskNotification>>? notifications,
+    Value<Goal>? goal,
+    Value<List<DateTime>>? checkIns,
   }) {
     return TasksCompanion(
       id: id ?? this.id,
@@ -1959,6 +2092,8 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
       createdAt: createdAt ?? this.createdAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
       notifications: notifications ?? this.notifications,
+      goal: goal ?? this.goal,
+      checkIns: checkIns ?? this.checkIns,
     );
   }
 
@@ -2005,6 +2140,16 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
         $TasksTable.$converternotifications.toSql(notifications.value),
       );
     }
+    if (goal.present) {
+      map['goal'] = Variable<String>(
+        $TasksTable.$convertergoal.toSql(goal.value),
+      );
+    }
+    if (checkIns.present) {
+      map['check_ins'] = Variable<String>(
+        $TasksTable.$convertercheckIns.toSql(checkIns.value),
+      );
+    }
     return map;
   }
 
@@ -2022,7 +2167,9 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
           ..write('windowBands: $windowBands, ')
           ..write('createdAt: $createdAt, ')
           ..write('resolvedAt: $resolvedAt, ')
-          ..write('notifications: $notifications')
+          ..write('notifications: $notifications, ')
+          ..write('goal: $goal, ')
+          ..write('checkIns: $checkIns')
           ..write(')'))
         .toString();
   }
@@ -4802,6 +4949,7 @@ typedef $$TemplatesTableCreateCompanionBuilder =
       Value<DateTime?> resumeOn,
       required DateTime createdAt,
       Value<List<TaskNotification>> notifications,
+      Value<Goal> goal,
       Value<int?> defaultLensId,
     });
 typedef $$TemplatesTableUpdateCompanionBuilder =
@@ -4815,6 +4963,7 @@ typedef $$TemplatesTableUpdateCompanionBuilder =
       Value<DateTime?> resumeOn,
       Value<DateTime> createdAt,
       Value<List<TaskNotification>> notifications,
+      Value<Goal> goal,
       Value<int?> defaultLensId,
     });
 
@@ -4937,6 +5086,12 @@ class $$TemplatesTableFilterComposer
     column: $table.notifications,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<Goal, Goal, String> get goal =>
+      $composableBuilder(
+        column: $table.goal,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   $$LensesTableFilterComposer get defaultLensId {
     final $$LensesTableFilterComposer composer = $composerBuilder(
@@ -5066,6 +5221,11 @@ class $$TemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LensesTableOrderingComposer get defaultLensId {
     final $$LensesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5134,6 +5294,9 @@ class $$TemplatesTableAnnotationComposer
     column: $table.notifications,
     builder: (column) => column,
   );
+
+  GeneratedColumnWithTypeConverter<Goal, String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
 
   $$LensesTableAnnotationComposer get defaultLensId {
     final $$LensesTableAnnotationComposer composer = $composerBuilder(
@@ -5251,6 +5414,7 @@ class $$TemplatesTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<List<TaskNotification>> notifications =
                     const Value.absent(),
+                Value<Goal> goal = const Value.absent(),
                 Value<int?> defaultLensId = const Value.absent(),
               }) => TemplatesCompanion(
                 id: id,
@@ -5262,6 +5426,7 @@ class $$TemplatesTableTableManager
                 resumeOn: resumeOn,
                 createdAt: createdAt,
                 notifications: notifications,
+                goal: goal,
                 defaultLensId: defaultLensId,
               ),
           createCompanionCallback:
@@ -5276,6 +5441,7 @@ class $$TemplatesTableTableManager
                 required DateTime createdAt,
                 Value<List<TaskNotification>> notifications =
                     const Value.absent(),
+                Value<Goal> goal = const Value.absent(),
                 Value<int?> defaultLensId = const Value.absent(),
               }) => TemplatesCompanion.insert(
                 id: id,
@@ -5287,6 +5453,7 @@ class $$TemplatesTableTableManager
                 resumeOn: resumeOn,
                 createdAt: createdAt,
                 notifications: notifications,
+                goal: goal,
                 defaultLensId: defaultLensId,
               ),
           withReferenceMapper: (p0) => p0
@@ -5425,6 +5592,8 @@ typedef $$TasksTableCreateCompanionBuilder =
       required DateTime createdAt,
       Value<DateTime?> resolvedAt,
       Value<List<TaskNotification>> notifications,
+      Value<Goal> goal,
+      Value<List<DateTime>> checkIns,
     });
 typedef $$TasksTableUpdateCompanionBuilder =
     TasksCompanion Function({
@@ -5440,6 +5609,8 @@ typedef $$TasksTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime?> resolvedAt,
       Value<List<TaskNotification>> notifications,
+      Value<Goal> goal,
+      Value<List<DateTime>> checkIns,
     });
 
 final class $$TasksTableReferences
@@ -5548,6 +5719,18 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
   >
   get notifications => $composableBuilder(
     column: $table.notifications,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Goal, Goal, String> get goal =>
+      $composableBuilder(
+        column: $table.goal,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<List<DateTime>, List<DateTime>, String>
+  get checkIns => $composableBuilder(
+    column: $table.checkIns,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
@@ -5664,6 +5847,16 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checkIns => $composableBuilder(
+    column: $table.checkIns,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TemplatesTableOrderingComposer get templateId {
     final $$TemplatesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5740,6 +5933,12 @@ class $$TasksTableAnnotationComposer
     column: $table.notifications,
     builder: (column) => column,
   );
+
+  GeneratedColumnWithTypeConverter<Goal, String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<DateTime>, String> get checkIns =>
+      $composableBuilder(column: $table.checkIns, builder: (column) => column);
 
   $$TemplatesTableAnnotationComposer get templateId {
     final $$TemplatesTableAnnotationComposer composer = $composerBuilder(
@@ -5831,6 +6030,8 @@ class $$TasksTableTableManager
                 Value<DateTime?> resolvedAt = const Value.absent(),
                 Value<List<TaskNotification>> notifications =
                     const Value.absent(),
+                Value<Goal> goal = const Value.absent(),
+                Value<List<DateTime>> checkIns = const Value.absent(),
               }) => TasksCompanion(
                 id: id,
                 templateId: templateId,
@@ -5844,6 +6045,8 @@ class $$TasksTableTableManager
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
                 notifications: notifications,
+                goal: goal,
+                checkIns: checkIns,
               ),
           createCompanionCallback:
               ({
@@ -5860,6 +6063,8 @@ class $$TasksTableTableManager
                 Value<DateTime?> resolvedAt = const Value.absent(),
                 Value<List<TaskNotification>> notifications =
                     const Value.absent(),
+                Value<Goal> goal = const Value.absent(),
+                Value<List<DateTime>> checkIns = const Value.absent(),
               }) => TasksCompanion.insert(
                 id: id,
                 templateId: templateId,
@@ -5873,6 +6078,8 @@ class $$TasksTableTableManager
                 createdAt: createdAt,
                 resolvedAt: resolvedAt,
                 notifications: notifications,
+                goal: goal,
+                checkIns: checkIns,
               ),
           withReferenceMapper: (p0) => p0
               .map(

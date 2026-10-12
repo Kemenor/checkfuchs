@@ -106,7 +106,7 @@ class TaskTile extends ConsumerWidget {
             ? () => ref.read(taskRepositoryProvider).correctMissedTask(task)
             : () => ref
                   .read(taskRepositoryProvider)
-                  .completeTask(task, ref.read(clockProvider).now()),
+                  .checkInTask(task, ref.read(clockProvider).now()),
       ),
       title: Text(
         task.name,
@@ -178,7 +178,7 @@ class TaskTile extends ConsumerWidget {
         final repo = ref.read(taskRepositoryProvider);
         final now = ref.read(clockProvider).now();
         if (direction == DismissDirection.startToEnd) {
-          await repo.completeTask(task, now);
+          await repo.checkInTask(task, now);
         } else if (periodic && task.id != null && lens?.id != null) {
           await repo.passTask(task.id!, lens!.id!, now);
         } else {

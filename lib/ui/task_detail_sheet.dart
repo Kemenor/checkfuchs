@@ -497,7 +497,7 @@ class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
               _StatusBlock(
                 task: _task,
                 now: ref.read(clockProvider).now(),
-                onDone: () => _act((r, now) => r.completeTask(_task, now)),
+                onDone: () => _act((r, now) => r.checkInTask(_task, now)),
                 onSkip: () => _act((r, now) => r.skipTask(_task, now)),
                 onCorrectMiss: () => _act((r, _) => r.correctMissedTask(_task)),
                 onReopen: () => _act((r, now) => r.reopenTask(_task, now)),

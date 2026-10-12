@@ -7,8 +7,8 @@ import '../../domain/lens.dart';
 import '../../domain/recurrence.dart';
 import '../../domain/task.dart' as domain;
 import '../../domain/window_rule.dart';
-import '../db/converters.dart';
 import '../db/database.dart';
+import '../db/mappers.dart';
 
 /// One lens as rendered inside a View: the shown tasks (open, projected, plus
 /// periodic holds) plus the optional terminal tasks the View's statusFilter
@@ -730,18 +730,5 @@ class ViewRepository {
     sortIndex: r.sortIndex,
   );
 
-  domain.Task _toTask(TaskRow r) => domain.Task(
-    id: r.id,
-    templateId: r.templateId,
-    occurrence: r.occurrence,
-    name: r.name,
-    note: r.note,
-    status: r.status,
-    start: r.windowStart,
-    end: r.windowEnd,
-    createdAt: r.createdAt,
-    resolvedAt: r.resolvedAt,
-    notifications: r.notifications,
-    bands: bandsFromSql(r.windowBands),
-  );
+  domain.Task _toTask(TaskRow r) => taskFromRow(r);
 }
