@@ -171,6 +171,7 @@ recurrence: {
   byMonthDay: int?                                    // monthly: 25  (−1 = last day)
   byMonth:    int?                                    // yearly: 3 (March) + byMonthDay
   anchor:     date                                    // the reference intervals count from
+  until:      date?                                   // last occurrence day (RRULE UNTIL); null = forever
 }
 ```
 | Want | Encodes as |
@@ -182,6 +183,10 @@ recurrence: {
 
 - The **`anchor`** is load-bearing for any `interval > 1` ("every two weeks" is meaningless
   without "from *when*").
+- **`until`** bounds the *series*, not the window: "daily for the next 7 days" ends on day
+  7, whose instance still runs its full window; nothing generates after it. Moving the end
+  in drops an untouched instance past it; reviving an ended series sets the generation
+  floor (§3.5) so the finished stretch is never back-filled as Missed.
 - **Month-overflow clamps** to the last valid day (Feb has no 31st); `byMonthDay: -1`
   means "last day of the month."
 - The same primitive also drives **Lens periods** (§4) — one calendar engine, two jobs.

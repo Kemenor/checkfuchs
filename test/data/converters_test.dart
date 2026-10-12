@@ -54,6 +54,20 @@ void main() {
       expect(r.byMonthDay, 13);
       expect(r.anchor, d(2026, 3, 13));
     });
+
+    test('an end date (until) survives; a row without one repeats forever', () {
+      final r = roundTrip(
+        Recurrence.daily(d(2026, 6, 27)).withUntil(d(2026, 7, 3)),
+      );
+      expect(r.until, d(2026, 7, 3));
+      expect(roundTrip(Recurrence.daily(d(2026, 6, 27))).until, isNull);
+      // A row stored before end dates existed has no `until` key at all.
+      final legacy = conv.fromSql(
+        '{"freq":0,"interval":1,"anchor":${d(2026, 6, 27).millisecondsSinceEpoch},'
+        '"byWeekday":[],"byMonthDay":null,"byMonth":null}',
+      );
+      expect(legacy.until, isNull);
+    });
   });
 
   group('WindowRuleConverter round-trips', () {

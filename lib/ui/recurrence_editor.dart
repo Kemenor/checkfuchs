@@ -42,6 +42,7 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
   late int _monthDay = widget.anchor.day;
   bool _lastDay = false;
   late int _month = widget.anchor.month;
+  DateTime? _until; // null = repeats forever
 
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
     _freq = r.freq;
     _interval = r.interval;
     _anchor = DateTime(r.anchor.year, r.anchor.month, r.anchor.day);
+    _until = r.until;
     if (r.byWeekday.isNotEmpty) _weekdays = {...r.byWeekday};
     final md = r.byMonthDay;
     if (md != null) {
@@ -66,7 +68,9 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
     if (r.byMonth != null) _month = r.byMonth!;
   }
 
-  Recurrence? _build() {
+  Recurrence? _build() => _buildRule()?.withUntil(_until);
+
+  Recurrence? _buildRule() {
     final a = _anchor;
     return switch (_freq) {
       null => null,
@@ -276,14 +280,69 @@ class _RecurrenceEditorState extends State<RecurrenceEditor> {
               if (picked != null) {
                 setState(() {
                   _anchor = DateTime(picked.year, picked.month, picked.day);
+                  // An end before the start would leave nothing to repeat.
+                  if (_until != null && _until!.isBefore(_anchor)) {
+                    _until = null;
+                  }
                   _emit();
                 });
               }
             },
           ),
+          // The optional end (RRULE UNTIL) — "daily for the next 7 days".
+          // The last day an occurrence may fall on; unset = forever.
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Symbols.event_busy_rounded),
+            title: Text(l10n.endsLabel),
+            trailing: _until == null
+                ? Text(l10n.endsNever, style: TextStyle(color: scheme.outline))
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        DateFormat.yMMMd(locale).format(_until!),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      IconButton(
+                        tooltip: l10n.endsClear,
+                        icon: const Icon(Symbols.close_rounded),
+                        onPressed: () => setState(() {
+                          _until = null;
+                          _emit();
+                        }),
+                      ),
+                    ],
+                  ),
+            onTap: _pickUntil,
+          ),
         ],
       ],
     );
+  }
+
+  Future<void> _pickUntil() async {
+    // Not before the start, nor in the past (an already-ended series can
+    // still show its old end, but a new pick looks forward).
+    final today = DateTime(
+      widget.anchor.year,
+      widget.anchor.month,
+      widget.anchor.day,
+    );
+    final first = _anchor.isAfter(today) ? _anchor : today;
+    final current = _until;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current == null || current.isBefore(first) ? first : current,
+      firstDate: first,
+      lastDate: DateTime(first.year + 5, 12, 31),
+    );
+    if (picked != null) {
+      setState(() {
+        _until = DateTime(picked.year, picked.month, picked.day);
+        _emit();
+      });
+    }
   }
 }
 

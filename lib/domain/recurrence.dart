@@ -39,6 +39,7 @@ class Recurrence {
     this.byWeekday = const {},
     this.byMonthDay,
     this.byMonth,
+    this.until,
   }) : assert(interval >= 1, 'interval must be >= 1'),
        assert(
          byMonthDay == null ||
@@ -106,6 +107,20 @@ class Recurrence {
   /// Yearly only — month (1–12). Null ⇒ the anchor's month.
   final int? byMonth;
 
+  /// RRULE `UNTIL`: the last day an occurrence may fall on (inclusive,
+  /// date-only). Null = repeats forever. A *series* bound — the engine stops
+  /// materialising after it — not a generator one: [occurrences] stays
+  /// infinite so the final instance's until-next window still resolves.
+  final DateTime? until;
+
+  /// Whether [occurrence] lies past [until] — a slot the series never fills.
+  bool endsBefore(DateTime occurrence) =>
+      until != null && _dateOnly(occurrence).isAfter(_dateOnly(until!));
+
+  /// Whether the series has run out by [now]: its last possible occurrence
+  /// day is already behind.
+  bool hasEndedBy(DateTime now) => endsBefore(now);
+
   /// The same rule anchored at [date]. The implicit fields (weekday, day of
   /// month, month — the ones that default to the anchor's) are pinned first,
   /// so moving the anchor can never shift the phase.
@@ -122,8 +137,20 @@ class Recurrence {
           ? (byMonthDay ?? a.day)
           : byMonthDay,
       byMonth: freq == Freq.yearly ? (byMonth ?? a.month) : byMonth,
+      until: until,
     );
   }
+
+  /// The same rule ending on [date] (null = forever).
+  Recurrence withUntil(DateTime? date) => Recurrence(
+    freq: freq,
+    anchor: anchor,
+    interval: interval,
+    byWeekday: byWeekday,
+    byMonthDay: byMonthDay,
+    byMonth: byMonth,
+    until: date == null ? null : _dateOnly(date),
+  );
 }
 
 // ---------------------------------------------------------------------------

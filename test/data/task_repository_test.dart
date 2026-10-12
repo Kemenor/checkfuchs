@@ -501,4 +501,80 @@ void main() {
     expect(tasks, hasLength(1));
     expect(tasks.single.status, TaskStatus.done); // no tomorrow generated
   });
+
+  group('end date', () {
+    Future<int> seedCourse(DateTime until) => repo.createTemplate(
+      Template(
+        name: 'Antibiotics',
+        recurrence: Recurrence.daily(d(2026, 6, 27)).withUntil(until),
+        createdAt: d(2026, 6, 27),
+      ),
+    );
+
+    test('a finished course generates nothing after its last day', () async {
+      await seedCourse(d(2026, 6, 28));
+      await repo.reconcileAll(d(2026, 6, 27, 8));
+      await repo.completeTask(
+        (await repo.allTasks()).single,
+        d(2026, 6, 27, 8),
+      );
+      await repo.reconcileAll(d(2026, 6, 28, 8));
+      final last = (await repo.allTasks()).firstWhere((t) => t.isOpen);
+      expect(last.occurrence, d(2026, 6, 28));
+      await repo.completeTask(last, d(2026, 6, 28, 8));
+      await repo.reconcileAll(d(2026, 7, 10, 8)); // days later: still nothing
+
+      final tasks = await repo.allTasks();
+      expect(tasks, hasLength(2));
+      expect(tasks.every((t) => t.status == TaskStatus.done), isTrue);
+    });
+
+    test('extending an ended course back-fills no Misses', () async {
+      final tid = await seedCourse(d(2026, 6, 27));
+      await repo.reconcileAll(d(2026, 6, 27, 8));
+      await repo.completeTask(
+        (await repo.allTasks()).single,
+        d(2026, 6, 27, 8),
+      );
+
+      // A week later the doctor says: three more days.
+      final now = d(2026, 7, 4, 9);
+      await repo.updateTemplateConfig(
+        tid,
+        Recurrence.daily(d(2026, 6, 27)).withUntil(d(2026, 7, 6)),
+        const UntilNextOccurrence(),
+        now,
+      );
+
+      final tasks = await repo.allTasks();
+      expect(tasks.where((t) => t.status == TaskStatus.missed), isEmpty);
+      expect(tasks.singleWhere((t) => t.isOpen).occurrence, d(2026, 7, 4));
+    });
+
+    test('moving the end before a waiting instance drops it', () async {
+      // Weekly Monday mornings, made on Wednesday: next Monday is waiting.
+      final now = d(2026, 7, 8, 10);
+      final tid = await repo.createTemplate(
+        Template(
+          name: 'Sheets',
+          recurrence: Recurrence.weekly(d(2026, 7, 8), on: {Weekday.mon}),
+          windowRule: Slice.morning,
+          createdAt: now,
+        ),
+      );
+      await repo.reconcileAll(now);
+      expect((await repo.allTasks()).single.occurrence, d(2026, 7, 13));
+
+      await repo.updateTemplateConfig(
+        tid,
+        Recurrence.weekly(
+          d(2026, 7, 8),
+          on: {Weekday.mon},
+        ).withUntil(d(2026, 7, 10)),
+        Slice.morning,
+        now,
+      );
+      expect(await repo.allTasks(), isEmpty);
+    });
+  });
 }

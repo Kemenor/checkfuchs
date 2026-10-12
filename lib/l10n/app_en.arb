@@ -322,6 +322,30 @@
   "@starts": {
     "description": "Row label: the recurrence anchor date."
   },
+  "endsLabel": "Ends",
+  "@endsLabel": {
+    "description": "Row label: the optional last day a habit repeats (its end date)."
+  },
+  "endsNever": "Never",
+  "@endsNever": {
+    "description": "Ends row value when the habit has no end date (repeats forever)."
+  },
+  "endsClear": "Remove end date",
+  "@endsClear": {
+    "description": "Tooltip of the button clearing a habit's end date."
+  },
+  "summaryUntil": "{rule}, until {date}",
+  "@summaryUntil": {
+    "description": "Recurrence summary with an end date. {rule} is the summary sentence (e.g. 'Every day'), {date} the formatted last day.",
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "increase": "Increase",
   "@increase": {
     "description": "Tooltip of the stepper + button."

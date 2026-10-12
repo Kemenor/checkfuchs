@@ -8,7 +8,8 @@ import 'window_rule.dart';
 /// and `now`, it:
 ///   1. expires any open Task whose window has passed → `Missed`;
 ///   2. ensures **exactly one open instance** exists, back-filling each skipped
-///      occurrence as `Missed` until it reaches the current (not-yet-passed) one.
+///      occurrence as `Missed` until it reaches the current (not-yet-passed) one
+///      — or the recurrence's `until`, past which the series generates nothing.
 ///
 /// Back-fill is **gate-aware** (§3.5, §6): an occurrence whose generation would
 /// have been suppressed at the time — its window started inside a vacation
@@ -143,6 +144,7 @@ ReconcileResult reconcileTemplate(
   var guard = 0;
   while (guard++ < _maxBackfill) {
     if (working.any((x) => x.isOpen)) break; // a current open instance exists
+    if (t.recurrence.endsBefore(occ)) break; // past the end date: series over
 
     if (filled.contains(occ)) {
       // Slot already materialised (e.g. pre-resolved on action); step over it.

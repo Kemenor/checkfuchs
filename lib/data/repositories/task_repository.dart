@@ -360,6 +360,11 @@ class TaskRepository {
 
   /// Edit a series prospectively (§5.2): update the Template's recurrence/window;
   /// reconcile leaves the running instance and applies the change from the next.
+  ///
+  /// End date: an untouched open instance past a moved-in `until` is dropped
+  /// (that slot no longer exists). Reviving a series that had already ended
+  /// stamps the generation floor, like an unpause — the days it lay finished
+  /// are not back-filled as Misses.
   Future<void> updateTemplateConfig(
     int templateId,
     Recurrence recurrence,
@@ -367,12 +372,21 @@ class TaskRepository {
     DateTime now,
   ) async {
     await db.transaction(() async {
+      final old = await (db.select(
+        db.templates,
+      )..where((t) => t.id.equals(templateId))).getSingleOrNull();
+      final revived =
+          old != null &&
+          !old.paused &&
+          old.recurrence.hasEndedBy(now) &&
+          !recurrence.hasEndedBy(now);
       await (db.update(
         db.templates,
       )..where((t) => t.id.equals(templateId))).write(
         TemplatesCompanion(
           recurrence: Value(recurrence),
           windowRule: Value(windowRule),
+          resumeOn: revived ? Value(now) : const Value.absent(),
         ),
       );
       // The running (open) instances take the new window too — editing
@@ -388,6 +402,10 @@ class TaskRepository {
       for (final r in open) {
         final occ = r.occurrence;
         if (occ == null) continue;
+        if (recurrence.endsBefore(occ)) {
+          await deleteTask(r.id);
+          continue;
+        }
         final w = windowRule.resolve(occ, occurrenceAfter(recurrence, occ));
         await (db.update(db.tasks)..where((t) => t.id.equals(r.id))).write(
           TasksCompanion(

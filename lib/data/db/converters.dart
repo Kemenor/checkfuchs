@@ -54,6 +54,10 @@ class RecurrenceConverter extends TypeConverter<Recurrence, String> {
           .toSet(),
       byMonthDay: m['byMonthDay'] as int?,
       byMonth: m['byMonth'] as int?,
+      // `until` arrived with end dates; older rows repeat forever.
+      until: m['until'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(m['until'] as int),
     );
   }
 
@@ -65,6 +69,7 @@ class RecurrenceConverter extends TypeConverter<Recurrence, String> {
     'byWeekday': value.byWeekday.map((w) => w.index).toList(),
     'byMonthDay': value.byMonthDay,
     'byMonth': value.byMonth,
+    if (value.until != null) 'until': value.until!.millisecondsSinceEpoch,
   });
 }
 

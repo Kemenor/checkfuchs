@@ -13,7 +13,14 @@ String localizedRecurrenceSummary(BuildContext context, Recurrence? r) {
   final l10n = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).toString();
   if (r == null) return l10n.summaryNoRepeat;
+  final rule = _ruleSummary(l10n, locale, r);
+  final until = r.until;
+  return until == null
+      ? rule
+      : l10n.summaryUntil(rule, DateFormat.yMMMd(locale).format(until));
+}
 
+String _ruleSummary(AppLocalizations l10n, String locale, Recurrence r) {
   final n = r.interval;
   switch (r.freq) {
     case Freq.daily:

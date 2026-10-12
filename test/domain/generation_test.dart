@@ -185,6 +185,72 @@ void main() {
     });
   });
 
+  group('end date (until)', () {
+    // "Take the medicine daily for 3 days": 06-27, 06-28, 06-29.
+    Template course() => Template(
+      id: 1,
+      name: 'Antibiotics',
+      recurrence: Recurrence.daily(d(2026, 6, 27)).withUntil(d(2026, 6, 29)),
+      createdAt: d(2026, 6, 27),
+    );
+
+    Task resolved(DateTime occ, TaskStatus s) => course()
+        .materialize(occ, d(occ.year, occ.month, occ.day + 1), now: occ)
+        .copyWith(status: s, resolvedAt: occ);
+
+    test('the last day still materialises, with its full window', () {
+      final t = only(
+        reconcileTemplate(course(), [
+          resolved(d(2026, 6, 27), TaskStatus.done),
+          resolved(d(2026, 6, 28), TaskStatus.done),
+        ], d(2026, 6, 29, 8)),
+      );
+      expect(t.occurrence, d(2026, 6, 29));
+      expect(t.status, TaskStatus.open);
+      expect(t.end, d(2026, 6, 30)); // until-next, not clipped
+    });
+
+    test('completing the last day generates nothing after it', () {
+      final r = reconcileTemplate(course(), [
+        resolved(d(2026, 6, 27), TaskStatus.done),
+        resolved(d(2026, 6, 28), TaskStatus.done),
+        resolved(d(2026, 6, 29), TaskStatus.done),
+      ], d(2026, 6, 29, 9));
+      expect(r.isEmpty, isTrue);
+    });
+
+    test('back-fill stops at the end date (no Misses after the course)', () {
+      // Opened a week later: only 06-28 and 06-29 are back-filled.
+      final r = reconcileTemplate(course(), [
+        resolved(d(2026, 6, 27), TaskStatus.done),
+      ], d(2026, 7, 5, 12));
+      expect(r.changed.map((t) => t.occurrence), [
+        d(2026, 6, 28),
+        d(2026, 6, 29),
+      ]);
+      expect(r.changed.every((t) => t.status == TaskStatus.missed), isTrue);
+    });
+
+    test('a series whose end has passed generates nothing when brand-new', () {
+      final r = reconcileTemplate(course(), [], d(2026, 7, 5, 12));
+      expect(r.isEmpty, isTrue);
+    });
+
+    test('the end date survives re-anchoring to the running cycle', () {
+      final r = Recurrence.weekly(
+        d(2026, 7, 8),
+        on: {Weekday.mon},
+      ).withUntil(d(2026, 7, 31));
+      final anchored = anchorToRunningCycle(
+        r,
+        const UntilNextOccurrence(),
+        d(2026, 7, 8, 10),
+      );
+      expect(anchored.anchor, d(2026, 7, 6));
+      expect(anchored.until, d(2026, 7, 31));
+    });
+  });
+
   group('back-fill (app unopened for days)', () {
     test('fills each skipped day as Missed, leaves the current day open', () {
       // Daily habit anchored 06-24; last resolved was 06-24 (Missed); the app is
