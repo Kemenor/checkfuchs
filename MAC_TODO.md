@@ -22,7 +22,7 @@ build from CI.
   subtitle, description, keywords, promo text, release notes, URLs). Screenshot
   slots under `fastlane/screenshots/<locale>/` are empty.
 - Flutter runs natively on the Mac (no distrobox). `flutter --version` should
-  match `.fvmrc` (3.44.4); install via fvm if not.
+  match `.fvmrc` (3.47.7); install via fvm if not.
 
 ## 1. App Store Connect record
 
