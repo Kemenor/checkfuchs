@@ -26,13 +26,18 @@ import 'window_rule.dart';
 /// days left. Returns [r] unchanged when the running cycle's window has
 /// already closed (a Monday-mornings habit made on Wednesday starts next
 /// Monday), when the anchor already covers it, or when the anchor is a
-/// deliberate future start.
+/// deliberate future start — any start date after today, even one cycle
+/// ahead ("daily, starting tomorrow" must not open today).
 ///
 /// Only the anchor moves, and only backwards by less than one period, so the
 /// rule's phase — every later occurrence — is untouched. Back-dating creates
 /// no history: the engine starts at the first occurrence whose window hasn't
 /// closed, so skipped-over slots never materialise as Missed.
 Recurrence anchorToRunningCycle(Recurrence r, WindowRule w, DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  if (DateTime(r.anchor.year, r.anchor.month, r.anchor.day).isAfter(today)) {
+    return r; // a start date the user picked in the future is kept as is
+  }
   final slot = currentCycleStart(r, now);
   if (slot == null) return r;
   final anchored = r.withAnchor(slot);

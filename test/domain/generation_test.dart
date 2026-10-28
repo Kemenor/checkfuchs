@@ -71,6 +71,33 @@ void main() {
       expect(phaseOf(task, now), TaskPhase.pending);
     });
 
+    test('a start one cycle ahead is honoured (daily, from tomorrow)', () {
+      final now = d(2026, 7, 8, 10);
+      final r = Recurrence.daily(d(2026, 7, 9));
+      expect(
+        anchorToRunningCycle(r, const UntilNextOccurrence(), now).anchor,
+        d(2026, 7, 9),
+      );
+      final t = Template(
+        id: 1,
+        name: 'Medicine',
+        recurrence: anchorToRunningCycle(r, const UntilNextOccurrence(), now),
+        createdAt: now,
+      );
+      final task = only(reconcileTemplate(t, [], now));
+      expect(task.occurrence, d(2026, 7, 9)); // tomorrow, not today
+      expect(phaseOf(task, now), TaskPhase.pending);
+    });
+
+    test('a weekly start next Monday is honoured', () {
+      final now = d(2026, 7, 8, 10); // Wednesday
+      final t = anchored(weekly(anchor: d(2026, 7, 13)), now);
+      expect(t.recurrence.anchor, d(2026, 7, 13));
+      final task = only(reconcileTemplate(t, [], now));
+      expect(task.occurrence, d(2026, 7, 13));
+      expect(phaseOf(task, now), TaskPhase.pending);
+    });
+
     test('a deliberate future start is left alone', () {
       final now = d(2026, 7, 8, 10);
       final t = anchored(weekly(anchor: d(2026, 8, 3)), now);
